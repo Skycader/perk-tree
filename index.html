@@ -2,9 +2,9 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <title>Властитель — Матрица способностей</title>
+    <title>Древо</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -16,8 +16,8 @@
         padding: 0;
       }
       body {
-        background: #0c0d14;
-        font-family: "Noto Sans", sans-serif;
+        background: #080910;
+        font-family: 'JetBrains Mono', monospace;
         color: #c0bdb4;
       }
 
@@ -45,8 +45,14 @@
         position: sticky;
         top: 0;
         z-index: 200;
-        background: #0a0b11;
-        border-bottom: 1px solid #1c1f2e;
+        background: linear-gradient(
+          90deg,
+          #0a0b13 0%,
+          #0c0d18 50%,
+          #0a0b13 100%
+        );
+        border-bottom: 1px solid #1e2235;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
         height: 46px;
         display: flex;
         align-items: center;
@@ -59,7 +65,7 @@
         gap: 12px;
       }
       .tb-title {
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 18px;
         font-weight: 700;
         color: #e09040;
@@ -135,12 +141,19 @@
       .title-box {
         flex-shrink: 0;
         width: 175px;
-        border: 1px solid rgba(200, 120, 48, 0.45);
-        background: rgba(200, 120, 48, 0.09);
+        border: 1px solid rgba(200, 120, 48, 0.5);
+        background: linear-gradient(
+          135deg,
+          rgba(200, 120, 48, 0.18) 0%,
+          rgba(200, 120, 48, 0.06) 100%
+        );
+        box-shadow:
+          0 4px 20px rgba(200, 120, 48, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
         padding: 10px 12px;
       }
       .title-box-name {
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
         font-size: 16px;
         color: #e09040;
@@ -149,14 +162,21 @@
       .title-box-sub {
         font-size: 9px;
         color: #585e72;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
+        letter-spacing: 0.05em;
         margin-top: 3px;
       }
       .altnames-box {
         flex: 1;
-        border: 1px solid #1c1f2e;
-        background: #12141e;
+        border: 1px solid #1e2235;
+        background: linear-gradient(
+          135deg,
+          #13151f 0%,
+          #111320 60%,
+          #0f1019 100%
+        );
+        box-shadow:
+          0 2px 12px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.03);
         padding: 10px 12px;
       }
       .altnames-label {
@@ -166,18 +186,30 @@
         text-transform: uppercase;
         margin-bottom: 7px;
       }
-      .altnames-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2px 8px;
+      .altnames-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
       }
-      .altnames-grid span {
+      .an-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-size: 10px;
-        color: #3d4870;
+        color: #7a8090;
+        background: #0f1018;
+        border: 1px solid #1e2235;
+        border-radius: 3px;
+        padding: 2px 8px 2px 6px;
       }
-      .altnames-grid span::before {
-        content: "• ";
-        color: #252840;
+      .an-tag::before {
+        content: '';
+        display: block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #3a4560;
+        flex-shrink: 0;
       }
 
       /* spacer + cols */
@@ -259,14 +291,14 @@
         flex-shrink: 0;
       }
       .ch-hdr .ch-num {
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 10px;
         font-weight: 500;
         color: #585e72;
         min-width: 16px;
       }
       .ch-hdr .ch-name {
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 12px;
         font-weight: 600;
         letter-spacing: 0.05em;
@@ -274,46 +306,88 @@
       }
 
       .hc-o {
-        background: rgba(200, 120, 48, 0.1);
-        border-color: rgba(200, 120, 48, 0.45);
+        background: linear-gradient(
+          120deg,
+          rgba(200, 120, 48, 0.18) 0%,
+          rgba(200, 120, 48, 0.07) 100%
+        );
+        border-color: rgba(200, 120, 48, 0.5);
+        box-shadow:
+          0 2px 12px rgba(200, 120, 48, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       .hc-o .ch-name {
-        color: #e09040;
+        color: #e8a050;
       }
       .hc-r {
-        background: rgba(160, 40, 40, 0.1);
-        border-color: rgba(160, 40, 40, 0.45);
+        background: linear-gradient(
+          120deg,
+          rgba(160, 40, 40, 0.18) 0%,
+          rgba(160, 40, 40, 0.07) 100%
+        );
+        border-color: rgba(160, 40, 40, 0.5);
+        box-shadow:
+          0 2px 12px rgba(160, 40, 40, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       .hc-r .ch-name {
-        color: #cc3838;
+        color: #d84040;
       }
       .hc-b {
-        background: rgba(40, 96, 168, 0.1);
-        border-color: rgba(40, 96, 168, 0.45);
+        background: linear-gradient(
+          120deg,
+          rgba(40, 96, 168, 0.18) 0%,
+          rgba(40, 96, 168, 0.07) 100%
+        );
+        border-color: rgba(40, 96, 168, 0.5);
+        box-shadow:
+          0 2px 12px rgba(40, 96, 168, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       .hc-b .ch-name {
-        color: #3e80d0;
+        color: #4a90e0;
       }
       .hc-g {
-        background: rgba(32, 136, 80, 0.1);
-        border-color: rgba(32, 136, 80, 0.45);
+        background: linear-gradient(
+          120deg,
+          rgba(32, 136, 80, 0.18) 0%,
+          rgba(32, 136, 80, 0.07) 100%
+        );
+        border-color: rgba(32, 136, 80, 0.5);
+        box-shadow:
+          0 2px 12px rgba(32, 136, 80, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       .hc-g .ch-name {
-        color: #28a860;
+        color: #30b868;
       }
       .hc-p {
-        background: rgba(96, 48, 168, 0.1);
-        border-color: rgba(96, 48, 168, 0.45);
+        background: linear-gradient(
+          120deg,
+          rgba(96, 48, 168, 0.18) 0%,
+          rgba(96, 48, 168, 0.07) 100%
+        );
+        border-color: rgba(96, 48, 168, 0.5);
+        box-shadow:
+          0 2px 12px rgba(96, 48, 168, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       .hc-p .ch-name {
-        color: #7840c8;
+        color: #8850d8;
       }
       .hc-y {
-        background: rgba(144, 120, 32, 0.1);
-        border-color: rgba(144, 120, 32, 0.45);
+        background: linear-gradient(
+          120deg,
+          rgba(144, 120, 32, 0.18) 0%,
+          rgba(144, 120, 32, 0.07) 100%
+        );
+        border-color: rgba(144, 120, 32, 0.5);
+        box-shadow:
+          0 2px 12px rgba(144, 120, 32, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       .hc-y .ch-name {
-        color: #b89030;
+        color: #c8a038;
       }
 
       .perks-wrap {
@@ -322,18 +396,36 @@
         gap: 6px;
       }
       .perk {
-        background: #12141e;
+        background: linear-gradient(
+          135deg,
+          #13151f 0%,
+          #111320 50%,
+          #0f1019 100%
+        );
         border: 1px solid #1c1f2e;
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.03);
         padding: 7px 10px 8px;
         display: flex;
         gap: 8px;
         align-items: flex-start;
-        transition: background 0.12s;
+        transition:
+          background 0.15s,
+          box-shadow 0.15s;
         cursor: default;
         position: relative;
       }
       .perk:hover {
-        background: #1a1c2a;
+        background: linear-gradient(
+          135deg,
+          #181a28 0%,
+          #151728 50%,
+          #121524 100%
+        );
+        box-shadow:
+          0 4px 16px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
       }
       .perk-icon {
         width: 10px;
@@ -348,7 +440,7 @@
         overflow: hidden;
       }
       .perk-name {
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-weight: 600;
         font-size: 12px;
         color: #dedad2;
@@ -394,7 +486,7 @@
         padding: 8px 10px;
         background: rgba(200, 120, 48, 0.09);
         border: 1px solid rgba(200, 120, 48, 0.4);
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 12px;
         font-weight: 600;
         color: #e09040;
@@ -483,7 +575,7 @@
         padding: 6px 12px;
         background: rgba(180, 140, 30, 0.07);
         border: 1px solid rgba(180, 140, 30, 0.22);
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 12px;
         font-weight: 600;
         color: #b89030;
@@ -512,45 +604,6 @@
         font-size: 10px;
         color: #585e72;
         line-height: 1.55;
-      }
-
-      /* ── INFO BUTTON ── */
-      .perk {
-        position: relative;
-      }
-      .perk-info {
-        position: absolute;
-        bottom: 6px;
-        left: 8px;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        border: 1px solid #2a3050;
-        background: #0f1018;
-        color: #3a4570;
-        font-size: 9px;
-        font-family: "Rajdhani", sans-serif;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition:
-          border-color 0.2s,
-          color 0.2s,
-          background 0.2s;
-        z-index: 2;
-        user-select: none;
-        line-height: 1;
-      }
-      .perk-info:hover {
-        border-color: #5a6a9a;
-        color: #8a9adf;
-        background: #151828;
-      }
-      /* give perk bottom padding room for the button */
-      .perk {
-        padding-bottom: 22px;
       }
 
       /* ── SCREEN OVERLAY ── */
@@ -618,7 +671,7 @@
       .tt-header {
         padding: 8px 12px;
         border-bottom: 1px solid #1c1f2e;
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 13px;
         font-weight: 600;
         color: #dedad2;
@@ -638,7 +691,7 @@
         border-bottom: none;
       }
       .tt-lvl {
-        font-family: "Rajdhani", sans-serif;
+        font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
         font-size: 11px;
         min-width: 20px;
@@ -656,8 +709,8 @@
   <body>
     <div class="topbar">
       <div class="tb-left">
-        <span class="tb-title" id="tb-title">ВЛАСТИТЕЛЬ</span>
-        <span class="tb-sub">Матрица способностей и перков</span>
+        <span class="tb-title" id="tb-title">ДРЕВО</span
+        ><span class="tb-sub">Матрица способностей</span>
       </div>
       <div class="tb-stats">
         <span class="tb-stat">Перков: <span id="stat-perks">—</span></span>
@@ -679,8 +732,8 @@
         <div class="main-area" id="main-area">
           <div class="meta-row">
             <div class="title-box" id="title-box">
-              <div class="title-box-name" id="title-name">⚜ Властитель</div>
-              <div class="title-box-sub">Матрица способностей и перков</div>
+              <div class="title-box-name" id="title-name">⚜ —</div>
+              <div class="title-box-sub" id="title-desc">—</div>
             </div>
             <div class="altnames-box" id="altnames-box"></div>
           </div>
@@ -692,6 +745,17 @@
       <div class="bottom-bar" id="bottom-bar"></div>
     </div>
 
+    <canvas
+      id="bg-canvas"
+      style="
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        pointer-events: none;
+      "
+    ></canvas>
     <div id="tt-overlay"></div>
     <!-- tooltip arrow -->
     <svg id="tt-arrow-svg" style="display: none"></svg>
@@ -704,37 +768,152 @@
     <!-- Load config -->
     <script src="overlord.js"></script>
     <script>
+      // ── BACKGROUND (GRID::RUNNER sky only) ──
+      (function () {
+        const cv = document.getElementById('bg-canvas');
+        const cx = cv.getContext('2d');
+        let T = 0,
+          lightnings = [];
+        function resize() {
+          cv.width = innerWidth;
+          cv.height = innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        function lcg(seed) {
+          let s = seed >>> 0;
+          return () => {
+            s = (1664525 * s + 1013904223) >>> 0;
+            return s / 4294967296;
+          };
+        }
+        const rnd = lcg(0xcafe1234);
+        // stars in polar coords — all rotate at same speed (celestial sphere)
+        const ROT_SPEED = 0.008; // rad/s
+        const STARS = Array.from({ length: 160 }, () => ({
+          r: 0.05 + rnd() * 0.78,
+          ang: rnd() * Math.PI * 2,
+          sz: rnd() < 0.14 ? 1.5 : 1,
+          ph: rnd() * Math.PI * 2,
+          tw: 0.28 + rnd() * 0.48,
+        }));
+        function drawBg(t) {
+          const W = cv.width,
+            H = cv.height;
+          const cx0 = W / 2,
+            cy0 = H / 2;
+          const diag = Math.sqrt(cx0 * cx0 + cy0 * cy0) * 1.05;
+          const sky = cx.createLinearGradient(0, 0, 0, H);
+          sky.addColorStop(0, '#000005');
+          sky.addColorStop(0.5, '#000a10');
+          sky.addColorStop(1, '#001420');
+          cx.fillStyle = sky;
+          cx.fillRect(0, 0, W, H);
+          // all stars rotate together around screen centre
+          cx.save();
+          cx.translate(cx0, cy0);
+          cx.rotate(t * ROT_SPEED);
+          STARS.forEach((s) => {
+            const x = Math.cos(s.ang) * s.r * diag;
+            const y = Math.sin(s.ang) * s.r * diag;
+            const fl = 0.3 + 0.7 * Math.abs(Math.sin(t * s.tw + s.ph));
+            cx.fillStyle = `rgba(160,220,255,${fl * 0.55})`;
+            cx.fillRect(x, y, s.sz, s.sz);
+          });
+          cx.restore();
+          // lightning
+          if (Math.random() < 0.0038) lightnings.push(mkLightning(W, H));
+          cx.save();
+          lightnings = lightnings.filter((l) => l.a > 0.01);
+          lightnings.forEach((l) => {
+            l.a -= l.dk;
+            drawLP(l.pts, 1.4, l.a * 0.88);
+            l.br.forEach((b) => drawLP(b, 0.65, l.a * 0.36));
+            if (l.a > 0.65) {
+              cx.fillStyle = `rgba(100,170,255,${(l.a - 0.65) * 0.07})`;
+              cx.fillRect(0, 0, W, H);
+            }
+          });
+          cx.restore();
+        }
+        function mkLightning(W, H) {
+          const x = rnd() * W,
+            y0 = rnd() * H * 0.3,
+            y1 = y0 + 50 + rnd() * 120;
+          const pts = [{ x, y: y0 }];
+          let cx2 = x,
+            cy = y0;
+          while (cy < y1) {
+            cy += 7 + rnd() * 13;
+            cx2 += (rnd() - 0.5) * 33;
+            pts.push({ x: cx2, y: cy });
+          }
+          const br = [];
+          if (pts.length > 2 && rnd() > 0.52) {
+            const bi = Math.floor(pts.length * 0.4);
+            let bx = pts[bi].x,
+              by = pts[bi].y;
+            const bp = [{ x: bx, y: by }];
+            for (let i = 0; i < 3 + Math.floor(rnd() * 4); i++) {
+              by += 5 + rnd() * 9;
+              bx += (rnd() - 0.5) * 23;
+              bp.push({ x: bx, y: by });
+            }
+            br.push(bp);
+          }
+          return { pts, br, a: 1, dk: 0.046 + rnd() * 0.05 };
+        }
+        function drawLP(pts, w, a) {
+          if (pts.length < 2) return;
+          cx.beginPath();
+          cx.moveTo(pts[0].x, pts[0].y);
+          for (let i = 1; i < pts.length; i++) cx.lineTo(pts[i].x, pts[i].y);
+          cx.strokeStyle = `rgba(160,212,255,${a})`;
+          cx.lineWidth = w;
+          cx.shadowBlur = 10;
+          cx.shadowColor = '#55aaff';
+          cx.stroke();
+          cx.shadowBlur = 0;
+        }
+        function loop(ts) {
+          T = ts / 1000;
+          resize();
+          drawBg(T);
+          requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      })();
       // ── COLOUR CYCLE for chapters ──
       const COLOURS = [
-        "o",
-        "b",
-        "o",
-        "p",
-        "o",
-        "r",
-        "g",
-        "r",
-        "b",
-        "r",
-        "b",
-        "y",
-        "b",
-        "g",
-        "g",
-        "y",
-        "y",
-        "p",
-        "o",
+        'o',
+        'b',
+        'o',
+        'p',
+        'o',
+        'r',
+        'g',
+        'r',
+        'b',
+        'r',
+        'b',
+        'y',
+        'b',
+        'g',
+        'g',
+        'y',
+        'y',
+        'p',
+        'o',
       ];
       const COL_HEX = {
-        o: "#c87830",
-        r: "#a02828",
-        b: "#2860a8",
-        g: "#208850",
-        p: "#6030a8",
-        y: "#907820",
+        o: '#c87830',
+        r: '#a02828',
+        b: '#2860a8',
+        g: '#208850',
+        p: '#6030a8',
+        y: '#907820',
       };
-      const SPINE = "#2e3448";
+      const SPINE = '#2e3448';
 
       // ── PROCESS CONFIG ──
       const D = STAND_DATA;
@@ -745,18 +924,19 @@
       const lvlPerRank = Math.ceil(maxLevel / nRanks);
 
       // update topbar stats
-      document.getElementById("tb-title").textContent =
-        "⚜ " + D.tabName.toUpperCase();
-      document.getElementById("title-name").textContent = "⚜ " + D.tabName;
-      document.getElementById("stat-perks").textContent = totalPerks;
-      document.getElementById("stat-lvl-per-rank").textContent = lvlPerRank;
-      document.getElementById("stat-max-lvl").textContent = maxLevel;
+      const standName = D.standName || D.tabName || 'Стэнд';
+      // tb-title is static 'ДРЕВО СПОСОБНОСТЕЙ'
+      document.getElementById('title-name').textContent = '⚜ ' + standName;
+      document.getElementById('title-desc').textContent = D.desc || '';
+      document.getElementById('stat-perks').textContent = totalPerks;
+      document.getElementById('stat-lvl-per-rank').textContent = lvlPerRank;
+      document.getElementById('stat-max-lvl').textContent = maxLevel;
 
-      // alt names
-      const anBox = document.getElementById("altnames-box");
+      // alt names as tags
+      const anBox = document.getElementById('altnames-box');
       const names = D.otherNames || D.altNames || [];
       anBox.innerHTML = `<div class="altnames-label">👤 Альтернативные имена</div>
-  <div class="altnames-grid">${names.map((n) => `<span>${n}</span>`).join("")}</div>`;
+  <div class="altnames-tags">${names.map((n) => `<span class="an-tag">${n}</span>`).join('')}</div>`;
 
       // ── DISTRIBUTE chapters into 3 columns (balance by perk count) ──
       function distributeToColumns(skills, nCols) {
@@ -780,72 +960,68 @@
         globalColIdx++;
       });
 
-      const tooltipEl = document.getElementById("tooltip");
-      const ttHeader = document.getElementById("tt-header");
-      const ttLevels = document.getElementById("tt-levels");
+      const tooltipEl = document.getElementById('tooltip');
+      const ttHeader = document.getElementById('tt-header');
+      const ttLevels = document.getElementById('tt-levels');
 
       // ── BUILD COLUMNS ──
-      const colsRow = document.getElementById("cols-row");
+      const colsRow = document.getElementById('cols-row');
       const colRefs = [];
 
       columns.forEach((chapters) => {
-        const col = document.createElement("div");
-        col.className = "col";
+        const col = document.createElement('div');
+        col.className = 'col';
 
-        const connEl = document.createElement("div");
-        connEl.className = "col-connector";
+        const connEl = document.createElement('div');
+        connEl.className = 'col-connector';
         const connSvg = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "svg",
+          'http://www.w3.org/2000/svg',
+          'svg',
         );
-        connSvg.setAttribute("aria-hidden", "true");
+        connSvg.setAttribute('aria-hidden', 'true');
         connEl.appendChild(connSvg);
 
         // col spine drawn inside connSvg (no separate element)
         const spineSvg = null;
-        const contentEl = document.createElement("div");
-        contentEl.className = "col-content";
+        const contentEl = document.createElement('div');
+        contentEl.className = 'col-content';
 
         const chRefs = [];
         chapters.forEach((ch) => {
           const c = chapterColour.get(ch);
-          const titleClean = ch.chapterTitle.replace(/^\d+\.\s*/, "");
+          const titleClean = ch.chapterTitle.replace(/^\d+\.\s*/, '');
           const numMatch = ch.chapterTitle.match(/^(\d+)\./);
-          const num = numMatch ? numMatch[1] : "";
+          const num = numMatch ? numMatch[1] : '';
 
-          const chDiv = document.createElement("div");
-          chDiv.className = "chapter";
+          const chDiv = document.createElement('div');
+          chDiv.className = 'chapter';
 
-          const hdr = document.createElement("div");
+          const hdr = document.createElement('div');
           hdr.className = `ch-hdr hc-${c}`;
-          hdr.innerHTML = `<span class="ch-num">${num ? num + "." : ""}</span><span class="ch-name">${titleClean}</span>`;
+          hdr.innerHTML = `<span class="ch-num">${num ? num + '.' : ''}</span><span class="ch-name">${titleClean}</span>`;
 
-          const pw = document.createElement("div");
-          pw.className = "perks-wrap";
+          const pw = document.createElement('div');
+          pw.className = 'perks-wrap';
 
           ch.perks.forEach((p) => {
-            const pEl = document.createElement("div");
-            pEl.className = "perk";
+            const pEl = document.createElement('div');
+            pEl.className = 'perk';
             pEl.innerHTML = `<div class="perk-icon ic-${c}"></div>
         <div class="perk-body">
           <div class="perk-name">${p.name}</div>
           <div class="perk-desc">${p.description}</div>
         </div>`;
 
-            // info button (only if level descriptions exist)
+            // hover on icon square triggers tooltip
             const lvlDesc = (D.skillLevelDescriptions || {})[p.id];
             if (lvlDesc) {
-              const btn = document.createElement("div");
-              btn.className = "perk-info";
-              btn.textContent = "i";
-              btn.addEventListener("mouseenter", () =>
-                showTooltip(p.name, lvlDesc, pEl),
+              const icon = pEl.querySelector('.perk-icon');
+              icon.style.cursor = 'pointer';
+              icon.addEventListener('mouseenter', () =>
+                showTooltip(p.name, lvlDesc, icon),
               );
-              btn.addEventListener("mouseleave", hideTooltip);
-              // tooltip mouseenter/leave handled globally above
-              pEl.appendChild(btn);
+              icon.addEventListener('mouseleave', hideTooltip);
             }
-
             pw.appendChild(pEl);
           });
 
@@ -865,27 +1041,27 @@
       function makeBadge(badgeStr) {
         // badgeStr uses emoji squares — map to css sq classes
         const out = [];
-        const lines = badgeStr.split("\n");
+        const lines = badgeStr.split('\n');
         for (const line of lines) {
           const chars = [...line]; // handle emoji properly
           const row = chars
             .map((ch) => {
-              if (ch === "◽" || ch === "⬜" || ch === "◻")
+              if (ch === '◽' || ch === '⬜' || ch === '◻')
                 return `<span class="sq sq-w"></span>`;
-              if (ch === "🟨") return `<span class="sq sq-y"></span>`;
-              if (ch === "🟥") return `<span class="sq sq-r"></span>`;
-              if (ch === "🟦") return `<span class="sq sq-b"></span>`;
-              if (ch === "⬛" || ch === "◼")
+              if (ch === '🟨') return `<span class="sq sq-y"></span>`;
+              if (ch === '🟥') return `<span class="sq sq-r"></span>`;
+              if (ch === '🟦') return `<span class="sq sq-b"></span>`;
+              if (ch === '⬛' || ch === '◼')
                 return `<span class="sq sq-k"></span>`;
-              return "";
+              return '';
             })
-            .join("");
+            .join('');
           if (row) out.push(`<div class="badge-row">${row}</div>`);
         }
-        return `<div class="badge">${out.join("")}</div>`;
+        return `<div class="badge">${out.join('')}</div>`;
       }
 
-      const sb = document.getElementById("sidebar");
+      const sb = document.getElementById('sidebar');
       const ranksHtml = D.ranks
         .map((r, i) => {
           const minLvl = i * lvlPerRank;
@@ -897,207 +1073,172 @@
     <td>${makeBadge(r.badge)}</td>
   </tr>`;
         })
-        .join("");
+        .join('');
 
       sb.innerHTML = `
-  <div class="sb-hdr">👑 Ранги ${D.tabName}</div>
+  <div class="sb-hdr">Ранги
   <div class="rtable-wrap"><table class="rtable">
     <thead><tr><th>Уровень</th><th>Ранг</th><th>Знак</th></tr></thead>
     <tbody>${ranksHtml}</tbody>
   </table></div>`;
 
-      // ── BOTTOM BAR vulnerabilities ──
-      const vulns = [
-        {
-          name: "1. Смертное тело",
-          desc: "Несмотря на огромную силу, тело Властителя остаётся смертным и подвержено физическому разрушению, старению и болезням.",
-        },
-        {
-          name: "2. Ограниченная энергия психики и души",
-          desc: "Психическая и духовная энергия не бесконечны. При истощении способности слабеют, а восстановление требует времени.",
-        },
-        {
-          name: "3. Тяжесть (аура) души",
-          desc: "Душа Властителя обладает огромной массой и резонансом, вызывая отклик в грешных душах — уязвимость для обнаружения.",
-        },
-      ];
-      document.getElementById("bottom-bar").innerHTML =
-        `<div class="bb-hdr">⚜ Уязвимости Властителя</div>
-   <div class="bb-items">${vulns
-     .map(
-       (v) => `<div class="bb-item">
-     <div class="bb-item-name">${v.name}</div>
-     <div class="bb-item-desc">${v.desc}</div>
-   </div>`,
-     )
-     .join("")}</div>`;
+      // ── BOTTOM BAR vulnerabilities — from D.vulns if present ──
+      const vulns = D.vulns || [];
+      document.getElementById('bottom-bar').innerHTML = vulns.length
+        ? `<div class="bb-hdr">⚜ Уязвимости ${standName}</div>
+       <div class="bb-items">${vulns
+         .map(
+           (v) => `<div class="bb-item">
+         <div class="bb-item-name">${v.name}</div>
+         <div class="bb-item-desc">${v.desc}</div>
+       </div>`,
+         )
+         .join('')}</div>`
+        : '';
 
       // ── TOOLTIP LOGIC ──
       const LEVEL_COLOURS = [
-        "#585e72",
-        "#4a7a50",
-        "#4a7a50",
-        "#5a7a30",
-        "#5a7a30",
-        "#7a7020",
-        "#7a7020",
-        "#7a5020",
-        "#7a5020",
-        "#904030",
-        "#a03028",
+        '#585e72',
+        '#4a7a50',
+        '#4a7a50',
+        '#5a7a30',
+        '#5a7a30',
+        '#7a7020',
+        '#7a7020',
+        '#7a5020',
+        '#7a5020',
+        '#904030',
+        '#a03028',
       ];
 
-      const ttArrowSvg = document.getElementById("tt-arrow-svg");
-      const ttOverlay = document.getElementById("tt-overlay");
+      const ttArrowSvg = document.getElementById('tt-arrow-svg');
+      const ttOverlay = document.getElementById('tt-overlay');
       let _ttHideTimer = null;
       let _currentBtn = null;
 
-      function showTooltip(name, lvlDesc, perkEl) {
+      function showTooltip(name, lvlDesc, iconEl) {
         clearTimeout(_ttHideTimer);
+        _currentBtn = iconEl;
 
         ttHeader.textContent = name;
         ttLevels.innerHTML = Object.entries(lvlDesc)
           .map(([lvl, txt]) => {
-            const col = LEVEL_COLOURS[parseInt(lvl)] || "#585e72";
+            const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
             return `<div class="tt-row">
       <span class="tt-lvl" style="color:${col}">${lvl}</span>
       <span class="tt-text">${txt}</span>
     </div>`;
           })
-          .join("");
+          .join('');
 
-        tooltipEl.classList.add("visible");
-        tooltipEl.classList.remove("shown");
+        tooltipEl.classList.add('visible');
+        tooltipEl.classList.remove('shown');
 
-        const btn = perkEl.querySelector(".perk-info");
-        _currentBtn = btn;
-        const br = btn.getBoundingClientRect();
-        const btnCX = br.left + br.width / 2;
-        const btnCY = br.top + br.height / 2;
+        const ir = iconEl.getBoundingClientRect();
+        const icX = ir.left + ir.width / 2;
+        const icY = ir.top + ir.height / 2;
 
         const tw = 340,
           vh = window.innerHeight,
           vw = window.innerWidth;
-        const GAP = 18; // distance from btn to tooltip edge
+        const GAP = 20;
 
-        // prefer right, else left
-        let x = btnCX + GAP;
-        if (x + tw > vw - 4) x = btnCX - tw - GAP;
+        // prefer right of icon, else left
+        let x = icX + GAP;
+        if (x + tw > vw - 4) x = icX - tw - GAP;
         if (x < 4) x = 4;
 
-        // vertically centre on button, clamp
         const estimatedH = Math.min(tooltipEl.scrollHeight || 400, vh * 0.82);
-        let y = btnCY - estimatedH / 2;
+        let y = icY - estimatedH / 2;
         if (y + estimatedH > vh - 4) y = vh - estimatedH - 4;
         if (y < 4) y = 4;
 
-        tooltipEl.style.left = x + "px";
-        tooltipEl.style.top = y + "px";
+        tooltipEl.style.left = x + 'px';
+        tooltipEl.style.top = y + 'px';
 
-        // draw animated dashed line from btn centre to nearest tooltip edge
-        const toX = x > btnCX ? x : x + tw;
-        const toY = btnCY;
+        // animated line from icon centre to tooltip edge
+        const toX = x > icX ? x : x + tw;
+        const toY = icY;
+        const len = Math.abs(toX - icX);
+        const dir = toX > icX;
 
-        ttArrowSvg.style.display = "block";
-        ttArrowSvg.style.width = vw + "px";
-        ttArrowSvg.style.height = vh + "px";
-        ttArrowSvg.setAttribute("viewBox", `0 0 ${vw} ${vh}`);
-
-        const len = Math.abs(toX - btnCX);
-        const dir = toX > btnCX;
+        ttArrowSvg.style.display = 'block';
+        ttArrowSvg.style.width = vw + 'px';
+        ttArrowSvg.style.height = vh + 'px';
+        ttArrowSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
         ttArrowSvg.innerHTML = `
-    <line x1="${btnCX}" y1="${toY}" x2="${toX}" y2="${toY}"
+    <line x1="${icX}" y1="${toY}" x2="${toX}" y2="${toY}"
       stroke="#50556a" stroke-width="1.5" stroke-dasharray="5,3"
       stroke-dashoffset="${len}"
-      style="animation:dashIn .3s ease forwards">
-    </line>
-    <polygon points="${
-      dir
-        ? toX +
-          "," +
-          toY +
-          " " +
-          (toX - 6) +
-          "," +
-          (toY - 3) +
-          " " +
-          (toX - 6) +
-          "," +
-          (toY + 3)
-        : toX +
-          "," +
-          toY +
-          " " +
-          (toX + 6) +
-          "," +
-          (toY - 3) +
-          " " +
-          (toX + 6) +
-          "," +
-          (toY + 3)
-    }"
+      style="animation:dashIn .3s ease forwards"/>
+    <polygon
+      points="${
+        dir
+          ? `${toX},${toY} ${toX - 6},${toY - 3} ${toX - 6},${toY + 3}`
+          : `${toX},${toY} ${toX + 6},${toY - 3} ${toX + 6},${toY + 3}`
+      }"
       fill="#50556a" opacity="0"
       style="animation:fadeIn .2s .25s ease forwards"/>`;
 
-        ttOverlay.classList.add("active");
-        requestAnimationFrame(() => tooltipEl.classList.add("shown"));
+        ttOverlay.classList.add('active');
+        requestAnimationFrame(() => tooltipEl.classList.add('shown'));
       }
 
       function hideTooltip() {
         clearTimeout(_ttHideTimer);
         _ttHideTimer = setTimeout(() => {
-          tooltipEl.classList.remove("shown");
-          ttOverlay.classList.remove("active");
-          ttArrowSvg.style.display = "none";
-          setTimeout(() => tooltipEl.classList.remove("visible"), 200);
+          tooltipEl.classList.remove('shown');
+          ttOverlay.classList.remove('active');
+          ttArrowSvg.style.display = 'none';
+          setTimeout(() => tooltipEl.classList.remove('visible'), 200);
         }, 80);
       }
 
       // keep open when cursor moves to tooltip
-      tooltipEl.addEventListener("mouseenter", () =>
+      tooltipEl.addEventListener('mouseenter', () =>
         clearTimeout(_ttHideTimer),
       );
-      tooltipEl.addEventListener("mouseleave", hideTooltip);
+      tooltipEl.addEventListener('mouseleave', hideTooltip);
 
       // hide on scroll
-      window.addEventListener("scroll", hideTooltip, { passive: true });
+      window.addEventListener('scroll', hideTooltip, { passive: true });
 
       // ── SVG CONNECTOR DRAWING ──
       function svgLine(x1, y1, x2, y2, stroke, sw = 1) {
         const l = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "line",
+          'http://www.w3.org/2000/svg',
+          'line',
         );
-        l.setAttribute("x1", x1);
-        l.setAttribute("y1", y1);
-        l.setAttribute("x2", x2);
-        l.setAttribute("y2", y2);
-        l.setAttribute("stroke", stroke);
-        l.setAttribute("stroke-width", sw);
+        l.setAttribute('x1', x1);
+        l.setAttribute('y1', y1);
+        l.setAttribute('x2', x2);
+        l.setAttribute('y2', y2);
+        l.setAttribute('stroke', stroke);
+        l.setAttribute('stroke-width', sw);
         return l;
       }
       function svgArrowRight(svg, x, y, fill) {
         const p = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "polygon",
+          'http://www.w3.org/2000/svg',
+          'polygon',
         );
         p.setAttribute(
-          "points",
+          'points',
           `${x},${y} ${x - 5},${y - 3} ${x - 5},${y + 3}`,
         );
-        p.setAttribute("fill", fill);
+        p.setAttribute('fill', fill);
         svg.appendChild(p);
       }
       function svgArrowDown(svg, x, y, fill) {
         const p = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "polygon",
+          'http://www.w3.org/2000/svg',
+          'polygon',
         );
         p.setAttribute(
-          "points",
+          'points',
           `${x},${y} ${x - 4},${y - 7} ${x + 4},${y - 7}`,
         );
-        p.setAttribute("fill", fill);
+        p.setAttribute('fill', fill);
         svg.appendChild(p);
       }
 
@@ -1133,7 +1274,7 @@
         const targets = [];
         chRefs.forEach(({ hdr, pw, c }) => {
           targets.push({ y: midOf(hdr), isHdr: true, c });
-          pw.querySelectorAll(".perk").forEach((p) => {
+          pw.querySelectorAll('.perk').forEach((p) => {
             targets.push({ y: iconOf(p), isHdr: false, c });
           });
         });
@@ -1141,26 +1282,26 @@
 
         // total svg height = bottom of last target + small padding
         const svgH = targets[targets.length - 1].y + 20;
-        connEl.style.height = svgH + "px";
-        connSvg.innerHTML = "";
-        connSvg.setAttribute("viewBox", `0 0 ${CONN} ${svgH}`);
+        connEl.style.height = svgH + 'px';
+        connSvg.innerHTML = '';
+        connSvg.setAttribute('viewBox', `0 0 ${CONN} ${svgH}`);
 
         // 1. grey gap segments between chapters (drawn first = behind)
         for (let i = 0; i < chRefs.length - 1; i++) {
           const lastPerk = Array.from(
-            chRefs[i].pw.querySelectorAll(".perk"),
+            chRefs[i].pw.querySelectorAll('.perk'),
           ).pop();
           const nextHdr = chRefs[i + 1].hdr;
           if (!lastPerk || !nextHdr) continue;
           connSvg.appendChild(
-            svgLine(mx, iconOf(lastPerk), mx, midOf(nextHdr), "#50556a"),
+            svgLine(mx, iconOf(lastPerk), mx, midOf(nextHdr), '#50556a'),
           );
         }
 
         // 2. coloured vertical spine within each chapter (drawn second = in front of grey)
         chRefs.forEach(({ hdr, pw, c }) => {
           const col = COL_HEX[c] || SPINE;
-          const perks = Array.from(pw.querySelectorAll(".perk"));
+          const perks = Array.from(pw.querySelectorAll('.perk'));
           const spineT = midOf(hdr);
           const spineB = perks.length
             ? iconOf(perks[perks.length - 1])
@@ -1177,16 +1318,16 @@
       }
 
       function drawTopBus() {
-        const old = document.getElementById("top-bus-svg");
+        const old = document.getElementById('top-bus-svg');
         if (old) old.remove();
 
-        const mainArea = document.getElementById("main-area");
-        const titleBox = document.getElementById("title-box");
-        const anBox2 = document.getElementById("altnames-box");
-        const spacer = document.getElementById("bus-spacer");
-        const colsRowEl = document.getElementById("cols-row");
+        const mainArea = document.getElementById('main-area');
+        const titleBox = document.getElementById('title-box');
+        const anBox2 = document.getElementById('altnames-box');
+        const spacer = document.getElementById('bus-spacer');
+        const colsRowEl = document.getElementById('cols-row');
         if (!mainArea || !titleBox || !spacer || !colsRowEl) return;
-        mainArea.style.position = "relative";
+        mainArea.style.position = 'relative';
 
         // All coords relative to mainArea using offsetLeft/offsetTop
         function off(el) {
@@ -1221,8 +1362,8 @@
         // target Xs: mid of first ch-hdr in each col
         const txs = [],
           hdrTops = [];
-        colsRowEl.querySelectorAll(".col").forEach((col) => {
-          const hdr = col.querySelector(".ch-hdr");
+        colsRowEl.querySelectorAll('.col').forEach((col) => {
+          const hdr = col.querySelector('.ch-hdr');
           if (!hdr) return;
           const r = off(hdr);
           txs.push(r.left + r.w / 2);
@@ -1234,14 +1375,14 @@
         const H = (hdrTops[0] || sp.bottom) + 10;
 
         const svg = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "svg",
+          'http://www.w3.org/2000/svg',
+          'svg',
         );
-        svg.id = "top-bus-svg";
-        svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+        svg.id = 'top-bus-svg';
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
         svg.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:none;overflow:visible;z-index:5;`;
 
-        const S = "#50556a";
+        const S = '#50556a';
         const ln = (x1, y1, x2, y2) => {
           const l = svgLine(x1, y1, x2, y2, S);
           svg.appendChild(l);
@@ -1265,40 +1406,40 @@
         drawTopBus();
       }
 
-      window.addEventListener("resize", () => requestAnimationFrame(redrawAll));
+      window.addEventListener('resize', () => requestAnimationFrame(redrawAll));
       document.fonts.ready.then(() =>
         requestAnimationFrame(() => requestAnimationFrame(redrawAll)),
       );
 
       // ── PNG EXPORT ──
       async function exportPNG() {
-        const st = document.getElementById("exp-st");
-        st.textContent = "Загрузка…";
-        const s = document.createElement("script");
+        const st = document.getElementById('exp-st');
+        st.textContent = 'Загрузка…';
+        const s = document.createElement('script');
         s.src =
-          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+          'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
         document.head.appendChild(s);
         await new Promise((res, rej) => {
           s.onload = res;
           s.onerror = rej;
         });
-        st.textContent = "Рендеринг…";
-        const root = document.getElementById("export-root");
+        st.textContent = 'Рендеринг…';
+        const root = document.getElementById('export-root');
         const cv = await html2canvas(root, {
-          backgroundColor: "#0c0d14",
+          backgroundColor: '#0c0d14',
           scale: 2,
           useCORS: true,
           logging: false,
           windowWidth: root.scrollWidth,
           width: root.scrollWidth,
         });
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.download = `${D.tabName}_perks.png`;
-        a.href = cv.toDataURL("image/png");
+        a.href = cv.toDataURL('image/png');
         a.click();
-        st.textContent = "✓";
+        st.textContent = '✓';
         setTimeout(() => {
-          st.textContent = "";
+          st.textContent = '';
         }, 3000);
       }
     </script>
