@@ -186,6 +186,7 @@
         width: var(--CONN);
         flex-shrink: 0;
         position: relative;
+        align-self: flex-start;
       }
       .col-connector svg {
         position: absolute;
@@ -217,6 +218,7 @@
         display: flex;
         flex-direction: column;
         gap: 14px;
+        align-self: flex-start;
       }
 
       /* chapter */
@@ -496,16 +498,22 @@
         display: none;
         position: fixed;
         z-index: 500;
-        width: 320px;
-        max-height: 80vh;
+        width: 340px;
+        max-height: 82vh;
         overflow-y: auto;
         background: #0f1018;
         border: 1px solid #2a3050;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
-        pointer-events: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        pointer-events: auto;
       }
       .tooltip.visible {
         display: block;
+      }
+      /* arrow line from perk to tooltip */
+      #tt-arrow-svg {
+        position: fixed;
+        pointer-events: none;
+        z-index: 499;
       }
       .tt-header {
         padding: 8px 12px;
@@ -521,8 +529,8 @@
       .tt-row {
         display: flex;
         gap: 8px;
-        align-items: baseline;
-        padding: 4px 12px;
+        align-items: flex-start;
+        padding: 5px 12px;
         border-bottom: 1px solid rgba(28, 31, 46, 0.4);
         font-size: 10px;
       }
@@ -535,10 +543,13 @@
         font-size: 11px;
         min-width: 20px;
         flex-shrink: 0;
+        padding-top: 1px;
       }
       .tt-text {
         color: #7a8090;
-        line-height: 1.45;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
     </style>
   </head>
@@ -581,6 +592,8 @@
       <div class="bottom-bar" id="bottom-bar"></div>
     </div>
 
+    <!-- tooltip arrow -->
+    <svg id="tt-arrow-svg" style="display: none"></svg>
     <!-- tooltip -->
     <div class="tooltip" id="tooltip">
       <div class="tt-header" id="tt-header"></div>
@@ -666,6 +679,10 @@
         globalColIdx++;
       });
 
+      const tooltipEl = document.getElementById("tooltip");
+      const ttHeader = document.getElementById("tt-header");
+      const ttLevels = document.getElementById("tt-levels");
+
       // ── BUILD COLUMNS ──
       const colsRow = document.getElementById("cols-row");
       const colRefs = [];
@@ -725,10 +742,15 @@
             const lvlDesc = (D.skillLevelDescriptions || {})[p.id];
             if (lvlDesc) {
               pEl.addEventListener("mouseenter", (e) =>
-                showTooltip(e, p.name, lvlDesc),
+                showTooltip(e, p.name, lvlDesc, pEl),
               );
-              pEl.addEventListener("mousemove", (e) => moveTooltip(e));
-              pEl.addEventListener("mouseleave", hideTooltip);
+              pEl.addEventListener("mouseleave", (e) => {
+                // delay hide to allow moving cursor to tooltip
+                setTimeout(() => {
+                  if (!tooltipEl.matches(":hover")) hideTooltip();
+                }, 120);
+              });
+              tooltipEl.addEventListener("mouseleave", hideTooltip);
             }
 
             pw.appendChild(pEl);
@@ -818,9 +840,6 @@
      .join("")}</div>`;
 
       // ── TOOLTIP LOGIC ──
-      const tooltipEl = document.getElementById("tooltip");
-      const ttHeader = document.getElementById("tt-header");
-      const ttLevels = document.getElementById("tt-levels");
       const LEVEL_COLOURS = [
         "#585e72",
         "#4a7a50",
@@ -835,36 +854,89 @@
         "#a03028",
       ];
 
-      function showTooltip(e, name, lvlDesc) {
+      const ttArrowSvg = document.getElementById("tt-arrow-svg");
+
+      function showTooltip(e, name, lvlDesc, perkEl) {
         ttHeader.textContent = name;
         ttLevels.innerHTML = Object.entries(lvlDesc)
           .map(([lvl, txt]) => {
             const col = LEVEL_COLOURS[parseInt(lvl)] || "#585e72";
-            // first sentence for brevity
-            const short = txt.split("\n")[0];
             return `<div class="tt-row">
       <span class="tt-lvl" style="color:${col}">${lvl}</span>
-      <span class="tt-text">${short}</span>
+      <span class="tt-text">${txt}</span>
     </div>`;
           })
           .join("");
         tooltipEl.classList.add("visible");
-        moveTooltip(e);
+        positionTooltip(perkEl);
       }
-      function moveTooltip(e) {
-        const tw = 320,
-          th = tooltipEl.offsetHeight;
-        let x = e.clientX + 14,
-          y = e.clientY + 14;
-        if (x + tw > window.innerWidth) x = e.clientX - tw - 8;
-        if (y + th > window.innerHeight) y = e.clientY - th - 8;
-        if (y < 0) y = 4;
-        if (x < 0) x = 4;
+
+      function positionTooltip(perkEl) {
+        const pr = perkEl.getBoundingClientRect();
+        const tw = 340;
+        const vh = window.innerHeight;
+        const vw = window.innerWidth;
+
+        // try right of perk first, else left
+        let x = pr.right + 10;
+        if (x + tw > vw - 4) x = pr.left - tw - 10;
+        if (x < 4) x = 4;
+
+        // vertically align to perk top, clamp to viewport
+        let y = pr.top;
+        const th = Math.min(tooltipEl.scrollHeight, vh * 0.82);
+        if (y + th > vh - 4) y = vh - th - 4;
+        if (y < 4) y = 4;
+
         tooltipEl.style.left = x + "px";
         tooltipEl.style.top = y + "px";
+
+        // draw arrow line from perk right-centre to tooltip left edge (or reverse)
+        const fromX = x > pr.right ? pr.right : pr.left;
+        const fromY = pr.top + pr.height / 2;
+        const toX = x > pr.right ? x : x + tw;
+        const toY = pr.top + pr.height / 2;
+
+        ttArrowSvg.style.display = "block";
+        ttArrowSvg.style.left = "0";
+        ttArrowSvg.style.top = "0";
+        ttArrowSvg.style.width = vw + "px";
+        ttArrowSvg.style.height = vh + "px";
+        ttArrowSvg.setAttribute("viewBox", `0 0 ${vw} ${vh}`);
+        ttArrowSvg.innerHTML = `
+    <line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}"
+      stroke="#2a3050" stroke-width="1" stroke-dasharray="4,3"/>
+    <polygon points="${
+      toX > fromX
+        ? toX +
+          "," +
+          toY +
+          " " +
+          (toX - 5) +
+          "," +
+          (toY - 3) +
+          " " +
+          (toX - 5) +
+          "," +
+          (toY + 3)
+        : toX +
+          "," +
+          toY +
+          " " +
+          (toX + 5) +
+          "," +
+          (toY - 3) +
+          " " +
+          (toX + 5) +
+          "," +
+          (toY + 3)
+    }"
+      fill="#2a3050"/>`;
       }
+
       function hideTooltip() {
         tooltipEl.classList.remove("visible");
+        ttArrowSvg.style.display = "none";
       }
 
       // ── SVG CONNECTOR DRAWING ──
