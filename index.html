@@ -801,13 +801,8 @@
         connSvg.setAttribute("aria-hidden", "true");
         connEl.appendChild(connSvg);
 
-        // col spine (grey continuous)
-        const spineSvg = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "svg",
-        );
-        spineSvg.classList.add("col-spine");
-        spineSvg.setAttribute("aria-hidden", "true");
+        // col spine drawn inside connSvg (no separate element)
+        const spineSvg = null;
         const contentEl = document.createElement("div");
         contentEl.className = "col-content";
 
@@ -862,7 +857,6 @@
 
         col.appendChild(connEl);
         col.appendChild(contentEl);
-        col.appendChild(spineSvg);
         colsRow.appendChild(col);
         colRefs.push({ connEl, connSvg, contentEl, chRefs, spineSvg });
       });
@@ -1118,27 +1112,24 @@
       }
 
       function drawColumn({ connEl, connSvg, contentEl, chRefs, spineSvg }) {
-        const CONN = connEl.offsetWidth;
-        const totalH = contentEl.offsetHeight;
-        if (!totalH) return;
-        connEl.style.height = totalH + "px";
-        connSvg.innerHTML = "";
-        connSvg.setAttribute("viewBox", `0 0 ${CONN} ${totalH}`);
+        const CONN = 22;
         const mx = CONN / 2;
 
-        // Use getBoundingClientRect relative to contentEl top
-        const baseY = contentEl.getBoundingClientRect().top;
+        // measure everything relative to connEl (same top as contentEl since they are flex siblings)
+        const base = connEl.getBoundingClientRect().top;
 
-        function midOf(el) {
+        function yOf(el, offset) {
           const r = el.getBoundingClientRect();
-          return r.top - baseY + r.height / 2;
+          return r.top - base + offset;
+        }
+        function midOf(el) {
+          return yOf(el, el.offsetHeight / 2);
         }
         function iconOf(el) {
-          // point to icon square: top of perk + padding(7) + margin-top(3) + half-icon(5) = 15
-          const r = el.getBoundingClientRect();
-          return r.top - baseY + 15;
+          return yOf(el, 15);
         }
 
+        // collect targets
         const targets = [];
         chRefs.forEach(({ hdr, pw, c }) => {
           targets.push({ y: midOf(hdr), isHdr: true, c });
@@ -1146,46 +1137,42 @@
             targets.push({ y: iconOf(p), isHdr: false, c });
           });
         });
-
         if (!targets.length) return;
 
-        // continuous spine
-        connSvg.appendChild(
-          svgLine(mx, targets[0].y, mx, targets[targets.length - 1].y, SPINE),
-        );
+        // total svg height = bottom of last target + small padding
+        const svgH = targets[targets.length - 1].y + 20;
+        connEl.style.height = svgH + "px";
+        connSvg.innerHTML = "";
+        connSvg.setAttribute("viewBox", `0 0 ${CONN} ${svgH}`);
 
+        // 1. grey gap segments between chapters (drawn first = behind)
+        for (let i = 0; i < chRefs.length - 1; i++) {
+          const lastPerk = Array.from(
+            chRefs[i].pw.querySelectorAll(".perk"),
+          ).pop();
+          const nextHdr = chRefs[i + 1].hdr;
+          if (!lastPerk || !nextHdr) continue;
+          connSvg.appendChild(
+            svgLine(mx, iconOf(lastPerk), mx, midOf(nextHdr), "#50556a"),
+          );
+        }
+
+        // 2. coloured vertical spine within each chapter (drawn second = in front of grey)
+        chRefs.forEach(({ hdr, pw, c }) => {
+          const col = COL_HEX[c] || SPINE;
+          const perks = Array.from(pw.querySelectorAll(".perk"));
+          const spineT = midOf(hdr);
+          const spineB = perks.length
+            ? iconOf(perks[perks.length - 1])
+            : spineT;
+          connSvg.appendChild(svgLine(mx, spineT, mx, spineB, col));
+        });
+
+        // 3. branches + arrowheads (drawn last = on top)
         targets.forEach(({ y, isHdr, c }) => {
           const col = COL_HEX[c] || SPINE;
           connSvg.appendChild(svgLine(mx, y, isHdr ? CONN : CONN - 3, y, col));
           if (!isHdr) svgArrowRight(connSvg, CONN + 1, y, col);
-        });
-
-        // grey spine: draw only in GAPS between chapters (not over coloured branches)
-        const allPerks = Array.from(contentEl.querySelectorAll(".perk"));
-        if (!allPerks.length) return;
-
-        // collect segments: bottom of last perk in chapter[i] → top of first hdr in chapter[i+1]
-        const segments = [];
-        for (let i = 0; i < chRefs.length - 1; i++) {
-          const lastPerkInCh = Array.from(
-            chRefs[i].pw.querySelectorAll(".perk"),
-          ).pop();
-          const nextHdr = chRefs[i + 1].hdr;
-          if (!lastPerkInCh || !nextHdr) continue;
-          const segTop = iconOf(lastPerkInCh);
-          const segBot = midOf(nextHdr);
-          segments.push({ segTop, segBot });
-        }
-
-        if (!segments.length) return;
-
-        const totalBot = segments[segments.length - 1].segBot;
-        spineSvg.innerHTML = "";
-        spineSvg.setAttribute("viewBox", `0 0 ${CONN} ${totalBot + 1}`);
-        spineSvg.style.height = totalBot + 1 + "px";
-
-        segments.forEach(({ segTop, segBot }) => {
-          spineSvg.appendChild(svgLine(mx, segTop, mx, segBot, "#50556a"));
         });
       }
 
