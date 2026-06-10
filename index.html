@@ -21,6 +21,26 @@
         color: #c0bdb4;
       }
 
+      /* ── CUSTOM SCROLLBAR ── */
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e2235;
+        border-radius: 2px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #2e3448;
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #1e2235 transparent;
+      }
+
       .topbar {
         position: sticky;
         top: 0;
@@ -207,9 +227,10 @@
         overflow: hidden;
         z-index: 0;
       }
-      .ch-connector svg {
-        z-index: 1;
+      .col-connector {
         position: relative;
+        z-index: 2;
+        isolation: isolate;
       }
 
       .col-content {
@@ -493,6 +514,61 @@
         line-height: 1.55;
       }
 
+      /* ── INFO BUTTON ── */
+      .perk {
+        position: relative;
+      }
+      .perk-info {
+        position: absolute;
+        bottom: 6px;
+        left: 8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid #2a3050;
+        background: #0f1018;
+        color: #3a4570;
+        font-size: 9px;
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          color 0.2s,
+          background 0.2s;
+        z-index: 2;
+        user-select: none;
+        line-height: 1;
+      }
+      .perk-info:hover {
+        border-color: #5a6a9a;
+        color: #8a9adf;
+        background: #151828;
+      }
+      /* give perk bottom padding room for the button */
+      .perk {
+        padding-bottom: 22px;
+      }
+
+      /* ── SCREEN OVERLAY ── */
+      #tt-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0);
+        z-index: 490;
+        transition: background 0.25s ease;
+        pointer-events: none;
+      }
+      #tt-overlay.active {
+        display: block;
+        background: rgba(0, 0, 0, 0.65);
+        pointer-events: none;
+      }
+
       /* ── TOOLTIP ── */
       .tooltip {
         display: none;
@@ -503,11 +579,35 @@
         overflow-y: auto;
         background: #0f1018;
         border: 1px solid #2a3050;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        box-shadow:
+          0 8px 40px rgba(0, 0, 0, 0.9),
+          0 0 0 1px rgba(90, 106, 154, 0.15);
         pointer-events: auto;
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
       }
       .tooltip.visible {
         display: block;
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+      }
+      .tooltip.shown {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      @keyframes dashIn {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+        }
       }
       /* arrow line from perk to tooltip */
       #tt-arrow-svg {
@@ -592,6 +692,7 @@
       <div class="bottom-bar" id="bottom-bar"></div>
     </div>
 
+    <div id="tt-overlay"></div>
     <!-- tooltip arrow -->
     <svg id="tt-arrow-svg" style="display: none"></svg>
     <!-- tooltip -->
@@ -707,8 +808,6 @@
         );
         spineSvg.classList.add("col-spine");
         spineSvg.setAttribute("aria-hidden", "true");
-        col.appendChild(spineSvg);
-
         const contentEl = document.createElement("div");
         contentEl.className = "col-content";
 
@@ -738,19 +837,18 @@
           <div class="perk-desc">${p.description}</div>
         </div>`;
 
-            // tooltip
+            // info button (only if level descriptions exist)
             const lvlDesc = (D.skillLevelDescriptions || {})[p.id];
             if (lvlDesc) {
-              pEl.addEventListener("mouseenter", (e) =>
-                showTooltip(e, p.name, lvlDesc, pEl),
+              const btn = document.createElement("div");
+              btn.className = "perk-info";
+              btn.textContent = "i";
+              btn.addEventListener("mouseenter", () =>
+                showTooltip(p.name, lvlDesc, pEl),
               );
-              pEl.addEventListener("mouseleave", (e) => {
-                // delay hide to allow moving cursor to tooltip
-                setTimeout(() => {
-                  if (!tooltipEl.matches(":hover")) hideTooltip();
-                }, 120);
-              });
-              tooltipEl.addEventListener("mouseleave", hideTooltip);
+              btn.addEventListener("mouseleave", hideTooltip);
+              // tooltip mouseenter/leave handled globally above
+              pEl.appendChild(btn);
             }
 
             pw.appendChild(pEl);
@@ -764,6 +862,7 @@
 
         col.appendChild(connEl);
         col.appendChild(contentEl);
+        col.appendChild(spineSvg);
         colsRow.appendChild(col);
         colRefs.push({ connEl, connSvg, contentEl, chRefs, spineSvg });
       });
@@ -855,8 +954,13 @@
       ];
 
       const ttArrowSvg = document.getElementById("tt-arrow-svg");
+      const ttOverlay = document.getElementById("tt-overlay");
+      let _ttHideTimer = null;
+      let _currentBtn = null;
 
-      function showTooltip(e, name, lvlDesc, perkEl) {
+      function showTooltip(name, lvlDesc, perkEl) {
+        clearTimeout(_ttHideTimer);
+
         ttHeader.textContent = name;
         ttLevels.innerHTML = Object.entries(lvlDesc)
           .map(([lvl, txt]) => {
@@ -867,77 +971,102 @@
     </div>`;
           })
           .join("");
+
         tooltipEl.classList.add("visible");
-        positionTooltip(perkEl);
-      }
+        tooltipEl.classList.remove("shown");
 
-      function positionTooltip(perkEl) {
-        const pr = perkEl.getBoundingClientRect();
-        const tw = 340;
-        const vh = window.innerHeight;
-        const vw = window.innerWidth;
+        const btn = perkEl.querySelector(".perk-info");
+        _currentBtn = btn;
+        const br = btn.getBoundingClientRect();
+        const btnCX = br.left + br.width / 2;
+        const btnCY = br.top + br.height / 2;
 
-        // try right of perk first, else left
-        let x = pr.right + 10;
-        if (x + tw > vw - 4) x = pr.left - tw - 10;
+        const tw = 340,
+          vh = window.innerHeight,
+          vw = window.innerWidth;
+        const GAP = 18; // distance from btn to tooltip edge
+
+        // prefer right, else left
+        let x = btnCX + GAP;
+        if (x + tw > vw - 4) x = btnCX - tw - GAP;
         if (x < 4) x = 4;
 
-        // vertically align to perk top, clamp to viewport
-        let y = pr.top;
-        const th = Math.min(tooltipEl.scrollHeight, vh * 0.82);
-        if (y + th > vh - 4) y = vh - th - 4;
+        // vertically centre on button, clamp
+        const estimatedH = Math.min(tooltipEl.scrollHeight || 400, vh * 0.82);
+        let y = btnCY - estimatedH / 2;
+        if (y + estimatedH > vh - 4) y = vh - estimatedH - 4;
         if (y < 4) y = 4;
 
         tooltipEl.style.left = x + "px";
         tooltipEl.style.top = y + "px";
 
-        // draw arrow line from perk right-centre to tooltip left edge (or reverse)
-        const fromX = x > pr.right ? pr.right : pr.left;
-        const fromY = pr.top + pr.height / 2;
-        const toX = x > pr.right ? x : x + tw;
-        const toY = pr.top + pr.height / 2;
+        // draw animated dashed line from btn centre to nearest tooltip edge
+        const toX = x > btnCX ? x : x + tw;
+        const toY = btnCY;
 
         ttArrowSvg.style.display = "block";
-        ttArrowSvg.style.left = "0";
-        ttArrowSvg.style.top = "0";
         ttArrowSvg.style.width = vw + "px";
         ttArrowSvg.style.height = vh + "px";
         ttArrowSvg.setAttribute("viewBox", `0 0 ${vw} ${vh}`);
+
+        const len = Math.abs(toX - btnCX);
+        const dir = toX > btnCX;
         ttArrowSvg.innerHTML = `
-    <line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}"
-      stroke="#2a3050" stroke-width="1" stroke-dasharray="4,3"/>
+    <line x1="${btnCX}" y1="${toY}" x2="${toX}" y2="${toY}"
+      stroke="#50556a" stroke-width="1.5" stroke-dasharray="5,3"
+      stroke-dashoffset="${len}"
+      style="animation:dashIn .3s ease forwards">
+    </line>
     <polygon points="${
-      toX > fromX
+      dir
         ? toX +
           "," +
           toY +
           " " +
-          (toX - 5) +
+          (toX - 6) +
           "," +
           (toY - 3) +
           " " +
-          (toX - 5) +
+          (toX - 6) +
           "," +
           (toY + 3)
         : toX +
           "," +
           toY +
           " " +
-          (toX + 5) +
+          (toX + 6) +
           "," +
           (toY - 3) +
           " " +
-          (toX + 5) +
+          (toX + 6) +
           "," +
           (toY + 3)
     }"
-      fill="#2a3050"/>`;
+      fill="#50556a" opacity="0"
+      style="animation:fadeIn .2s .25s ease forwards"/>`;
+
+        ttOverlay.classList.add("active");
+        requestAnimationFrame(() => tooltipEl.classList.add("shown"));
       }
 
       function hideTooltip() {
-        tooltipEl.classList.remove("visible");
-        ttArrowSvg.style.display = "none";
+        clearTimeout(_ttHideTimer);
+        _ttHideTimer = setTimeout(() => {
+          tooltipEl.classList.remove("shown");
+          ttOverlay.classList.remove("active");
+          ttArrowSvg.style.display = "none";
+          setTimeout(() => tooltipEl.classList.remove("visible"), 200);
+        }, 80);
       }
+
+      // keep open when cursor moves to tooltip
+      tooltipEl.addEventListener("mouseenter", () =>
+        clearTimeout(_ttHideTimer),
+      );
+      tooltipEl.addEventListener("mouseleave", hideTooltip);
+
+      // hide on scroll
+      window.addEventListener("scroll", hideTooltip, { passive: true });
 
       // ── SVG CONNECTOR DRAWING ──
       function svgLine(x1, y1, x2, y2, stroke, sw = 1) {
@@ -1031,16 +1160,33 @@
           if (!isHdr) svgArrowRight(connSvg, CONN + 1, y, col);
         });
 
-        // grey spine: first hdr mid to last perk icon
-        const firstHdr = chRefs[0]?.hdr;
+        // grey spine: draw only in GAPS between chapters (not over coloured branches)
         const allPerks = Array.from(contentEl.querySelectorAll(".perk"));
-        if (!firstHdr || !allPerks.length) return;
-        const topY = midOf(firstHdr);
-        const botY = iconOf(allPerks[allPerks.length - 1]);
+        if (!allPerks.length) return;
+
+        // collect segments: bottom of last perk in chapter[i] → top of first hdr in chapter[i+1]
+        const segments = [];
+        for (let i = 0; i < chRefs.length - 1; i++) {
+          const lastPerkInCh = Array.from(
+            chRefs[i].pw.querySelectorAll(".perk"),
+          ).pop();
+          const nextHdr = chRefs[i + 1].hdr;
+          if (!lastPerkInCh || !nextHdr) continue;
+          const segTop = iconOf(lastPerkInCh);
+          const segBot = midOf(nextHdr);
+          segments.push({ segTop, segBot });
+        }
+
+        if (!segments.length) return;
+
+        const totalBot = segments[segments.length - 1].segBot;
         spineSvg.innerHTML = "";
-        spineSvg.setAttribute("viewBox", `0 0 ${CONN} ${botY + 1}`);
-        spineSvg.style.height = botY + 1 + "px";
-        spineSvg.appendChild(svgLine(mx, topY, mx, botY, "#50556a"));
+        spineSvg.setAttribute("viewBox", `0 0 ${CONN} ${totalBot + 1}`);
+        spineSvg.style.height = totalBot + 1 + "px";
+
+        segments.forEach(({ segTop, segBot }) => {
+          spineSvg.appendChild(svgLine(mx, segTop, mx, segBot, "#50556a"));
+        });
       }
 
       function drawTopBus() {
