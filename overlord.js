@@ -327,7 +327,7 @@ const STAND_DATA = {
       ],
     },
     {
-      chapterTitle: '13. Манипуляция материей',
+      chapterTitle: '12. Манипуляция материей',
       color: 'Orange',
       perks: [
         {
@@ -345,7 +345,7 @@ const STAND_DATA = {
       ],
     },
     {
-      chapterTitle: '14. Автономность Тени',
+      chapterTitle: '13. Автономность Тени',
       color: 'Orange',
       perks: [
         {
@@ -357,7 +357,7 @@ const STAND_DATA = {
       ],
     },
     {
-      chapterTitle: '15. Энерговместимость',
+      chapterTitle: '14. Энерговместимость',
       color: 'Yellow',
       perks: [
         {
@@ -369,7 +369,7 @@ const STAND_DATA = {
       ],
     },
     {
-      chapterTitle: '16. Вершитель судеб',
+      chapterTitle: '15. Вершитель судеб',
       color: 'Purple',
       perks: [
         {
@@ -381,7 +381,7 @@ const STAND_DATA = {
       ],
     },
     {
-      chapterTitle: '17. Метафизические способности',
+      chapterTitle: '16. Метафизические способности',
       color: 'Purple',
       perks: [
         {
