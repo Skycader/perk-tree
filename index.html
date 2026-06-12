@@ -474,6 +474,40 @@
         background: #b89030;
       }
 
+      .perk-icon {
+        transition: box-shadow 0.25s ease;
+      }
+      .perk-icon.glowing.ic-o {
+        box-shadow:
+          0 0 6px 3px rgba(224, 144, 64, 0.9),
+          0 0 18px 7px rgba(224, 144, 64, 0.35);
+      }
+      .perk-icon.glowing.ic-r {
+        box-shadow:
+          0 0 6px 3px rgba(204, 56, 56, 0.9),
+          0 0 18px 7px rgba(204, 56, 56, 0.35);
+      }
+      .perk-icon.glowing.ic-b {
+        box-shadow:
+          0 0 6px 3px rgba(62, 128, 208, 0.9),
+          0 0 18px 7px rgba(62, 128, 208, 0.35);
+      }
+      .perk-icon.glowing.ic-g {
+        box-shadow:
+          0 0 6px 3px rgba(40, 168, 96, 0.9),
+          0 0 18px 7px rgba(40, 168, 96, 0.35);
+      }
+      .perk-icon.glowing.ic-p {
+        box-shadow:
+          0 0 6px 3px rgba(120, 64, 200, 0.9),
+          0 0 18px 7px rgba(120, 64, 200, 0.35);
+      }
+      .perk-icon.glowing.ic-y {
+        box-shadow:
+          0 0 6px 3px rgba(184, 144, 48, 0.9),
+          0 0 18px 7px rgba(184, 144, 48, 0.35);
+      }
+
       /* sidebar */
       .sidebar {
         width: 210px;
@@ -618,15 +652,9 @@
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0);
         z-index: 490;
-        transition: background 0.25s ease;
-        pointer-events: none;
-      }
-      #tt-overlay.active {
-        display: block;
-        background: rgba(0, 0, 0, 0.65);
-        pointer-events: none;
+        pointer-events: auto;
+        cursor: default;
       }
 
       /* ── TOOLTIP ── */
@@ -636,27 +664,22 @@
         z-index: 500;
         width: 340px;
         max-height: 82vh;
-        overflow-y: auto;
         background: #0f1018;
         border: 1px solid #2a3050;
         box-shadow:
           0 8px 40px rgba(0, 0, 0, 0.9),
           0 0 0 1px rgba(90, 106, 154, 0.15);
         pointer-events: auto;
-        opacity: 0;
-        transform: translateY(-6px) scale(0.98);
-        transition:
-          opacity 0.2s ease,
-          transform 0.2s ease;
+        flex-direction: column;
+        overflow: hidden;
       }
-      .tooltip.visible {
-        display: block;
-        opacity: 0;
-        transform: translateY(-6px) scale(0.98);
+      .tooltip .tt-header {
+        flex-shrink: 0;
       }
-      .tooltip.shown {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+      .tt-levels {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
       }
 
       @keyframes dashIn {
@@ -676,12 +699,35 @@
         z-index: 499;
       }
       .tt-header {
-        padding: 8px 12px;
+        padding: 8px 36px 8px 12px;
         border-bottom: 1px solid #1c1f2e;
         font-family: 'JetBrains Mono', monospace;
         font-size: 13px;
         font-weight: 600;
         color: #dedad2;
+        position: relative;
+      }
+      .tt-close {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        background: none;
+        border: none;
+        color: #585e72;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .tt-close:hover {
+        color: #c0bdb4;
       }
       .tt-levels {
         padding: 0;
@@ -768,7 +814,12 @@
     <svg id="tt-arrow-svg" style="display: none"></svg>
     <!-- tooltip -->
     <div class="tooltip" id="tooltip">
-      <div class="tt-header" id="tt-header"></div>
+      <div class="tt-header">
+        <span id="tt-header"></span>
+        <button class="tt-close" onclick="hideTooltip()" title="Закрыть">
+          ✕
+        </button>
+      </div>
       <div class="tt-levels" id="tt-levels"></div>
     </div>
 
@@ -1042,9 +1093,14 @@
               const icon = pEl.querySelector('.perk-icon');
               icon.style.cursor = 'pointer';
               icon.addEventListener('mouseenter', () =>
+                icon.classList.add('glowing'),
+              );
+              icon.addEventListener('mouseleave', () => {
+                if (_currentBtn !== icon) icon.classList.remove('glowing');
+              });
+              icon.addEventListener('click', () =>
                 showTooltip(p.name, lvlDesc, icon),
               );
-              icon.addEventListener('mouseleave', hideTooltip);
             }
             pw.appendChild(pEl);
           });
@@ -1137,95 +1193,95 @@
 
       const ttArrowSvg = document.getElementById('tt-arrow-svg');
       const ttOverlay = document.getElementById('tt-overlay');
-      let _ttHideTimer = null;
       let _currentBtn = null;
+      let _isVisible = false;
 
       function showTooltip(name, lvlDesc, iconEl) {
-        clearTimeout(_ttHideTimer);
         _currentBtn = iconEl;
+        _isVisible = true;
+        document.body.style.overflow = 'hidden';
+
+        // keep glow on clicked icon, remove from others
+        document.querySelectorAll('.perk-icon.glowing').forEach((el) => {
+          if (el !== iconEl) el.classList.remove('glowing');
+        });
 
         ttHeader.textContent = name;
         ttLevels.innerHTML = Object.entries(lvlDesc)
           .map(([lvl, txt]) => {
             const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
-            return `<div class="tt-row">
-      <span class="tt-lvl" style="color:${col}">${lvl}</span>
-      <span class="tt-text">${txt}</span>
-    </div>`;
+            return `<div class="tt-row"><span class="tt-lvl" style="color:${col}">${lvl}</span><span class="tt-text">${txt}</span></div>`;
           })
           .join('');
 
-        tooltipEl.classList.add('visible');
-        tooltipEl.classList.remove('shown');
-
+        // position & show synchronously — no timers, no rAF
         const ir = iconEl.getBoundingClientRect();
         const icX = ir.left + ir.width / 2;
         const icY = ir.top + ir.height / 2;
-
         const tw = 340,
           vh = window.innerHeight,
           vw = window.innerWidth;
-        const GAP = 20;
-
-        // prefer right of icon, else left
-        let x = icX + GAP;
-        if (x + tw > vw - 4) x = icX - tw - GAP;
+        const GAP = 16;
+        const goRight = icX + GAP + tw <= vw - 4;
+        let x = goRight ? icX + GAP : icX - tw - GAP;
         if (x < 4) x = 4;
-
-        const estimatedH = Math.min(tooltipEl.scrollHeight || 400, vh * 0.82);
-        let y = icY - estimatedH / 2;
-        if (y + estimatedH > vh - 4) y = vh - estimatedH - 4;
-        if (y < 4) y = 4;
+        tooltipEl.style.display = 'flex';
+        tooltipEl.style.opacity = '0'; // measure without flash
+        const maxH = Math.floor(vh * 0.82);
+        tooltipEl.style.maxHeight = maxH + 'px';
+        const actualH = Math.min(tooltipEl.scrollHeight, maxH);
+        let y = icY - actualH / 2;
+        if (y + actualH > vh - 8) y = vh - actualH - 8;
+        if (y < 8) y = 8;
 
         tooltipEl.style.left = x + 'px';
         tooltipEl.style.top = y + 'px';
+        tooltipEl.style.opacity = '1';
 
-        // animated line from icon centre to tooltip edge
-        const toX = x > icX ? x : x + tw;
-        const toY = icY;
-        const len = Math.abs(toX - icX);
-        const dir = toX > icX;
+        ttOverlay.style.display = 'block';
+        ttOverlay.style.background = 'rgba(0,0,0,.6)';
 
-        ttArrowSvg.style.display = 'block';
-        ttArrowSvg.style.width = vw + 'px';
-        ttArrowSvg.style.height = vh + 'px';
+        // draw L-line
+        const ttHeaderMidY = y + 18;
+        const toX = goRight ? x : x + tw;
+        const cornerY = ttHeaderMidY;
+        const vLen = Math.abs(icY - cornerY);
+        const hLen = Math.abs(toX - icX);
+        const total = vLen + hLen;
+
+        ttArrowSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw}px;height:${vh}px;pointer-events:none;z-index:499;overflow:visible;`;
         ttArrowSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
         ttArrowSvg.innerHTML = `
-    <line x1="${icX}" y1="${toY}" x2="${toX}" y2="${toY}"
-      stroke="#50556a" stroke-width="1.5" stroke-dasharray="5,3"
-      stroke-dashoffset="${len}"
-      style="animation:dashIn .3s ease forwards"/>
-    <polygon
-      points="${
-        dir
-          ? `${toX},${toY} ${toX - 6},${toY - 3} ${toX - 6},${toY + 3}`
-          : `${toX},${toY} ${toX + 6},${toY - 3} ${toX + 6},${toY + 3}`
-      }"
-      fill="#50556a" opacity="0"
-      style="animation:fadeIn .2s .25s ease forwards"/>`;
-
-        ttOverlay.classList.add('active');
-        requestAnimationFrame(() => tooltipEl.classList.add('shown'));
+    <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
+    <polyline points="${icX},${icY} ${icX},${cornerY} ${toX},${cornerY}"
+      fill="none" stroke="#50556a" stroke-width="1.5"
+      stroke-dasharray="${total}" stroke-dashoffset="${total}"
+      style="animation:dashIn .3s ease forwards"/>`;
       }
 
       function hideTooltip() {
-        clearTimeout(_ttHideTimer);
-        _ttHideTimer = setTimeout(() => {
-          tooltipEl.classList.remove('shown');
-          ttOverlay.classList.remove('active');
-          ttArrowSvg.style.display = 'none';
-          setTimeout(() => tooltipEl.classList.remove('visible'), 200);
-        }, 80);
+        if (!_isVisible) return;
+        _isVisible = false;
+        tooltipEl.style.display = 'none';
+        tooltipEl.style.maxHeight = '';
+        tooltipEl.style.opacity = '0';
+        ttOverlay.style.display = 'none';
+        ttOverlay.style.background = 'rgba(0,0,0,0)';
+        ttArrowSvg.style.display = 'none';
+        ttArrowSvg.innerHTML = '';
+        document.body.style.overflow = '';
+        if (_currentBtn) {
+          _currentBtn.classList.remove('glowing');
+          _currentBtn = null;
+        }
       }
 
-      // keep open when cursor moves to tooltip
-      tooltipEl.addEventListener('mouseenter', () =>
-        clearTimeout(_ttHideTimer),
-      );
-      tooltipEl.addEventListener('mouseleave', hideTooltip);
-
-      // hide on scroll
-      window.addEventListener('scroll', hideTooltip, { passive: true });
+      // close on Escape key
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideTooltip();
+      });
+      // close on click outside tooltip
+      ttOverlay.addEventListener('click', hideTooltip);
 
       // ── SVG CONNECTOR DRAWING ──
       function svgLine(x1, y1, x2, y2, stroke, sw = 1) {
