@@ -22,6 +22,7 @@ const STAND_DATA = {
   skills: [
     {
       chapterTitle: 'Базовые характеристики',
+      color: 'Yellow',
       perks: [
         {
           id: 'standStrength',
@@ -69,6 +70,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '2. Сенсорные способности',
+      color: 'Blue',
       perks: [
         {
           id: 'standRadar',
@@ -104,6 +106,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '3. Манипулятивные способности',
+      color: 'Orange',
       perks: [
         {
           id: 'standKineticContour',
@@ -133,6 +136,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '4. Маскировочные способности',
+      color: 'Green',
       perks: [
         {
           id: 'standCamouflage',
@@ -156,6 +160,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '5. Защитные способности',
+      color: 'Blue',
       perks: [
         {
           id: 'standEnergyShield',
@@ -167,6 +172,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '6. Вооружение',
+      color: 'Red',
       perks: [
         {
           id: 'standFists',
@@ -214,6 +220,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '7. Исцеление',
+      color: 'Green',
       perks: [
         {
           id: 'standHealing',
@@ -225,6 +232,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '8. Автоматические части',
+      color: 'Orange',
       perks: [
         {
           id: 'standDrones',
@@ -242,6 +250,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '9. Зеркальное измерение',
+      color: 'Purple',
       perks: [
         {
           id: 'standMirrorAccess',
@@ -277,6 +286,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '10. Временные способности',
+      color: 'Blue',
       perks: [
         {
           id: 'standTimeStop',
@@ -300,6 +310,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '11. Пробуждение Тени',
+      color: 'Orange',
       perks: [
         {
           id: 'standAwakening',
@@ -311,6 +322,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '12. Подавляющее поле',
+      color: 'Blue',
       perks: [
         {
           id: 'standSuppressField',
@@ -322,6 +334,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '13. Манипуляция материей',
+      color: 'Orange',
       perks: [
         {
           id: 'standMatterManipulation',
@@ -333,6 +346,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '14. Автономность Тени',
+      color: 'Orange',
       perks: [
         {
           id: 'standAutonomy',
@@ -344,6 +358,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '15. Энерговместимость',
+      color: 'Yellow',
       perks: [
         {
           id: 'standEnergyCapacity',
@@ -355,6 +370,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '16. Вершитель судеб',
+      color: 'Purple',
       perks: [
         {
           id: 'standFateWeaver',
@@ -366,6 +382,7 @@ const STAND_DATA = {
     },
     {
       chapterTitle: '17. Метафизические способности',
+      color: 'Purple',
       perks: [
         {
           id: 'standNoosphere',

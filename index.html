@@ -995,7 +995,24 @@
 
         const chRefs = [];
         chapters.forEach((ch) => {
-          const c = chapterColour.get(ch);
+          // use explicit color from config if set, else auto-assigned
+          const COLOR_MAP = {
+            orange: 'o',
+            red: 'r',
+            blue: 'b',
+            green: 'g',
+            purple: 'p',
+            yellow: 'y',
+            o: 'o',
+            r: 'r',
+            b: 'b',
+            g: 'g',
+            p: 'p',
+            y: 'y',
+          };
+          const c = ch.color
+            ? COLOR_MAP[ch.color.toLowerCase()] || ch.color[0]
+            : chapterColour.get(ch);
           const titleClean = ch.chapterTitle.replace(/^\d+\.\s*/, '');
           const numMatch = ch.chapterTitle.match(/^(\d+)\./);
           const num = numMatch ? numMatch[1] : '';
