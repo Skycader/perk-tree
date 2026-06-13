@@ -725,6 +725,27 @@
         color: #dedad2;
         position: relative;
       }
+      #sp-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 490;
+        pointer-events: auto;
+        cursor: default;
+      }
+      #sp-tooltip {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 340px;
+        max-height: 82vh;
+        background: #0f1018;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
       .tt-close {
         position: absolute;
         top: 50%;
@@ -780,7 +801,19 @@
   <body>
     <div class="topbar">
       <div class="tb-left">
-        <span class="tb-title" id="tb-title">ДРЕВО</span
+        <span class="tb-title" id="tb-title"
+          ><span
+            style="
+              display: inline-block;
+              width: 10px;
+              height: 10px;
+              background: #e09040;
+              border-radius: 1px;
+              margin-right: 8px;
+              vertical-align: middle;
+            "
+          ></span
+          >ДРЕВО</span
         ><span class="tb-sub">Матрица способностей</span>
       </div>
       <div class="tb-stats">
@@ -803,7 +836,20 @@
         <div class="main-area" id="main-area">
           <div class="meta-row">
             <div class="title-box" id="title-box">
-              <div class="title-box-name" id="title-name">⚜ —</div>
+              <div class="title-box-name" id="title-name">
+                <span
+                  style="
+                    display: inline-block;
+                    width: 10px;
+                    height: 10px;
+                    background: #e09040;
+                    border-radius: 1px;
+                    margin-right: 7px;
+                    vertical-align: middle;
+                  "
+                ></span
+                >—
+              </div>
               <div class="title-box-sub" id="title-desc">—</div>
             </div>
             <div class="altnames-box" id="altnames-box"></div>
@@ -828,6 +874,16 @@
       "
     ></canvas>
     <div id="tt-overlay"></div>
+    <div id="sp-overlay"></div>
+    <div class="tooltip" id="sp-tooltip">
+      <div class="tt-header">
+        <span id="sp-header"></span>
+        <button class="tt-close" onclick="hideSpectre()" title="Закрыть">
+          ✕
+        </button>
+      </div>
+      <div class="tt-levels" id="sp-levels"></div>
+    </div>
     <!-- tooltip arrow -->
     <svg id="tt-arrow-svg" style="display: none"></svg>
     <!-- tooltip -->
@@ -1002,8 +1058,28 @@
       // update topbar stats
       const standName = D.standName || D.tabName || 'Стэнд';
       // tb-title is static 'ДРЕВО СПОСОБНОСТЕЙ'
-      document.getElementById('title-name').textContent = '⚜ ' + standName;
+      document.getElementById('title-name').innerHTML =
+        '<span style="display:inline-block;width:10px;height:10px;background:#e09040;border-radius:1px;margin-right:7px;vertical-align:middle"></span>' +
+        standName;
       document.getElementById('title-desc').textContent = D.desc || '';
+
+      // spectre tooltip on title-box icon click
+      if (D.spectre) {
+        const titleIcon = document.querySelector('#title-name span');
+        if (titleIcon) {
+          titleIcon.style.cursor = 'pointer';
+          titleIcon.style.transition = 'box-shadow .25s';
+          titleIcon.addEventListener('mouseenter', () => {
+            titleIcon.style.boxShadow =
+              '0 0 6px 3px rgba(224,144,64,.9), 0 0 18px 7px rgba(224,144,64,.35)';
+          });
+          titleIcon.addEventListener('mouseleave', () => {
+            if (_spectreOpen) return;
+            titleIcon.style.boxShadow = '';
+          });
+          titleIcon.addEventListener('click', () => showSpectre(titleIcon));
+        }
+      }
       document.getElementById('stat-perks').textContent = totalPerks;
       document.getElementById('stat-lvl-per-rank').textContent = lvlPerRank;
       document.getElementById('stat-max-lvl').textContent = maxLevel;
@@ -1174,7 +1250,7 @@
         .join('');
 
       sb.innerHTML = `
-  <div class="sb-hdr">Ранги</div>
+  <div class="sb-hdr"><span style="display:inline-block;width:9px;height:9px;background:#e09040;border-radius:1px;margin-right:7px;vertical-align:middle"></span>Ранги</div>
   <div class="rtable-wrap"><table class="rtable">
     <thead><tr><th>Уровень</th><th>Ранг</th><th>Знак</th></tr></thead>
     <tbody>${ranksHtml}</tbody>
@@ -1498,6 +1574,98 @@
 
         mainArea.appendChild(svg);
       }
+      // ── SPECTRE TOOLTIP ──
+      const spTooltip = document.getElementById('sp-tooltip');
+      const spOverlay = document.getElementById('sp-overlay');
+      const spHeader = document.getElementById('sp-header');
+      const spLevels = document.getElementById('sp-levels');
+      let _spectreOpen = false;
+
+      const COLOUR_KEYS = {
+        red: '#cc3838',
+        orange: '#e09040',
+        yellow: '#b89030',
+        blue: '#3e80d0',
+        green: '#28a860',
+        purple: '#7840c8',
+      };
+
+      function showSpectre(iconEl) {
+        if (!D.spectre) return;
+        _spectreOpen = true;
+        document.body.style.overflow = 'hidden';
+
+        spHeader.textContent = 'Палитра цветов';
+        spLevels.innerHTML = Object.entries(D.spectre)
+          .map(([colour, txt]) => {
+            const hex = COLOUR_KEYS[colour] || '#888';
+            return `<div class="tt-row">
+      <span style="display:inline-block;width:10px;height:10px;background:${hex};border-radius:1px;flex-shrink:0;margin-top:2px"></span>
+      <span class="tt-text">${txt}</span>
+    </div>`;
+          })
+          .join('');
+
+        spTooltip.style.display = 'flex';
+        spTooltip.style.opacity = '1';
+        const ir = iconEl.getBoundingClientRect();
+        const icX = ir.left + ir.width / 2;
+        const icY = ir.top + ir.height / 2;
+        const tw = 340,
+          vh = window.innerHeight,
+          vw = window.innerWidth;
+        const goRight = icX + 16 + tw <= vw - 4;
+        let x = goRight ? icX + 16 : icX - tw - 16;
+        if (x < 4) x = 4;
+        spTooltip.style.maxHeight = Math.floor(vh * 0.82) + 'px';
+        const actualH = Math.min(spTooltip.scrollHeight, Math.floor(vh * 0.82));
+        let y = icY - actualH / 2;
+        if (y + actualH > vh - 8) y = vh - actualH - 8;
+        if (y < 8) y = 8;
+        spTooltip.style.left = x + 'px';
+        spTooltip.style.top = y + 'px';
+
+        spOverlay.style.display = 'block';
+        spOverlay.style.background = 'rgba(0,0,0,.6)';
+        spOverlay.addEventListener('click', hideSpectre);
+
+        // draw L-line from icon to sp-tooltip header
+        const ttHeaderMidY = y + 18;
+        const toX = goRight ? x : x + tw;
+        const vLen = Math.abs(icY - ttHeaderMidY);
+        const hLen = Math.abs(toX - icX);
+        const total = vLen + hLen;
+        const vw2 = vw;
+        const vh2 = vh;
+
+        ttArrowSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw2}px;height:${vh2}px;pointer-events:none;z-index:499;overflow:visible;`;
+        ttArrowSvg.setAttribute('viewBox', `0 0 ${vw2} ${vh2}`);
+        ttArrowSvg.innerHTML = `
+    <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
+    <polyline points="${icX},${icY} ${icX},${ttHeaderMidY} ${toX},${ttHeaderMidY}"
+      fill="none" stroke="#50556a" stroke-width="1.5"
+      stroke-dasharray="${total}" stroke-dashoffset="${total}"
+      style="animation:dashIn .3s ease forwards"/>`;
+      }
+
+      function hideSpectre() {
+        _spectreOpen = false;
+        spTooltip.style.display = 'none';
+        spOverlay.style.display = 'none';
+        spOverlay.style.background = '';
+        ttArrowSvg.style.display = 'none';
+        ttArrowSvg.innerHTML = '';
+        document.body.style.overflow = '';
+        const titleIcon = document.querySelector('#title-name span');
+        if (titleIcon) titleIcon.style.boxShadow = '';
+      }
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          hideTooltip();
+          hideSpectre();
+        }
+      });
+
       // ── DRAW ──
       function redrawAll() {
         colRefs.forEach(drawColumn);
