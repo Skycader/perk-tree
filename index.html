@@ -824,7 +824,21 @@
         font-family: 'JetBrains Mono', monospace;
         font-size: 11px;
         font-weight: 600;
-        color: #c0bdb4;
+        color: #8090a0;
+        cursor: pointer;
+        transition: color 0.15s;
+      }
+      .combo-item-hdr {
+        cursor: pointer;
+      }
+      .combo-item-hdr:hover .combo-item-name {
+        color: #e0ddd6;
+      }
+      .combo-item-hdr:hover .combo-sq {
+        box-shadow: var(--combo-glow, none);
+      }
+      .combo-sq {
+        transition: box-shadow 0.2s;
       }
       .combo-item-lvl {
         font-size: 9px;
@@ -1375,9 +1389,11 @@
                         p: '#7840c8',
                         y: '#b89030',
                       }[rcolor] || '#888';
-                    return `<div class="perk-chain-dep" data-rid="${rid}">
-              <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0"></span>
-              <span>${rname}</span>
+                    return `<div class="perk-chain-dep" data-rid="${rid}" style="cursor:pointer"
+                onmouseenter="this.querySelector('span').style.boxShadow='0 0 6px 3px ${hex}88, 0 0 14px 5px ${hex}44'; this.querySelectorAll('span')[1].style.color='#e0ddd6'"
+                onmouseleave="this.querySelector('span').style.boxShadow=''; this.querySelectorAll('span')[1].style.color=''">
+              <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
+              <span style="transition:color .15s">${rname}</span>
             </div>`;
                   })
                   .join('');
@@ -1689,11 +1705,10 @@
                   y: '#b89030',
                 }[pcol] || '#888';
               return `<div class="combo-item">
-        <div class="combo-item-hdr">
+        <div class="combo-item-hdr" style="--combo-glow: 0 0 6px 3px ${hex}88, 0 0 14px 5px ${hex}44">
           <span class="combo-sq" data-rid="${partnerId}"
-            style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer"
-            title="Перейти к перку"></span>
-          <span class="combo-item-name">${pname}</span>
+            style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer;transition:box-shadow .2s"></span>
+          <span class="combo-item-name" data-rid="${partnerId}" style="cursor:pointer">${pname}</span>
           ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
         </div>
         <div class="combo-item-desc">${info.desc || ''}</div>
@@ -1705,60 +1720,62 @@
           // click square → focus that perk (reuse focusPerk logic inline)
           comboLvls.querySelectorAll &&
             setTimeout(() => {
-              comboLvls.querySelectorAll('.combo-sq').forEach((sq) => {
-                sq.addEventListener('click', () => {
-                  const rid = sq.dataset.rid;
-                  const allPerks = document.querySelectorAll('.perk');
-                  let target = null;
-                  for (const pe of allPerks) {
-                    if (pe.dataset.perkId === rid) {
-                      target = pe;
-                      break;
+              comboLvls
+                .querySelectorAll('.combo-sq, .combo-item-name')
+                .forEach((sq) => {
+                  sq.addEventListener('click', () => {
+                    const rid = sq.dataset.rid;
+                    const allPerks = document.querySelectorAll('.perk');
+                    let target = null;
+                    for (const pe of allPerks) {
+                      if (pe.dataset.perkId === rid) {
+                        target = pe;
+                        break;
+                      }
                     }
-                  }
-                  if (!target) return;
-                  hideTooltip();
-                  target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                  });
-                  setTimeout(() => {
-                    let fo = document.getElementById('focus-overlay');
-                    if (!fo) {
-                      fo = document.createElement('div');
-                      fo.id = 'focus-overlay';
-                      fo.style.cssText =
-                        'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;pointer-events:auto;';
-                      document.body.appendChild(fo);
-                    }
-                    target.style.position = 'relative';
-                    target.style.zIndex = '51';
-                    target.style.boxShadow =
-                      '0 0 0 2px #e09040, 0 0 30px rgba(224,144,64,.5)';
-                    function clearFocus() {
-                      fo.remove();
-                      target.style.position = '';
-                      target.style.zIndex = '';
-                      target.style.boxShadow = '';
-                      window.removeEventListener('scroll', clearFocus, {
-                        passive: true,
-                      });
-                      window.removeEventListener('click', clearFocus);
-                      window.removeEventListener('keydown', clearFocus);
-                    }
-                    fo.addEventListener('click', clearFocus);
+                    if (!target) return;
+                    hideTooltip();
+                    target.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center',
+                    });
                     setTimeout(() => {
-                      window.addEventListener('scroll', clearFocus, {
-                        once: true,
-                        passive: true,
-                      });
-                      window.addEventListener('keydown', clearFocus, {
-                        once: true,
-                      });
-                    }, 400);
-                  }, 500);
+                      let fo = document.getElementById('focus-overlay');
+                      if (!fo) {
+                        fo = document.createElement('div');
+                        fo.id = 'focus-overlay';
+                        fo.style.cssText =
+                          'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;pointer-events:auto;';
+                        document.body.appendChild(fo);
+                      }
+                      target.style.position = 'relative';
+                      target.style.zIndex = '51';
+                      target.style.boxShadow =
+                        '0 0 0 2px #e09040, 0 0 30px rgba(224,144,64,.5)';
+                      function clearFocus() {
+                        fo.remove();
+                        target.style.position = '';
+                        target.style.zIndex = '';
+                        target.style.boxShadow = '';
+                        window.removeEventListener('scroll', clearFocus, {
+                          passive: true,
+                        });
+                        window.removeEventListener('click', clearFocus);
+                        window.removeEventListener('keydown', clearFocus);
+                      }
+                      fo.addEventListener('click', clearFocus);
+                      setTimeout(() => {
+                        window.addEventListener('scroll', clearFocus, {
+                          once: true,
+                          passive: true,
+                        });
+                        window.addEventListener('keydown', clearFocus, {
+                          once: true,
+                        });
+                      }, 400);
+                    }, 500);
+                  });
                 });
-              });
             }, 50);
           // position: below and right of main tooltip
           const mainR = tooltipEl.getBoundingClientRect();
