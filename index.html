@@ -482,6 +482,60 @@
       .perk-icon {
         transition: box-shadow 0.25s ease;
       }
+
+      /* ── CHAIN DEPENDENCY ── */
+      .perk-name-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .perk-chain {
+        display: inline-flex;
+        align-items: center;
+        width: 13px;
+        height: 13px;
+        flex-shrink: 0;
+        opacity: 0.4;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .perk-chain:hover {
+        opacity: 1;
+      }
+      .perk-chain-tip {
+        display: none;
+        position: fixed;
+        z-index: 600;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        padding: 8px 12px;
+        font-size: 10px;
+        color: #8090a0;
+        pointer-events: auto;
+        max-width: 240px;
+        line-height: 1.6;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      }
+      .perk-chain-tip strong {
+        display: block;
+        color: #c0bdb4;
+        margin-bottom: 6px;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+      }
+      .perk-chain-dep {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 4px;
+        cursor: pointer;
+        padding: 2px 0;
+        border-radius: 2px;
+        transition: color 0.15s;
+      }
+      .perk-chain-dep:hover {
+        color: #c0bdb4;
+      }
       .perk-icon.glowing.ic-o {
         box-shadow:
           0 0 6px 3px rgba(224, 144, 64, 0.9),
@@ -1175,11 +1229,181 @@
           ch.perks.forEach((p) => {
             const pEl = document.createElement('div');
             pEl.className = 'perk';
+            pEl.dataset.perkId = p.id;
             pEl.innerHTML = `<div class="perk-icon ic-${c}"></div>
         <div class="perk-body">
-          <div class="perk-name">${p.name}</div>
+          <div class="perk-name-row">
+            <div class="perk-name">${p.name}</div>
+          </div>
           <div class="perk-desc">${p.description}</div>
         </div>`;
+
+            // chain dependency icon
+            if (p.requiredPerks && p.requiredPerks.length) {
+              const chainSvg = document.createElementNS(
+                'http://www.w3.org/2000/svg',
+                'svg',
+              );
+              chainSvg.setAttribute('viewBox', '0 0 16 16');
+              chainSvg.classList.add('perk-chain');
+              // 🔗-like: two ovals linked with a connecting bar, rotated 45deg
+              chainSvg.innerHTML = `
+          <g transform="rotate(-40 8 8)">
+            <rect x="2" y="5.5" width="5" height="3" rx="1.5" fill="none" stroke="#8090a0" stroke-width="1.2"/>
+            <rect x="9" y="7.5" width="5" height="3" rx="1.5" fill="none" stroke="#8090a0" stroke-width="1.2"/>
+            <line x1="7" y1="7" x2="9" y2="9" stroke="#8090a0" stroke-width="1.2"/>
+          </g>`;
+
+              const tip = document.createElement('div');
+              tip.className = 'perk-chain-tip';
+              tip.innerHTML =
+                `<strong>Эта способность требует развития:</strong>` +
+                p.requiredPerks
+                  .map((rid) => {
+                    let rname = rid,
+                      rcolor = 'o';
+                    for (const skill of D.skills) {
+                      const found = skill.perks.find((pp) => pp.id === rid);
+                      if (found) {
+                        rname = found.name;
+                        // find chapter colour
+                        const COLOR_MAP2 = {
+                          orange: 'o',
+                          red: 'r',
+                          blue: 'b',
+                          green: 'g',
+                          purple: 'p',
+                          yellow: 'y',
+                          o: 'o',
+                          r: 'r',
+                          b: 'b',
+                          g: 'g',
+                          p: 'p',
+                          y: 'y',
+                        };
+                        rcolor = skill.color
+                          ? COLOR_MAP2[skill.color.toLowerCase()] ||
+                            skill.color[0]
+                          : chapterColour.get(skill);
+                        break;
+                      }
+                    }
+                    const hex =
+                      {
+                        o: '#e09040',
+                        r: '#cc3838',
+                        b: '#3e80d0',
+                        g: '#28a860',
+                        p: '#7840c8',
+                        y: '#b89030',
+                      }[rcolor] || '#888';
+                    return `<div class="perk-chain-dep" data-rid="${rid}">
+              <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0"></span>
+              <span>${rname}</span>
+            </div>`;
+                  })
+                  .join('');
+
+              let _chainHide = null;
+              function showTip() {
+                clearTimeout(_chainHide);
+                const r = chainSvg.getBoundingClientRect();
+                tip.style.display = 'block';
+                requestAnimationFrame(() => {
+                  const tw = tip.offsetWidth,
+                    th = tip.offsetHeight;
+                  const vw = window.innerWidth,
+                    vh = window.innerHeight;
+                  let tx = r.left - tw - 8;
+                  if (tx < 4) tx = r.right + 8;
+                  let ty = r.top - th / 2 + 7;
+                  if (ty < 4) ty = 4;
+                  if (ty + th > vh - 4) ty = vh - th - 4;
+                  tip.style.left = tx + 'px';
+                  tip.style.top = ty + 'px';
+                });
+              }
+              function hideTipDelayed() {
+                _chainHide = setTimeout(() => {
+                  tip.style.display = 'none';
+                }, 150);
+              }
+              chainSvg.addEventListener('mouseenter', showTip);
+              chainSvg.addEventListener('mouseleave', hideTipDelayed);
+              tip.addEventListener('mouseenter', () =>
+                clearTimeout(_chainHide),
+              );
+              tip.addEventListener('mouseleave', () => {
+                tip.style.display = 'none';
+              });
+
+              // click chain icon or dep item → scroll to & highlight target perk
+              function focusPerk(rid) {
+                tip.style.display = 'none';
+                const allPerks = document.querySelectorAll('.perk');
+                let target = null;
+                for (const pe of allPerks) {
+                  if (pe.dataset.perkId === rid) {
+                    target = pe;
+                    break;
+                  }
+                }
+                if (!target) return;
+                // scroll first, then highlight after scroll settles
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                  // create full-screen focus overlay
+                  let fo = document.getElementById('focus-overlay');
+                  if (!fo) {
+                    fo = document.createElement('div');
+                    fo.id = 'focus-overlay';
+                    fo.style.cssText =
+                      'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;pointer-events:auto;';
+                    document.body.appendChild(fo);
+                  }
+                  // lift target above overlay
+                  target.style.position = 'relative';
+                  target.style.zIndex = '51';
+                  target.style.boxShadow =
+                    '0 0 0 2px #e09040, 0 0 30px rgba(224,144,64,.5)';
+                  function clearFocus() {
+                    fo.remove();
+                    target.style.position = '';
+                    target.style.zIndex = '';
+                    target.style.boxShadow = '';
+                    window.removeEventListener('scroll', clearFocus, {
+                      passive: true,
+                    });
+                    window.removeEventListener('click', clearFocus);
+                    window.removeEventListener('keydown', clearFocus);
+                  }
+                  fo.addEventListener('click', clearFocus);
+                  setTimeout(() => {
+                    window.addEventListener('scroll', clearFocus, {
+                      once: true,
+                      passive: true,
+                    });
+                    window.addEventListener('keydown', clearFocus, {
+                      once: true,
+                    });
+                  }, 400);
+                }, 500);
+              }
+
+              chainSvg.addEventListener('click', (e) => {
+                e.stopPropagation();
+                focusPerk(p.requiredPerks[0]);
+              });
+              tip.addEventListener('click', (e) => {
+                const dep = e.target.closest('.perk-chain-dep');
+                if (dep) focusPerk(dep.dataset.rid);
+              });
+
+              // insert chain icon into name row
+              const nameRow = pEl.querySelector('.perk-name-row');
+              nameRow.appendChild(chainSvg);
+              document.body.appendChild(tip); // attach to body so hover works
+            }
 
             // hover on icon square triggers tooltip
             const lvlDesc = (D.skillLevelDescriptions || {})[p.id];
