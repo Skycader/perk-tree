@@ -8,6 +8,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%0A%20%20%3C%21--%20nucleus%20--%3E%0A%20%20%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%224%22%20fill%3D%22%23e09040%22/%3E%0A%20%20%3C%21--%20orbit%20ellipse%20rotated%20-35deg%20--%3E%0A%20%20%3Cellipse%20cx%3D%2216%22%20cy%3D%2216%22%20rx%3D%2213%22%20ry%3D%225.5%22%0A%20%20%20%20fill%3D%22none%22%20stroke%3D%22%23c87830%22%20stroke-width%3D%221%22%0A%20%20%20%20transform%3D%22rotate%28-35%2016%2016%29%22/%3E%0A%20%20%3C%21--%20electron%3A%20position%20on%20orbit%20at%20~-35deg%20angle%20%3D%20top-right%20--%3E%0A%20%20%3C%21--%20at%20angle%200%20on%20ellipse%3A%20%2816%2B13%2C%2016%29%20%3D%20%2829%2C16%29%2C%20rotate%20point%20by%20-35deg%20around%20%2816%2C16%29%20--%3E%0A%20%20%3C%21--%20cos%28-35%29%3D0.819%2C%20sin%28-35%29%3D-0.574%20--%3E%0A%20%20%3C%21--%20x%20%3D%2016%20%2B%2013%2A0.819%20%3D%2026.65%2C%20y%20%3D%2016%20%2B%205.5%2A%28-0.574%29%20%3D%2012.84%20--%3E%0A%20%20%3C%21--%20but%20we%20want%20electron%20at%20~-60deg%20on%20ellipse%20for%20top-right%20feel%20--%3E%0A%20%20%3C%21--%20angle%3D-60%3A%20x%3D16%2B13%2Acos%28-60%29%3D16%2B6.5%3D22.5%2C%20y%3D16%2B5.5%2Asin%28-60%29%3D16-4.76%3D11.24%2C%20then%20rotate%20-35%20--%3E%0A%20%20%3C%21--%20easier%3A%20just%20place%20it%20visually%20--%3E%0A%20%20%3Ccircle%20cx%3D%2224.5%22%20cy%3D%229.5%22%20r%3D%222.5%22%20fill%3D%22%23e09040%22/%3E%0A%3C/svg%3E"
     />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
       rel="stylesheet"
@@ -780,6 +781,124 @@
         color: #dedad2;
         position: relative;
       }
+      /* ── EXTRA WINDOW ── */
+      #extra-box {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 320px;
+        max-height: 70vh;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #extra-box .tt-header {
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid #1c1f2e;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #8090a0;
+        letter-spacing: 0.05em;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      #extra-content {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+        padding: 0;
+        font-size: 10px;
+        color: #7a8090;
+        line-height: 1.55;
+      }
+      /* md styles matching combo */
+      #extra-content p {
+        padding: 6px 12px 0;
+        margin: 0;
+      }
+      #extra-content h1,
+      #extra-content h2,
+      #extra-content h3 {
+        font-family: 'JetBrains Mono', monospace;
+        color: #c0bdb4;
+        padding: 8px 12px 2px;
+        margin: 0;
+        font-size: 11px;
+        border-bottom: 1px solid #1e2235;
+      }
+      #extra-content strong {
+        color: #c0bdb4;
+      }
+      #extra-content em {
+        color: #8898b0;
+      }
+      #extra-content code {
+        font-family: 'JetBrains Mono', monospace;
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 9px;
+        color: #7ab0d0;
+      }
+      #extra-content pre {
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        margin: 4px 12px;
+        padding: 6px 8px;
+        overflow-x: auto;
+        border-radius: 2px;
+      }
+      #extra-content pre code {
+        border: none;
+        background: none;
+        padding: 0;
+      }
+      #extra-content ul,
+      #extra-content ol {
+        padding: 4px 12px 4px 28px;
+        margin: 0;
+      }
+      #extra-content li {
+        margin: 2px 0;
+      }
+      #extra-content blockquote {
+        border-left: 2px solid #3a4570;
+        padding: 4px 10px;
+        margin: 4px 12px;
+        color: #7a8090;
+      }
+      #extra-content hr {
+        border: none;
+        border-top: 1px solid #1e2235;
+        margin: 6px 12px;
+      }
+      #extra-content table {
+        border-collapse: collapse;
+        width: calc(100% - 24px);
+        margin: 6px 12px;
+        font-size: 10px;
+      }
+      #extra-content th {
+        background: #0f1020;
+        border: 1px solid #1e2235;
+        padding: 3px 7px;
+        color: #8090a0;
+        font-weight: 600;
+        text-align: left;
+      }
+      #extra-content td {
+        border: 1px solid #1a1d2e;
+        padding: 3px 7px;
+      }
+      #extra-content tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
       /* ── COMBO WINDOW ── */
       #combo-box {
         display: none;
@@ -1006,6 +1125,10 @@
     ></canvas>
     <div id="tt-overlay"></div>
     <div id="sp-overlay"></div>
+    <div id="extra-box">
+      <div class="tt-header">📄 Расширенное описание</div>
+      <div id="extra-content"></div>
+    </div>
     <div id="combo-box">
       <div class="tt-header">⬡ Комбо-способности</div>
       <div id="combo-levels"></div>
@@ -1021,6 +1144,18 @@
     </div>
     <!-- tooltip arrow -->
     <svg id="tt-arrow-svg" style="display: none"></svg>
+    <svg
+      id="extra-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 499;
+        overflow: visible;
+      "
+    ></svg>
     <svg
       id="combo-arrow-svg"
       style="
@@ -1681,6 +1816,60 @@
         ttOverlay.style.display = 'block';
         ttOverlay.style.background = 'rgba(0,0,0,.6)';
 
+        // ── EXTRA WINDOW ──
+        const extraBox = document.getElementById('extra-box');
+        const extraContent = document.getElementById('extra-content');
+        const extraSvg = document.getElementById('extra-arrow-svg');
+        const perkData = D.skills
+          .flatMap((s) => s.perks)
+          .find((p) => p.id === _comboPerkId);
+        extraBox.style.display = 'none';
+        extraSvg.style.display = 'none';
+
+        if (perkData?.extra) {
+          const md =
+            typeof marked !== 'undefined'
+              ? marked.parse(perkData.extra)
+              : perkData.extra.replace(/\n/g, '<br>');
+          extraContent.innerHTML = md;
+          extraBox.style.display = 'flex';
+          const ew = 320,
+            vh_e = window.innerHeight,
+            vw_e = window.innerWidth;
+          extraBox.style.maxHeight = Math.floor(vh_e * 0.7) + 'px';
+          const mainR2 = tooltipEl.getBoundingClientRect();
+          // position right of main tooltip
+          let ex = mainR2.right + 20;
+          if (ex + ew > vw_e - 4) ex = mainR2.left - ew - 20;
+          if (ex < 4) ex = 4;
+          const eh = Math.min(extraBox.scrollHeight, Math.floor(vh_e * 0.7));
+          let ey = mainR2.top;
+          if (ey + eh > vh_e - 8) ey = vh_e - eh - 8;
+          if (ey < 8) ey = 8;
+          extraBox.style.left = ex + 'px';
+          extraBox.style.top = ey + 'px';
+
+          requestAnimationFrame(() => {
+            const er2 = extraBox.getBoundingClientRect();
+            const mr2 = tooltipEl.getBoundingClientRect();
+            const fromX = mr2.right,
+              fromY = mr2.top + 18;
+            const toX = er2.left,
+              toY = er2.top + 18;
+            const midX = (fromX + toX) / 2;
+            const pts = `${fromX},${fromY} ${midX},${fromY} ${midX},${toY} ${toX},${toY}`;
+            const len =
+              Math.abs(midX - fromX) +
+              Math.abs(toY - fromY) +
+              Math.abs(toX - midX);
+            extraSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw_e}px;height:${vh_e}px;pointer-events:none;z-index:499;overflow:visible;`;
+            extraSvg.setAttribute('viewBox', `0 0 ${vw_e} ${vh_e}`);
+            extraSvg.innerHTML = `<polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
+        stroke-dasharray="${len}" stroke-dashoffset="${len}"
+        style="animation:dashIn .4s ease forwards"/>`;
+          });
+        }
+
         // ── COMBO WINDOW ──
         const comboBox = document.getElementById('combo-box');
         const comboLvls = document.getElementById('combo-levels');
@@ -1743,7 +1932,11 @@
             .join('');
 
           comboBox.style.display = 'flex';
-          // click square → focus that perk (reuse focusPerk logic inline)
+          // if extra box also visible, shift combo further right
+          const extraR =
+            extraBox.style.display === 'flex'
+              ? extraBox.getBoundingClientRect()
+              : null;
           comboLvls.querySelectorAll &&
             setTimeout(() => {
               comboLvls
@@ -1827,7 +2020,11 @@
           const mainR = tooltipEl.getBoundingClientRect();
           const cw = 320,
             vh2 = window.innerHeight;
-          let cx2 = mainR.right + 20;
+          const extraVisible = extraBox.style.display === 'flex';
+          const extraRight = extraVisible
+            ? extraBox.getBoundingClientRect().right
+            : mainR.right;
+          let cx2 = extraRight + 20;
           if (cx2 + cw > window.innerWidth - 4) cx2 = mainR.left - cw - 20;
           comboBox.style.maxHeight = Math.floor(vh2 * 0.7) + 'px';
           const ch = Math.min(comboBox.scrollHeight, Math.floor(vh2 * 0.7));
@@ -1891,6 +2088,8 @@
         ttOverlay.style.background = 'rgba(0,0,0,0)';
         ttArrowSvg.style.display = 'none';
         ttArrowSvg.innerHTML = '';
+        document.getElementById('extra-box').style.display = 'none';
+        document.getElementById('extra-arrow-svg').style.display = 'none';
         document.getElementById('combo-box').style.display = 'none';
         document.getElementById('combo-arrow-svg').style.display = 'none';
         document.body.style.overflow = '';
