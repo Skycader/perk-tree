@@ -1,6 +1,6 @@
 const STAND_DATA = {
   standName: 'Властитель',
-  desc: 'Могуществено Властителя неоспоримо.\n-Неизвестный',
+  desc: 'Могуществено Властителя неоспоримо.',
   user: 'Yamighami',
   otherNames: [
     'Авторитет (Authority)',
