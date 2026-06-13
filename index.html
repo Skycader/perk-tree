@@ -458,6 +458,7 @@
         line-height: 1.5;
         margin-top: 2px;
         word-break: break-word;
+        white-space: pre-line;
       }
 
       .ic-o {
@@ -1192,6 +1193,7 @@
         y: '#907820',
       };
       const SPINE = '#2e3448';
+      const FOCUS_DIM = 0.75; // затемнение фона при фокусе (0–1)
 
       // ── PROCESS CONFIG ──
       const D = STAND_DATA;
@@ -1327,7 +1329,7 @@
           <div class="perk-name-row">
             <div class="perk-name">${p.name}</div>
           </div>
-          <div class="perk-desc">${p.description}</div>
+          <div class="perk-desc">${(p.description || '').replace(/\\n/g, '\n')}</div>
         </div>`;
 
             // chain dependency icon
@@ -1446,30 +1448,54 @@
                 // scroll first, then highlight after scroll settles
                 target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 setTimeout(() => {
-                  // create full-screen focus overlay
+                  // create full-screen focus overlay with fade-in
                   let fo = document.getElementById('focus-overlay');
                   if (!fo) {
                     fo = document.createElement('div');
                     fo.id = 'focus-overlay';
                     fo.style.cssText =
-                      'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;pointer-events:auto;';
+                      'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
                     document.body.appendChild(fo);
                   }
+                  // fade in
+                  requestAnimationFrame(() => {
+                    fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+                  });
                   // lift target above overlay
                   target.style.position = 'relative';
                   target.style.zIndex = '51';
-                  target.style.boxShadow =
-                    '0 0 0 2px #e09040, 0 0 30px rgba(224,144,64,.5)';
+                  // get chapter colour from perk icon class
+                  const _ic1 = target.querySelector('.perk-icon');
+                  const _cm1 = {
+                    'ic-o': '#e09040',
+                    'ic-r': '#cc3838',
+                    'ic-b': '#3e80d0',
+                    'ic-g': '#28a860',
+                    'ic-p': '#7840c8',
+                    'ic-y': '#b89030',
+                  };
+                  const _hex1 =
+                    Object.entries(_cm1).find(
+                      ([k]) => _ic1 && _ic1.classList.contains(k),
+                    )?.[1] || '#e09040';
+                  const _hex1a = _hex1 + '80';
+                  target.style.transition = 'box-shadow .35s ease';
+                  target.style.boxShadow = `0 0 0 2px ${_hex1}, 0 0 30px ${_hex1a}`;
+
                   function clearFocus() {
-                    fo.remove();
-                    target.style.position = '';
-                    target.style.zIndex = '';
+                    fo.style.background = 'rgba(0,0,0,0)';
                     target.style.boxShadow = '';
                     window.removeEventListener('scroll', clearFocus, {
                       passive: true,
                     });
                     window.removeEventListener('click', clearFocus);
                     window.removeEventListener('keydown', clearFocus);
+                    setTimeout(() => {
+                      fo.remove();
+                      target.style.position = '';
+                      target.style.zIndex = '';
+                      target.style.transition = '';
+                    }, 350);
                   }
                   fo.addEventListener('click', clearFocus);
                   setTimeout(() => {
@@ -1745,23 +1771,43 @@
                         fo = document.createElement('div');
                         fo.id = 'focus-overlay';
                         fo.style.cssText =
-                          'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;pointer-events:auto;';
+                          'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
                         document.body.appendChild(fo);
                       }
+                      requestAnimationFrame(() => {
+                        fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+                      });
                       target.style.position = 'relative';
                       target.style.zIndex = '51';
-                      target.style.boxShadow =
-                        '0 0 0 2px #e09040, 0 0 30px rgba(224,144,64,.5)';
+                      const _ic2 = target.querySelector('.perk-icon');
+                      const _cm2 = {
+                        'ic-o': '#e09040',
+                        'ic-r': '#cc3838',
+                        'ic-b': '#3e80d0',
+                        'ic-g': '#28a860',
+                        'ic-p': '#7840c8',
+                        'ic-y': '#b89030',
+                      };
+                      const _hex2 =
+                        Object.entries(_cm2).find(
+                          ([k]) => _ic2 && _ic2.classList.contains(k),
+                        )?.[1] || '#e09040';
+                      target.style.transition = 'box-shadow .35s ease';
+                      target.style.boxShadow = `0 0 0 2px ${_hex2}, 0 0 30px ${_hex2}80`;
                       function clearFocus() {
-                        fo.remove();
-                        target.style.position = '';
-                        target.style.zIndex = '';
+                        fo.style.background = 'rgba(0,0,0,0)';
                         target.style.boxShadow = '';
                         window.removeEventListener('scroll', clearFocus, {
                           passive: true,
                         });
                         window.removeEventListener('click', clearFocus);
                         window.removeEventListener('keydown', clearFocus);
+                        setTimeout(() => {
+                          fo.remove();
+                          target.style.position = '';
+                          target.style.zIndex = '';
+                          target.style.transition = '';
+                        }, 350);
                       }
                       fo.addEventListener('click', clearFocus);
                       setTimeout(() => {
