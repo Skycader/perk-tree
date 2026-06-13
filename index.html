@@ -1690,8 +1690,10 @@
                 }[pcol] || '#888';
               return `<div class="combo-item">
         <div class="combo-item-hdr">
-          <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0"></span>
-          <span class="combo-item-name">+ ${pname}</span>
+          <span class="combo-sq" data-rid="${partnerId}"
+            style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer"
+            title="Перейти к перку"></span>
+          <span class="combo-item-name">${pname}</span>
           ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
         </div>
         <div class="combo-item-desc">${info.desc || ''}</div>
@@ -1700,6 +1702,64 @@
             .join('');
 
           comboBox.style.display = 'flex';
+          // click square → focus that perk (reuse focusPerk logic inline)
+          comboLvls.querySelectorAll &&
+            setTimeout(() => {
+              comboLvls.querySelectorAll('.combo-sq').forEach((sq) => {
+                sq.addEventListener('click', () => {
+                  const rid = sq.dataset.rid;
+                  const allPerks = document.querySelectorAll('.perk');
+                  let target = null;
+                  for (const pe of allPerks) {
+                    if (pe.dataset.perkId === rid) {
+                      target = pe;
+                      break;
+                    }
+                  }
+                  if (!target) return;
+                  hideTooltip();
+                  target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                  });
+                  setTimeout(() => {
+                    let fo = document.getElementById('focus-overlay');
+                    if (!fo) {
+                      fo = document.createElement('div');
+                      fo.id = 'focus-overlay';
+                      fo.style.cssText =
+                        'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;pointer-events:auto;';
+                      document.body.appendChild(fo);
+                    }
+                    target.style.position = 'relative';
+                    target.style.zIndex = '51';
+                    target.style.boxShadow =
+                      '0 0 0 2px #e09040, 0 0 30px rgba(224,144,64,.5)';
+                    function clearFocus() {
+                      fo.remove();
+                      target.style.position = '';
+                      target.style.zIndex = '';
+                      target.style.boxShadow = '';
+                      window.removeEventListener('scroll', clearFocus, {
+                        passive: true,
+                      });
+                      window.removeEventListener('click', clearFocus);
+                      window.removeEventListener('keydown', clearFocus);
+                    }
+                    fo.addEventListener('click', clearFocus);
+                    setTimeout(() => {
+                      window.addEventListener('scroll', clearFocus, {
+                        once: true,
+                        passive: true,
+                      });
+                      window.addEventListener('keydown', clearFocus, {
+                        once: true,
+                      });
+                    }, 400);
+                  }, 500);
+                });
+              });
+            }, 50);
           // position: below and right of main tooltip
           const mainR = tooltipEl.getBoundingClientRect();
           const cw = 320,
