@@ -779,6 +779,68 @@
         color: #dedad2;
         position: relative;
       }
+      /* ── COMBO WINDOW ── */
+      #combo-box {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 320px;
+        max-height: 70vh;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #combo-box .tt-header {
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid #1c1f2e;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #8090a0;
+        letter-spacing: 0.05em;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .combo-item {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(28, 31, 46, 0.6);
+        font-size: 10px;
+        color: #7a8090;
+        line-height: 1.55;
+      }
+      .combo-item:last-child {
+        border-bottom: none;
+      }
+      .combo-item-hdr {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 5px;
+      }
+      .combo-item-name {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: #c0bdb4;
+      }
+      .combo-item-lvl {
+        font-size: 9px;
+        color: #585e72;
+        margin-left: auto;
+        white-space: nowrap;
+      }
+      .combo-item-desc {
+        white-space: pre-line;
+      }
+      #combo-levels {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+      }
+
       #sp-overlay {
         display: none;
         position: fixed;
@@ -929,6 +991,10 @@
     ></canvas>
     <div id="tt-overlay"></div>
     <div id="sp-overlay"></div>
+    <div id="combo-box">
+      <div class="tt-header">⬡ Комбо-способности</div>
+      <div id="combo-levels"></div>
+    </div>
     <div class="tooltip" id="sp-tooltip">
       <div class="tt-header">
         <span id="sp-header"></span>
@@ -940,6 +1006,18 @@
     </div>
     <!-- tooltip arrow -->
     <svg id="tt-arrow-svg" style="display: none"></svg>
+    <svg
+      id="combo-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 499;
+        overflow: visible;
+      "
+    ></svg>
     <!-- tooltip -->
     <div class="tooltip" id="tooltip">
       <div class="tt-header">
@@ -1513,10 +1591,12 @@
       const ttOverlay = document.getElementById('tt-overlay');
       let _currentBtn = null;
       let _isVisible = false;
+      let _comboPerkId = null;
 
       function showTooltip(name, lvlDesc, iconEl) {
         _currentBtn = iconEl;
         _isVisible = true;
+        _comboPerkId = iconEl.closest('.perk')?.dataset?.perkId || null;
         document.body.style.overflow = 'hidden';
 
         // keep glow on clicked icon, remove from others
@@ -1559,6 +1639,107 @@
         ttOverlay.style.display = 'block';
         ttOverlay.style.background = 'rgba(0,0,0,.6)';
 
+        // ── COMBO WINDOW ──
+        const comboBox = document.getElementById('combo-box');
+        const comboLvls = document.getElementById('combo-levels');
+        const comboSvg = document.getElementById('combo-arrow-svg');
+        const lvlData = (D.skillLevelDescriptions || {})[_comboPerkId];
+        const combo = lvlData?.combo || null;
+
+        comboBox.style.display = 'none';
+        comboSvg.style.display = 'none';
+
+        if (combo && Object.keys(combo).length) {
+          comboLvls.innerHTML = Object.entries(combo)
+            .map(([partnerId, info]) => {
+              // find partner name and colour
+              let pname = partnerId,
+                pcol = 'o';
+              for (const skill of D.skills) {
+                const found = skill.perks.find((pp) => pp.id === partnerId);
+                if (found) {
+                  pname = found.name;
+                  const CM = {
+                    orange: 'o',
+                    red: 'r',
+                    blue: 'b',
+                    green: 'g',
+                    purple: 'p',
+                    yellow: 'y',
+                    o: 'o',
+                    r: 'r',
+                    b: 'b',
+                    g: 'g',
+                    p: 'p',
+                    y: 'y',
+                  };
+                  pcol = skill.color
+                    ? CM[skill.color.toLowerCase()] || skill.color[0]
+                    : chapterColour.get(skill);
+                  break;
+                }
+              }
+              const hex =
+                {
+                  o: '#e09040',
+                  r: '#cc3838',
+                  b: '#3e80d0',
+                  g: '#28a860',
+                  p: '#7840c8',
+                  y: '#b89030',
+                }[pcol] || '#888';
+              return `<div class="combo-item">
+        <div class="combo-item-hdr">
+          <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0"></span>
+          <span class="combo-item-name">+ ${pname}</span>
+          ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
+        </div>
+        <div class="combo-item-desc">${info.desc || ''}</div>
+      </div>`;
+            })
+            .join('');
+
+          comboBox.style.display = 'flex';
+          // position: below and right of main tooltip
+          const mainR = tooltipEl.getBoundingClientRect();
+          const cw = 320,
+            vh2 = window.innerHeight;
+          let cx2 = mainR.right + 20;
+          if (cx2 + cw > window.innerWidth - 4) cx2 = mainR.left - cw - 20;
+          comboBox.style.maxHeight = Math.floor(vh2 * 0.7) + 'px';
+          const ch = Math.min(comboBox.scrollHeight, Math.floor(vh2 * 0.7));
+          // align top of combo with top of main tooltip header
+          let cy2 = mainR.top;
+          if (cy2 + ch > vh2 - 8) cy2 = vh2 - ch - 8;
+          if (cy2 < 8) cy2 = 8;
+          comboBox.style.left = cx2 + 'px';
+          comboBox.style.top = cy2 + 'px';
+
+          // draw connector: from right edge of tt-header → right → down to combo top-left
+          requestAnimationFrame(() => {
+            const mr = tooltipEl.getBoundingClientRect();
+            const cr = comboBox.getBoundingClientRect();
+            const vw3 = window.innerWidth,
+              vh3 = window.innerHeight;
+            const startX = mr.right,
+              startY = mr.top + 18; // header mid
+            const endX = cr.left,
+              endY = cr.top + 18;
+            const midX = (startX + endX) / 2;
+            comboSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw3}px;height:${vh3}px;pointer-events:none;z-index:499;overflow:visible;`;
+            comboSvg.setAttribute('viewBox', `0 0 ${vw3} ${vh3}`);
+            const pts = `${startX},${startY} ${midX},${startY} ${midX},${endY} ${endX},${endY}`;
+            const len =
+              Math.abs(midX - startX) +
+              Math.abs(endY - startY) +
+              Math.abs(endX - midX);
+            comboSvg.innerHTML = `
+        <polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
+          stroke-dasharray="${len}" stroke-dashoffset="${len}"
+          style="animation:dashIn .4s ease forwards"/>`;
+          });
+        }
+
         // draw L-line
         const ttHeaderMidY = y + 18;
         const toX = goRight ? x : x + tw;
@@ -1587,6 +1768,8 @@
         ttOverlay.style.background = 'rgba(0,0,0,0)';
         ttArrowSvg.style.display = 'none';
         ttArrowSvg.innerHTML = '';
+        document.getElementById('combo-box').style.display = 'none';
+        document.getElementById('combo-arrow-svg').style.display = 'none';
         document.body.style.overflow = '';
         if (_currentBtn) {
           _currentBtn.classList.remove('glowing');
