@@ -395,6 +395,20 @@
       .hc-y .ch-name {
         color: #c8a038;
       }
+      .hc-k {
+        background: linear-gradient(
+          120deg,
+          rgba(60, 60, 60, 0.18) 0%,
+          rgba(40, 40, 40, 0.07) 100%
+        );
+        border-color: rgba(100, 100, 100, 0.45);
+        box-shadow:
+          0 2px 12px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .hc-k .ch-name {
+        color: #909090;
+      }
 
       .perks-wrap {
         display: flex;
@@ -479,6 +493,9 @@
       }
       .ic-y {
         background: #b89030;
+      }
+      .ic-k {
+        background: #505050;
       }
 
       .perk-icon {
@@ -567,6 +584,11 @@
         box-shadow:
           0 0 6px 3px rgba(184, 144, 48, 0.9),
           0 0 18px 7px rgba(184, 144, 48, 0.35);
+      }
+      .perk-icon.glowing.ic-k {
+        box-shadow:
+          0 0 6px 3px rgba(120, 120, 120, 0.9),
+          0 0 18px 7px rgba(120, 120, 120, 0.35);
       }
 
       /* sidebar */
@@ -979,14 +1001,14 @@
         display: none;
         position: fixed;
         inset: 0;
-        z-index: 490;
+        z-index: 515;
         pointer-events: auto;
         cursor: default;
       }
       #sp-tooltip {
         display: none;
         position: fixed;
-        z-index: 500;
+        z-index: 520;
         width: 340px;
         max-height: 82vh;
         background: #0f1018;
@@ -1326,6 +1348,7 @@
         g: '#208850',
         p: '#6030a8',
         y: '#907820',
+        k: '#303030',
       };
       const SPINE = '#2e3448';
       const FOCUS_DIM = 0.75; // затемнение фона при фокусе (0–1)
@@ -1431,6 +1454,7 @@
             green: 'g',
             purple: 'p',
             yellow: 'y',
+            black: 'k',
             o: 'o',
             r: 'r',
             b: 'b',
@@ -1503,6 +1527,7 @@
                           green: 'g',
                           purple: 'p',
                           yellow: 'y',
+                          black: 'k',
                           o: 'o',
                           r: 'r',
                           b: 'b',
@@ -1802,7 +1827,99 @@
           if (el !== iconEl) el.classList.remove('glowing');
         });
 
-        ttHeader.textContent = name;
+        // coloured square in header
+        const _perkEl2 = _currentBtn?.closest('.perk');
+        const _perkIc2 = _perkEl2?.querySelector('.perk-icon');
+        const _icHexMap = {
+          'ic-o': '#e09040',
+          'ic-r': '#cc3838',
+          'ic-b': '#3e80d0',
+          'ic-g': '#28a860',
+          'ic-p': '#7840c8',
+          'ic-y': '#b89030',
+          'ic-k': '#505050',
+        };
+        const _icCls2 = Object.keys(_icHexMap).find((cl) =>
+          _perkIc2?.classList.contains(cl),
+        );
+        const _icHex2 = _icHexMap[_icCls2] || '#888';
+        const _sqSpan = document.createElement('span');
+        _sqSpan.style.cssText = `display:inline-block;width:10px;height:10px;background:${_icHex2};border-radius:1px;margin-right:8px;vertical-align:middle;cursor:pointer;flex-shrink:0;transition:box-shadow .2s`;
+        _sqSpan.addEventListener('mouseenter', () => {
+          _sqSpan.style.boxShadow = `0 0 6px 3px ${_icHex2}aa,0 0 14px 5px ${_icHex2}44`;
+        });
+        _sqSpan.addEventListener('mouseleave', () => {
+          _sqSpan.style.boxShadow = '';
+        });
+        _sqSpan.addEventListener('click', () => {
+          if (!D.spectre) return;
+          // show spectre anchored to this square
+          _spectreOpen = true;
+          spHeader.textContent = 'Палитра цветов';
+          spLevels.innerHTML = Object.entries(D.spectre)
+            .map(([colour, txt]) => {
+              const hex = COLOUR_KEYS[colour] || '#888';
+              return `<div class="tt-row"><span style="display:inline-block;width:10px;height:10px;background:${hex};border-radius:1px;flex-shrink:0;margin-top:2px"></span><span class="tt-text">${txt}</span></div>`;
+            })
+            .join('');
+          spTooltip.style.display = 'flex';
+          spTooltip.style.opacity = '1';
+          const sr = _sqSpan.getBoundingClientRect();
+          const tw = 340,
+            vh2 = window.innerHeight,
+            vw2 = window.innerWidth;
+          spTooltip.style.maxHeight = Math.floor(vh2 * 0.82) + 'px';
+          const sh = Math.min(spTooltip.scrollHeight, Math.floor(vh2 * 0.82));
+          let sx = sr.right + 12;
+          if (sx + tw > vw2 - 4) sx = sr.left - tw - 12;
+          if (sx < 4) sx = 4;
+          let sy = sr.top - sh / 2;
+          if (sy + sh > vh2 - 8) sy = vh2 - sh - 8;
+          if (sy < 8) sy = 8;
+          spTooltip.style.left = sx + 'px';
+          spTooltip.style.top = sy + 'px';
+          // no extra overlay for cascade — reuse existing tt-overlay
+          // draw L-line with circle from square to sp-tooltip header
+          requestAnimationFrame(() => {
+            const sqR = _sqSpan.getBoundingClientRect();
+            const spR = spTooltip.getBoundingClientRect();
+            const vwA = window.innerWidth,
+              vhA = window.innerHeight;
+            const icX = sqR.left + sqR.width / 2,
+              icY = sqR.top + sqR.height / 2;
+            const goRight = spR.left > icX;
+            const toX = goRight ? spR.left : spR.right;
+            const toY = spR.top + 18;
+            const vLen = Math.abs(icY - toY),
+              hLen = Math.abs(toX - icX),
+              total = vLen + hLen;
+            // draw on separate SVG so main arrow stays intact
+            let cascSvg = document.getElementById('casc-arrow-svg');
+            if (!cascSvg) {
+              cascSvg = document.createElementNS(
+                'http://www.w3.org/2000/svg',
+                'svg',
+              );
+              cascSvg.id = 'casc-arrow-svg';
+              cascSvg.style.cssText =
+                'position:fixed;left:0;top:0;pointer-events:none;z-index:519;overflow:visible;';
+              document.body.appendChild(cascSvg);
+            }
+            cascSvg.style.width = vwA + 'px';
+            cascSvg.style.height = vhA + 'px';
+            cascSvg.style.display = 'block';
+            cascSvg.setAttribute('viewBox', `0 0 ${vwA} ${vhA}`);
+            cascSvg.innerHTML = `
+        <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
+        <polyline points="${icX},${icY} ${icX},${toY} ${toX},${toY}"
+          fill="none" stroke="#50556a" stroke-width="1.5"
+          stroke-dasharray="${total}" stroke-dashoffset="${total}"
+          style="animation:dashIn .3s ease forwards"/>`;
+          });
+        });
+        ttHeader.innerHTML = '';
+        ttHeader.appendChild(_sqSpan);
+        ttHeader.appendChild(document.createTextNode(name));
         ttLevels.innerHTML = Object.entries(lvlDesc)
           .map(([lvl, txt]) => {
             const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
@@ -2338,6 +2455,7 @@
         blue: '#3e80d0',
         green: '#28a860',
         purple: '#7840c8',
+        black: '#505050',
       };
 
       function showSpectre(iconEl) {
@@ -2403,9 +2521,9 @@
         spTooltip.style.display = 'none';
         spOverlay.style.display = 'none';
         spOverlay.style.background = '';
-        ttArrowSvg.style.display = 'none';
-        ttArrowSvg.innerHTML = '';
         document.body.style.overflow = '';
+        const cascSvg2 = document.getElementById('casc-arrow-svg');
+        if (cascSvg2) cascSvg2.style.display = 'none';
         const titleIcon = document.querySelector('#title-name span');
         if (titleIcon) titleIcon.style.boxShadow = '';
       }
