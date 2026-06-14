@@ -1552,11 +1552,33 @@
                   if (ty + th > vh - 4) ty = vh - th - 4;
                   tip.style.left = tx + 'px';
                   tip.style.top = ty + 'px';
+
+                  // draw L-line from chain icon centre → tip header
+                  const icX = r.left + r.width / 2;
+                  const icY = r.top + r.height / 2;
+                  const tipR = tip.getBoundingClientRect();
+                  const goRight = tx > icX;
+                  const toX = goRight ? tipR.left : tipR.right;
+                  const toY = tipR.top + 18;
+                  const cornerY = toY;
+                  const vLen = Math.abs(icY - cornerY);
+                  const hLen = Math.abs(toX - icX);
+                  const total = vLen + hLen;
+                  ttArrowSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw}px;height:${vh}px;pointer-events:none;z-index:499;overflow:visible;`;
+                  ttArrowSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+                  ttArrowSvg.innerHTML = `
+                    <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
+                    <polyline points="${icX},${icY} ${icX},${cornerY} ${toX},${cornerY}"
+                      fill="none" stroke="#50556a" stroke-width="1.5"
+                      stroke-dasharray="${total}" stroke-dashoffset="${total}"
+                      style="animation:dashIn .3s ease forwards"/>`;
                 });
               }
               function hideTipDelayed() {
                 _chainHide = setTimeout(() => {
                   tip.style.display = 'none';
+                  ttArrowSvg.style.display = 'none';
+                  ttArrowSvg.innerHTML = '';
                 }, 150);
               }
               chainSvg.addEventListener('mouseenter', showTip);
@@ -1566,6 +1588,8 @@
               );
               tip.addEventListener('mouseleave', () => {
                 tip.style.display = 'none';
+                ttArrowSvg.style.display = 'none';
+                ttArrowSvg.innerHTML = '';
               });
 
               // click chain icon or dep item → scroll to & highlight target perk
@@ -1645,7 +1669,11 @@
                 }, 500);
               }
 
-              // click disabled — hover only
+              // click on dep row (square or name) → focus perk
+              tip.addEventListener('click', (e) => {
+                const dep = e.target.closest('.perk-chain-dep');
+                if (dep) focusPerk(dep.dataset.rid);
+              });
 
               // insert chain icon into name row
               const nameRow = pEl.querySelector('.perk-name-row');
