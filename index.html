@@ -1645,14 +1645,7 @@
                 }, 500);
               }
 
-              chainSvg.addEventListener('click', (e) => {
-                e.stopPropagation();
-                focusPerk(p.requiredPerks[0]);
-              });
-              tip.addEventListener('click', (e) => {
-                const dep = e.target.closest('.perk-chain-dep');
-                if (dep) focusPerk(dep.dataset.rid);
-              });
+              // click disabled — hover only
 
               // insert chain icon into name row
               const nameRow = pEl.querySelector('.perk-name-row');
