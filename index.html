@@ -2455,7 +2455,7 @@
         blue: '#3e80d0',
         green: '#28a860',
         purple: '#7840c8',
-        black: '#505050',
+        black: '#282827',
       };
 
       function showSpectre(iconEl) {
@@ -2524,6 +2524,9 @@
         document.body.style.overflow = '';
         const cascSvg2 = document.getElementById('casc-arrow-svg');
         if (cascSvg2) cascSvg2.style.display = 'none';
+        // also clear main arrow SVG (used for title-box spectre line)
+        ttArrowSvg.style.display = 'none';
+        ttArrowSvg.innerHTML = '';
         const titleIcon = document.querySelector('#title-name span');
         if (titleIcon) titleIcon.style.boxShadow = '';
       }
