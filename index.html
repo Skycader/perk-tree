@@ -804,6 +804,32 @@
         position: relative;
       }
       /* ── EXTRA WINDOW ── */
+      #img-box {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 280px;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #img-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        overflow: hidden;
+      }
+      #img-content img {
+        max-width: 100%;
+        max-height: 340px;
+        object-fit: contain;
+        border-radius: 2px;
+      }
+
       #extra-box {
         display: none;
         position: fixed;
@@ -1155,6 +1181,22 @@
       <div class="tt-header">⬡ Комбо-способности</div>
       <div id="combo-levels"></div>
     </div>
+    <div id="img-box">
+      <div class="tt-header" id="img-header">Иллюстрация</div>
+      <div id="img-content"></div>
+    </div>
+    <svg
+      id="img-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 499;
+        overflow: visible;
+      "
+    ></svg>
     <div class="tooltip" id="sp-tooltip">
       <div class="tt-header">
         <span id="sp-header"></span>
@@ -2008,6 +2050,61 @@
           });
         }
 
+        // ── IMAGE WINDOW ──
+        const imgBox = document.getElementById('img-box');
+        const imgContent = document.getElementById('img-content');
+        const imgHeader = document.getElementById('img-header');
+        const imgArwSvg = document.getElementById('img-arrow-svg');
+        imgBox.style.display = 'none';
+        imgArwSvg.style.display = 'none';
+
+        if (perkData?.img) {
+          imgHeader.textContent = perkData.name || 'Иллюстрация';
+          imgContent.innerHTML = `<img src="${perkData.img}" alt="${perkData.name || ''}" loading="lazy">`;
+          imgBox.style.display = 'flex';
+
+          const vw_i = window.innerWidth,
+            vh_i = window.innerHeight;
+          const iw = 280;
+          const mainR_i = tooltipEl.getBoundingClientRect();
+          // position right of main tooltip (after extra if present)
+          const extraVisible_i = extraBox.style.display === 'flex';
+          const rightEdge_i = extraVisible_i
+            ? extraBox.getBoundingClientRect().right
+            : mainR_i.right;
+          let ix = rightEdge_i + 20;
+          if (ix + iw > vw_i - 4) ix = mainR_i.left - iw - 20;
+          if (ix < 4) ix = 4;
+          const ih = Math.min(imgBox.scrollHeight || 360, vh_i * 0.7);
+          let iy = mainR_i.top;
+          if (iy + ih > vh_i - 8) iy = vh_i - ih - 8;
+          if (iy < 8) iy = 8;
+          imgBox.style.left = ix + 'px';
+          imgBox.style.top = iy + 'px';
+
+          // draw connector from right edge of main tooltip header → img-box header
+          requestAnimationFrame(() => {
+            const mr_i = tooltipEl.getBoundingClientRect();
+            const ir_i = imgBox.getBoundingClientRect();
+            const fromX = mr_i.right,
+              fromY = mr_i.top + 18;
+            const toX = ir_i.left,
+              toY = ir_i.top + 18;
+            const midX = (fromX + toX) / 2;
+            const pts = `${fromX},${fromY} ${midX},${fromY} ${midX},${toY} ${toX},${toY}`;
+            const len =
+              Math.abs(midX - fromX) +
+              Math.abs(toY - fromY) +
+              Math.abs(toX - midX);
+            imgArwSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw_i}px;height:${vh_i}px;pointer-events:none;z-index:499;overflow:visible;`;
+            imgArwSvg.setAttribute('viewBox', `0 0 ${vw_i} ${vh_i}`);
+            imgArwSvg.innerHTML = `
+        <polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
+          stroke-dasharray="${len}" stroke-dashoffset="${len}"
+          style="animation:dashIn .4s ease forwards"/>`;
+          });
+        }
+
         // ── COMBO WINDOW ──
         const comboBox = document.getElementById('combo-box');
         const comboLvls = document.getElementById('combo-levels');
@@ -2228,6 +2325,8 @@
         ttArrowSvg.innerHTML = '';
         document.getElementById('extra-box').style.display = 'none';
         document.getElementById('extra-arrow-svg').style.display = 'none';
+        document.getElementById('img-box').style.display = 'none';
+        document.getElementById('img-arrow-svg').style.display = 'none';
         document.getElementById('combo-box').style.display = 'none';
         document.getElementById('combo-arrow-svg').style.display = 'none';
         document.body.style.overflow = '';
