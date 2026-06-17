@@ -2068,7 +2068,7 @@
           const len = Math.abs(mx - fx) + Math.abs(ty - fy) + Math.abs(tx - mx);
           svg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
           svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-          svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
+          svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.5"
             stroke-dasharray="${len}" stroke-dashoffset="${len}"
             style="animation:dashIn .4s ease forwards"/>`;
         }
@@ -2201,10 +2201,15 @@
               } else {
                 placeSecond(comboBox, cw, ch);
               }
+              console.log('drawLine combo called');
               drawLine(
                 comboSvg,
                 comboAnchor.getBoundingClientRect(),
                 comboBox.getBoundingClientRect(),
+              );
+              console.log(
+                'comboSvg innerHTML:',
+                comboSvg.innerHTML.slice(0, 120),
               );
 
               comboLvls.querySelectorAll &&
