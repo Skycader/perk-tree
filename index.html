@@ -1977,7 +1977,16 @@
           vh = window.innerHeight,
           vw = window.innerWidth;
         const GAP = 16;
-        const goRight = icX + GAP + tw <= vw - 4;
+
+        // detect if this perk lives in the LAST (rightmost) column —
+        // if so, force everything (tooltip + secondary windows) to open LEFTWARD,
+        // mirrored, regardless of available space on the right.
+        const allCols = document.querySelectorAll('.col');
+        const perkCol = iconEl.closest('.col');
+        const isLastCol =
+          allCols.length > 0 && perkCol === allCols[allCols.length - 1];
+
+        const goRight = isLastCol ? false : icX + GAP + tw <= vw - 4;
         let x = goRight ? icX + GAP : icX - tw - GAP;
         if (x < 4) x = 4;
         tooltipEl.style.display = 'flex';
@@ -2031,26 +2040,27 @@
 
         function drawLine(svg, fromRect, toRect, vertical) {
           // strict 90deg L-shape: one horizontal + one vertical segment
+          // ALL coordinates rounded to whole pixels — sub-pixel positions get
+          // anti-aliased across two rows/cols, which visually halves stroke opacity.
           svg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
           svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
 
+          const R = Math.round;
           let pts, len;
           if (vertical) {
-            // toRect is BELOW fromRect: go straight down from fromRect bottom-left area
-            const fx = fromRect.left + 20,
-              fy = fromRect.bottom;
+            const fx = R(fromRect.left + 20),
+              fy = R(fromRect.bottom);
             const tx = fx,
-              ty = toRect.top;
+              ty = R(toRect.top);
             pts = `${fx},${fy} ${tx},${ty}`;
             len = Math.abs(ty - fy);
           } else {
-            // determine actual direction: is toRect to the right or left of fromRect?
             const toIsRight = toRect.left >= fromRect.right - 1;
-            const fx = toIsRight ? fromRect.right : fromRect.left;
-            const fy = fromRect.top + 18;
-            const tx = toIsRight ? toRect.left : toRect.right;
-            const ty = toRect.top + 18;
-            const midX = (fx + tx) / 2;
+            const fx = R(toIsRight ? fromRect.right : fromRect.left);
+            const fy = R(fromRect.top + 18);
+            const tx = R(toIsRight ? toRect.left : toRect.right);
+            const ty = R(toRect.top + 18);
+            const midX = R((fx + tx) / 2);
             pts = `${fx},${fy} ${midX},${fy} ${midX},${ty} ${tx},${ty}`;
             len = Math.abs(midX - fx) + Math.abs(ty - fy) + Math.abs(tx - midX);
           }
@@ -2342,9 +2352,9 @@
           );
         }
 
-        // draw L-line
+        // draw L-line — terminates at the NEAR edge of the tooltip, never runs underneath it
         const ttHeaderMidY = y + 18;
-        const toX = goRight ? x : x + tw;
+        const toX = goRight ? x : x + tw; // near edge: left edge if goRight, right edge if not
         const cornerY = ttHeaderMidY;
         const vLen = Math.abs(icY - cornerY);
         const hLen = Math.abs(toX - icX);
