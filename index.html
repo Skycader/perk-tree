@@ -1996,10 +1996,9 @@
         ttOverlay.style.display = 'block';
         ttOverlay.style.background = 'rgba(0,0,0,.6)';
 
-        // ── SECONDARY WINDOWS: img → extra → combo (chain) ──
-        // Order: [levels] → [img] → [extra] → [combo]
-        // 2nd window: right of levels
-        // 3rd+ window: below 2nd window
+        // ── SECONDARY WINDOWS: tiling layout ──
+        // Right column split: extra (top half) + img (bottom half), each capped at half viewport height.
+        // Combo goes to the right of that column (or below the pair if no horizontal room).
         const extraBox = document.getElementById('extra-box');
         const extraContent = document.getElementById('extra-content');
         const extraSvg = document.getElementById('extra-arrow-svg');
@@ -2017,203 +2016,249 @@
         imgArwSvg.style.display = 'none';
         comboBox.style.display = 'none';
         comboSvg.style.display = 'none';
+        // reset any maxHeight left over from previous opens
+        extraBox.style.maxHeight = '';
+        imgBox.style.maxHeight = '';
+        comboBox.style.maxHeight = '';
 
         const perkData = D.skills
           .flatMap((s) => s.perks)
           .find((p) => p.id === _comboPerkId);
+        const lvlData = (D.skillLevelDescriptions || {})[_comboPerkId];
+        const combo = lvlData?.combo || null;
         const vwC = window.innerWidth,
           vhC = window.innerHeight;
 
-        // place 2nd box: right of levels tooltip
-        function placeSecond(box, w, h) {
-          const mr = tooltipEl.getBoundingClientRect();
-          let bx = mr.right + 20,
-            by = mr.top;
-          if (bx + w > vwC - 4) {
-            bx = mr.left - w - 20;
-          }
-          if (bx < 4) bx = 4;
-          if (by + h > vhC - 8) by = vhC - h - 8;
-          if (by < 8) by = 8;
-          box.style.left = bx + 'px';
-          box.style.top = by + 'px';
-        }
-        // place 3rd+ box: below previous box, left-aligned with it
-        function placeBelow(box, anchorRect, w, h) {
-          // strictly below: top = anchor bottom + gap
-          let bx = anchorRect.left;
-          let by = anchorRect.bottom + 16;
-          console.log('placeBelow', {
-            anchorBottom: anchorRect.bottom,
-            anchorLeft: anchorRect.left,
-            by,
-            bx,
-          });
-          if (by + h > vhC - 8) by = vhC - h - 8;
-          if (by < 8) by = 8;
-          if (bx + w > vwC - 4) bx = vwC - w - 4;
-          if (bx < 4) bx = 4;
-          box.style.left = bx + 'px';
-          box.style.top = by + 'px';
-          box.style.right = 'auto';
-          console.log('placeBelow result', { bx, by });
-        }
-        function drawLine(svg, fromRect, toRect) {
-          const fx = fromRect.right,
-            fy = fromRect.top + 18;
-          const tx = toRect.left,
-            ty = toRect.top + 18;
-          const mx = (fx + tx) / 2;
-          const pts = `${fx},${fy} ${mx},${fy} ${mx},${ty} ${tx},${ty}`;
-          const len = Math.abs(mx - fx) + Math.abs(ty - fy) + Math.abs(tx - mx);
+        function drawLine(svg, fromRect, toRect, vertical) {
+          // strict 90deg L-shape: one horizontal + one vertical segment
           svg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
           svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+
+          let pts, len;
+          if (vertical) {
+            // toRect is BELOW fromRect: go straight down from fromRect bottom-left area
+            const fx = fromRect.left + 20,
+              fy = fromRect.bottom;
+            const tx = fx,
+              ty = toRect.top;
+            pts = `${fx},${fy} ${tx},${ty}`;
+            len = Math.abs(ty - fy);
+          } else {
+            // determine actual direction: is toRect to the right or left of fromRect?
+            const toIsRight = toRect.left >= fromRect.right - 1;
+            const fx = toIsRight ? fromRect.right : fromRect.left;
+            const fy = fromRect.top + 18;
+            const tx = toIsRight ? toRect.left : toRect.right;
+            const ty = toRect.top + 18;
+            const midX = (fx + tx) / 2;
+            pts = `${fx},${fy} ${midX},${fy} ${midX},${ty} ${tx},${ty}`;
+            len = Math.abs(midX - fx) + Math.abs(ty - fy) + Math.abs(tx - midX);
+          }
+
           svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.5"
             stroke-dasharray="${len}" stroke-dashoffset="${len}"
             style="animation:dashIn .4s ease forwards"/>`;
         }
 
-        let secondBox = null; // first placed secondary box
+        const hasExtra = !!perkData?.extra;
+        const hasImg = !!perkData?.img;
+        const hasCombo = !!(combo && Object.keys(combo).length);
 
-        // 1. IMG (2nd window — right of levels)
-        if (perkData?.img) {
-          imgHeader.textContent = perkData.name || 'Иллюстрация';
-          imgContent.innerHTML = `<img src="${perkData.img}" alt="${perkData.name || ''}" loading="lazy">`;
-          imgBox.style.display = 'flex';
-          imgBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-          const iw = 280,
-            ih = Math.min(imgBox.scrollHeight || 320, vhC * 0.7);
-          placeSecond(imgBox, iw, ih);
-          requestAnimationFrame(() =>
-            drawLine(
-              imgArwSvg,
-              tooltipEl.getBoundingClientRect(),
-              imgBox.getBoundingClientRect(),
-            ),
-          );
-          secondBox = imgBox;
-        }
+        if (hasExtra || hasImg || hasCombo) {
+          const TOP_MARGIN = 8,
+            BOTTOM_MARGIN = 8,
+            ROW_GAP = 12;
+          const usableH = vhC - TOP_MARGIN - BOTTOM_MARGIN;
 
-        // 2. EXTRA (2nd if no img, else 3rd = below 2nd)
-        // 3. COMBO — all placed after rAF so real sizes are known
-        const lvlData = (D.skillLevelDescriptions || {})[_comboPerkId];
-        const combo = lvlData?.combo || null;
-
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            // double rAF: img box is fully laid out now
-            if (perkData?.extra) {
-              const md =
-                typeof marked !== 'undefined'
-                  ? marked.parse(perkData.extra)
-                  : perkData.extra.replace(/\n/g, '<br>');
-              extraContent.innerHTML = md;
-              extraBox.style.display = 'flex';
-              extraBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-              const ew = 320,
-                eh = Math.min(extraBox.scrollHeight || 300, vhC * 0.7);
-              if (!secondBox) {
-                placeSecond(extraBox, ew, eh);
-                drawLine(
-                  extraSvg,
-                  tooltipEl.getBoundingClientRect(),
-                  extraBox.getBoundingClientRect(),
-                );
-                secondBox = extraBox;
-              } else {
-                // place strictly below secondBox using its REAL rendered rect
-                placeBelow(extraBox, secondBox.getBoundingClientRect(), ew, eh);
-                drawLine(
-                  extraSvg,
-                  secondBox.getBoundingClientRect(),
-                  extraBox.getBoundingClientRect(),
-                );
-              }
+          // anchor strictly to the ACTUAL rendered tooltip rect (already clamped to viewport)
+          const mainR = tooltipEl.getBoundingClientRect();
+          const colW = 320;
+          const COL_GAP = 36;
+          let colX, placedLeft;
+          // prefer the same side the tooltip itself is on
+          if (goRight) {
+            colX = mainR.right + COL_GAP;
+            placedLeft = false;
+            if (colX + colW > vwC - 4) {
+              colX = mainR.left - colW - COL_GAP;
+              placedLeft = true;
             }
+          } else {
+            colX = mainR.left - colW - COL_GAP;
+            placedLeft = true;
+            if (colX < 4) {
+              colX = mainR.right + COL_GAP;
+              placedLeft = false;
+            }
+          }
+          if (colX < 4) colX = 4;
+          if (colX + colW > vwC - 4) colX = vwC - colW - 4;
+          // align column top with the main tooltip's top, clamped to viewport
+          let colTop = mainR.top;
+          if (colTop < TOP_MARGIN) colTop = TOP_MARGIN;
 
-            if (combo && Object.keys(combo).length) {
-              comboLvls.innerHTML = Object.entries(combo)
-                .map(([partnerId, info]) => {
-                  let pname = partnerId,
-                    pcol = 'o';
-                  for (const skill of D.skills) {
-                    const found = skill.perks.find((pp) => pp.id === partnerId);
-                    if (found) {
-                      pname = found.name;
-                      const CM = {
-                        orange: 'o',
-                        red: 'r',
-                        blue: 'b',
-                        green: 'g',
-                        purple: 'p',
-                        yellow: 'y',
-                        black: 'k',
-                        o: 'o',
-                        r: 'r',
-                        b: 'b',
-                        g: 'g',
-                        p: 'p',
-                        y: 'y',
-                        k: 'k',
-                      };
-                      pcol = skill.color
-                        ? CM[skill.color.toLowerCase()] || skill.color[0]
-                        : chapterColour.get(skill);
-                      break;
-                    }
+          // populate content
+          const imgLoadPromises = [];
+          if (hasImg) {
+            imgHeader.textContent = perkData.name || 'Иллюстрация';
+            const imgEl = document.createElement('img');
+            imgEl.alt = perkData.name || '';
+            imgContent.innerHTML = '';
+            imgContent.appendChild(imgEl);
+            imgLoadPromises.push(
+              new Promise((resolve) => {
+                imgEl.addEventListener('load', resolve, { once: true });
+                imgEl.addEventListener('error', resolve, { once: true });
+              }),
+            );
+            imgEl.src = perkData.img;
+          }
+          if (hasExtra) {
+            const md =
+              typeof marked !== 'undefined'
+                ? marked.parse(perkData.extra)
+                : perkData.extra.replace(/\n/g, '<br>');
+            extraContent.innerHTML = md;
+          }
+          if (hasCombo) {
+            comboLvls.innerHTML = Object.entries(combo)
+              .map(([partnerId, info]) => {
+                let pname = partnerId,
+                  pcol = 'o';
+                for (const skill of D.skills) {
+                  const found = skill.perks.find((pp) => pp.id === partnerId);
+                  if (found) {
+                    pname = found.name;
+                    const CM = {
+                      orange: 'o',
+                      red: 'r',
+                      blue: 'b',
+                      green: 'g',
+                      purple: 'p',
+                      yellow: 'y',
+                      black: 'k',
+                      o: 'o',
+                      r: 'r',
+                      b: 'b',
+                      g: 'g',
+                      p: 'p',
+                      y: 'y',
+                      k: 'k',
+                    };
+                    pcol = skill.color
+                      ? CM[skill.color.toLowerCase()] || skill.color[0]
+                      : chapterColour.get(skill);
+                    break;
                   }
-                  const hex =
-                    {
-                      o: '#e09040',
-                      r: '#cc3838',
-                      b: '#3e80d0',
-                      g: '#28a860',
-                      p: '#7840c8',
-                      y: '#b89030',
-                      k: '#1a0000',
-                    }[pcol] || '#888';
-                  return `<div class="combo-item">
-              <div class="combo-item-hdr" style="--combo-glow:0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44">
-                <span class="combo-sq" data-rid="${partnerId}"
-                  style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer;transition:box-shadow .2s"
-                  onmouseenter="this.style.boxShadow='0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44'"
-                  onmouseleave="this.style.boxShadow=''"></span>
-                <span class="combo-item-name" data-rid="${partnerId}" style="cursor:pointer">${pname}</span>
-                ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
-              </div>
-              <div class="combo-item-desc">${info.desc || ''}</div>
-            </div>`;
-                })
-                .join('');
-              comboBox.style.display = 'flex';
-              comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-              const cw = 320,
-                ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
-              // combo always goes below secondBox (real rect now available in rAF)
-              const comboAnchor = secondBox || tooltipEl;
-              if (secondBox) {
-                placeBelow(
-                  comboBox,
-                  comboAnchor.getBoundingClientRect(),
-                  cw,
-                  ch,
-                );
-              } else {
-                placeSecond(comboBox, cw, ch);
-              }
-              console.log('drawLine combo called');
-              drawLine(
-                comboSvg,
-                comboAnchor.getBoundingClientRect(),
-                comboBox.getBoundingClientRect(),
-              );
-              console.log(
-                'comboSvg innerHTML:',
-                comboSvg.innerHTML.slice(0, 120),
-              );
+                }
+                const hex =
+                  {
+                    o: '#e09040',
+                    r: '#cc3838',
+                    b: '#3e80d0',
+                    g: '#28a860',
+                    p: '#7840c8',
+                    y: '#b89030',
+                    k: '#1a0000',
+                  }[pcol] || '#888';
+                return `<div class="combo-item">
+                <div class="combo-item-hdr" style="--combo-glow:0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44">
+                  <span class="combo-sq" data-rid="${partnerId}"
+                    style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer;transition:box-shadow .2s"
+                    onmouseenter="this.style.boxShadow='0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44'"
+                    onmouseleave="this.style.boxShadow=''"></span>
+                  <span class="combo-item-name" data-rid="${partnerId}" style="cursor:pointer">${pname}</span>
+                  ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
+                </div>
+                <div class="combo-item-desc">${info.desc || ''}</div>
+              </div>`;
+              })
+              .join('');
+          }
 
-              comboLvls.querySelectorAll &&
-                setTimeout(() => {
+          Promise.all(imgLoadPromises).then(() =>
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                // ── TILED LAYOUT: column slots are HARD-capped, never overlap, never off-screen ──
+                const slots = [hasExtra, hasImg].filter(Boolean).length;
+
+                // actual usable height FROM colTop down to the bottom margin
+                const usableFromTop = vhC - colTop - BOTTOM_MARGIN;
+
+                let extraRect = null,
+                  imgRect = null;
+
+                if (slots === 2) {
+                  // split usable height in half, with a gap between
+                  const slotH = Math.floor((usableFromTop - ROW_GAP) / 2);
+                  // EXTRA = top half
+                  extraBox.style.left = colX + 'px';
+                  extraBox.style.top = colTop + 'px';
+                  extraBox.style.width = colW + 'px';
+                  extraBox.style.maxHeight = slotH + 'px';
+                  extraBox.style.display = 'flex';
+                  // IMG = bottom half
+                  const imgTop = colTop + slotH + ROW_GAP;
+                  imgBox.style.left = colX + 'px';
+                  imgBox.style.top = imgTop + 'px';
+                  imgBox.style.width = colW + 'px';
+                  imgBox.style.maxHeight = slotH + 'px';
+                  imgBox.style.display = 'flex';
+
+                  extraRect = extraBox.getBoundingClientRect();
+                  imgRect = imgBox.getBoundingClientRect();
+                  drawLine(extraSvg, mainR, extraRect);
+                  drawLine(imgArwSvg, extraRect, imgRect, true);
+                } else if (hasExtra) {
+                  extraBox.style.left = colX + 'px';
+                  extraBox.style.top = colTop + 'px';
+                  extraBox.style.width = colW + 'px';
+                  extraBox.style.maxHeight =
+                    vhC - colTop - BOTTOM_MARGIN + 'px';
+                  extraBox.style.display = 'flex';
+                  extraRect = extraBox.getBoundingClientRect();
+                  drawLine(extraSvg, mainR, extraRect);
+                } else if (hasImg) {
+                  imgBox.style.left = colX + 'px';
+                  imgBox.style.top = colTop + 'px';
+                  imgBox.style.width = colW + 'px';
+                  imgBox.style.maxHeight = vhC - colTop - BOTTOM_MARGIN + 'px';
+                  imgBox.style.display = 'flex';
+                  imgRect = imgBox.getBoundingClientRect();
+                  drawLine(imgArwSvg, mainR, imgRect);
+                }
+
+                // COMBO: to the right of the column, else below the column
+                if (hasCombo) {
+                  const colRect =
+                    imgRect && extraRect
+                      ? {
+                          left: Math.min(extraRect.left, imgRect.left),
+                          right: Math.max(extraRect.right, imgRect.right),
+                          top: Math.min(extraRect.top, imgRect.top),
+                          bottom: Math.max(extraRect.bottom, imgRect.bottom),
+                        }
+                      : extraRect || imgRect || mainR;
+
+                  const cw = 320;
+                  comboBox.style.display = 'flex';
+                  comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
+                  let cx = colRect.right + 20,
+                    cy = colRect.top;
+                  if (cx + cw > vwC - 4) {
+                    // no room to the right → place below the column
+                    cx = colRect.left;
+                    cy = colRect.bottom + 16;
+                  }
+                  const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
+                  if (cy + ch > vhC - 8) cy = vhC - ch - 8;
+                  if (cy < 8) cy = 8;
+                  if (cx < 4) cx = 4;
+                  comboBox.style.left = cx + 'px';
+                  comboBox.style.top = cy + 'px';
+                  const comboRect = comboBox.getBoundingClientRect();
+                  drawLine(comboSvg, colRect, comboRect);
+
                   comboLvls
                     .querySelectorAll('.combo-sq, .combo-item-name')
                     .forEach((sq) => {
@@ -2291,10 +2336,11 @@
                         }, 500);
                       });
                     });
-                }, 50);
-            }
-          }),
-        ); // end requestAnimationFrame
+                }
+              }),
+            ),
+          );
+        }
 
         // draw L-line
         const ttHeaderMidY = y + 18;
@@ -2345,7 +2391,7 @@
       ttOverlay.addEventListener('click', hideTooltip);
 
       // ── SVG CONNECTOR DRAWING ──
-      function svgLine(x1, y1, x2, y2, stroke, sw = 1) {
+      function svgLine(x1, y1, x2, y2, stroke, sw = 1.5) {
         const l = document.createElementNS(
           'http://www.w3.org/2000/svg',
           'line',
