@@ -1996,304 +1996,300 @@
         ttOverlay.style.display = 'block';
         ttOverlay.style.background = 'rgba(0,0,0,.6)';
 
-        // ── EXTRA WINDOW ──
+        // ── SECONDARY WINDOWS: img → extra → combo (chain) ──
+        // Order: [levels] → [img] → [extra] → [combo]
+        // 2nd window: right of levels
+        // 3rd+ window: below 2nd window
         const extraBox = document.getElementById('extra-box');
         const extraContent = document.getElementById('extra-content');
         const extraSvg = document.getElementById('extra-arrow-svg');
-        const perkData = D.skills
-          .flatMap((s) => s.perks)
-          .find((p) => p.id === _comboPerkId);
-        extraBox.style.display = 'none';
-        extraSvg.style.display = 'none';
-
-        if (perkData?.extra) {
-          const md =
-            typeof marked !== 'undefined'
-              ? marked.parse(perkData.extra)
-              : perkData.extra.replace(/\n/g, '<br>');
-          extraContent.innerHTML = md;
-          extraBox.style.display = 'flex';
-          const ew = 320,
-            vh_e = window.innerHeight,
-            vw_e = window.innerWidth;
-          extraBox.style.maxHeight = Math.floor(vh_e * 0.7) + 'px';
-          const mainR2 = tooltipEl.getBoundingClientRect();
-          // position right of main tooltip
-          let ex = mainR2.right + 20;
-          if (ex + ew > vw_e - 4) ex = mainR2.left - ew - 20;
-          if (ex < 4) ex = 4;
-          const eh = Math.min(extraBox.scrollHeight, Math.floor(vh_e * 0.7));
-          let ey = mainR2.top;
-          if (ey + eh > vh_e - 8) ey = vh_e - eh - 8;
-          if (ey < 8) ey = 8;
-          extraBox.style.left = ex + 'px';
-          extraBox.style.top = ey + 'px';
-
-          requestAnimationFrame(() => {
-            const er2 = extraBox.getBoundingClientRect();
-            const mr2 = tooltipEl.getBoundingClientRect();
-            const fromX = mr2.right,
-              fromY = mr2.top + 18;
-            const toX = er2.left,
-              toY = er2.top + 18;
-            const midX = (fromX + toX) / 2;
-            const pts = `${fromX},${fromY} ${midX},${fromY} ${midX},${toY} ${toX},${toY}`;
-            const len =
-              Math.abs(midX - fromX) +
-              Math.abs(toY - fromY) +
-              Math.abs(toX - midX);
-            extraSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw_e}px;height:${vh_e}px;pointer-events:none;z-index:499;overflow:visible;`;
-            extraSvg.setAttribute('viewBox', `0 0 ${vw_e} ${vh_e}`);
-            extraSvg.innerHTML = `<polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
-        stroke-dasharray="${len}" stroke-dashoffset="${len}"
-        style="animation:dashIn .4s ease forwards"/>`;
-          });
-        }
-
-        // ── IMAGE WINDOW ──
         const imgBox = document.getElementById('img-box');
         const imgContent = document.getElementById('img-content');
         const imgHeader = document.getElementById('img-header');
         const imgArwSvg = document.getElementById('img-arrow-svg');
+        const comboBox = document.getElementById('combo-box');
+        const comboLvls = document.getElementById('combo-levels');
+        const comboSvg = document.getElementById('combo-arrow-svg');
+
+        extraBox.style.display = 'none';
+        extraSvg.style.display = 'none';
         imgBox.style.display = 'none';
         imgArwSvg.style.display = 'none';
+        comboBox.style.display = 'none';
+        comboSvg.style.display = 'none';
 
+        const perkData = D.skills
+          .flatMap((s) => s.perks)
+          .find((p) => p.id === _comboPerkId);
+        const vwC = window.innerWidth,
+          vhC = window.innerHeight;
+
+        // place 2nd box: right of levels tooltip
+        function placeSecond(box, w, h) {
+          const mr = tooltipEl.getBoundingClientRect();
+          let bx = mr.right + 20,
+            by = mr.top;
+          if (bx + w > vwC - 4) {
+            bx = mr.left - w - 20;
+          }
+          if (bx < 4) bx = 4;
+          if (by + h > vhC - 8) by = vhC - h - 8;
+          if (by < 8) by = 8;
+          box.style.left = bx + 'px';
+          box.style.top = by + 'px';
+        }
+        // place 3rd+ box: below previous box, left-aligned with it
+        function placeBelow(box, anchorRect, w, h) {
+          // strictly below: top = anchor bottom + gap
+          let bx = anchorRect.left;
+          let by = anchorRect.bottom + 16;
+          console.log('placeBelow', {
+            anchorBottom: anchorRect.bottom,
+            anchorLeft: anchorRect.left,
+            by,
+            bx,
+          });
+          if (by + h > vhC - 8) by = vhC - h - 8;
+          if (by < 8) by = 8;
+          if (bx + w > vwC - 4) bx = vwC - w - 4;
+          if (bx < 4) bx = 4;
+          box.style.left = bx + 'px';
+          box.style.top = by + 'px';
+          box.style.right = 'auto';
+          console.log('placeBelow result', { bx, by });
+        }
+        function drawLine(svg, fromRect, toRect) {
+          const fx = fromRect.right,
+            fy = fromRect.top + 18;
+          const tx = toRect.left,
+            ty = toRect.top + 18;
+          const mx = (fx + tx) / 2;
+          const pts = `${fx},${fy} ${mx},${fy} ${mx},${ty} ${tx},${ty}`;
+          const len = Math.abs(mx - fx) + Math.abs(ty - fy) + Math.abs(tx - mx);
+          svg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+          svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+          svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
+            stroke-dasharray="${len}" stroke-dashoffset="${len}"
+            style="animation:dashIn .4s ease forwards"/>`;
+        }
+
+        let secondBox = null; // first placed secondary box
+
+        // 1. IMG (2nd window — right of levels)
         if (perkData?.img) {
           imgHeader.textContent = perkData.name || 'Иллюстрация';
           imgContent.innerHTML = `<img src="${perkData.img}" alt="${perkData.name || ''}" loading="lazy">`;
           imgBox.style.display = 'flex';
-
-          const vw_i = window.innerWidth,
-            vh_i = window.innerHeight;
-          const iw = 280;
-          const mainR_i = tooltipEl.getBoundingClientRect();
-          // position right of main tooltip (after extra if present)
-          const extraVisible_i = extraBox.style.display === 'flex';
-          const rightEdge_i = extraVisible_i
-            ? extraBox.getBoundingClientRect().right
-            : mainR_i.right;
-          let ix = rightEdge_i + 20;
-          if (ix + iw > vw_i - 4) ix = mainR_i.left - iw - 20;
-          if (ix < 4) ix = 4;
-          const ih = Math.min(imgBox.scrollHeight || 360, vh_i * 0.7);
-          let iy = mainR_i.top;
-          if (iy + ih > vh_i - 8) iy = vh_i - ih - 8;
-          if (iy < 8) iy = 8;
-          imgBox.style.left = ix + 'px';
-          imgBox.style.top = iy + 'px';
-
-          // draw connector from right edge of main tooltip header → img-box header
-          requestAnimationFrame(() => {
-            const mr_i = tooltipEl.getBoundingClientRect();
-            const ir_i = imgBox.getBoundingClientRect();
-            const fromX = mr_i.right,
-              fromY = mr_i.top + 18;
-            const toX = ir_i.left,
-              toY = ir_i.top + 18;
-            const midX = (fromX + toX) / 2;
-            const pts = `${fromX},${fromY} ${midX},${fromY} ${midX},${toY} ${toX},${toY}`;
-            const len =
-              Math.abs(midX - fromX) +
-              Math.abs(toY - fromY) +
-              Math.abs(toX - midX);
-            imgArwSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw_i}px;height:${vh_i}px;pointer-events:none;z-index:499;overflow:visible;`;
-            imgArwSvg.setAttribute('viewBox', `0 0 ${vw_i} ${vh_i}`);
-            imgArwSvg.innerHTML = `
-        <polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
-          stroke-dasharray="${len}" stroke-dashoffset="${len}"
-          style="animation:dashIn .4s ease forwards"/>`;
-          });
+          imgBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
+          const iw = 280,
+            ih = Math.min(imgBox.scrollHeight || 320, vhC * 0.7);
+          placeSecond(imgBox, iw, ih);
+          requestAnimationFrame(() =>
+            drawLine(
+              imgArwSvg,
+              tooltipEl.getBoundingClientRect(),
+              imgBox.getBoundingClientRect(),
+            ),
+          );
+          secondBox = imgBox;
         }
 
-        // ── COMBO WINDOW ──
-        const comboBox = document.getElementById('combo-box');
-        const comboLvls = document.getElementById('combo-levels');
-        const comboSvg = document.getElementById('combo-arrow-svg');
+        // 2. EXTRA (2nd if no img, else 3rd = below 2nd)
+        // 3. COMBO — all placed after rAF so real sizes are known
         const lvlData = (D.skillLevelDescriptions || {})[_comboPerkId];
         const combo = lvlData?.combo || null;
 
-        comboBox.style.display = 'none';
-        comboSvg.style.display = 'none';
-
-        if (combo && Object.keys(combo).length) {
-          comboLvls.innerHTML = Object.entries(combo)
-            .map(([partnerId, info]) => {
-              // find partner name and colour
-              let pname = partnerId,
-                pcol = 'o';
-              for (const skill of D.skills) {
-                const found = skill.perks.find((pp) => pp.id === partnerId);
-                if (found) {
-                  pname = found.name;
-                  const CM = {
-                    orange: 'o',
-                    red: 'r',
-                    blue: 'b',
-                    green: 'g',
-                    purple: 'p',
-                    yellow: 'y',
-                    o: 'o',
-                    r: 'r',
-                    b: 'b',
-                    g: 'g',
-                    p: 'p',
-                    y: 'y',
-                  };
-                  pcol = skill.color
-                    ? CM[skill.color.toLowerCase()] || skill.color[0]
-                    : chapterColour.get(skill);
-                  break;
-                }
-              }
-              const hex =
-                {
-                  o: '#e09040',
-                  r: '#cc3838',
-                  b: '#3e80d0',
-                  g: '#28a860',
-                  p: '#7840c8',
-                  y: '#b89030',
-                }[pcol] || '#888';
-              return `<div class="combo-item">
-        <div class="combo-item-hdr" style="--combo-glow: 0 0 6px 3px ${hex}88, 0 0 14px 5px ${hex}44">
-          <span class="combo-sq" data-rid="${partnerId}"
-            style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer;transition:box-shadow .2s"></span>
-          <span class="combo-item-name" data-rid="${partnerId}" style="cursor:pointer">${pname}</span>
-          ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
-        </div>
-        <div class="combo-item-desc">${info.desc || ''}</div>
-      </div>`;
-            })
-            .join('');
-
-          comboBox.style.display = 'flex';
-          // if extra box also visible, shift combo further right
-          const extraR =
-            extraBox.style.display === 'flex'
-              ? extraBox.getBoundingClientRect()
-              : null;
-          comboLvls.querySelectorAll &&
-            setTimeout(() => {
-              comboLvls
-                .querySelectorAll('.combo-sq, .combo-item-name')
-                .forEach((sq) => {
-                  sq.addEventListener('click', () => {
-                    const rid = sq.dataset.rid;
-                    const allPerks = document.querySelectorAll('.perk');
-                    let target = null;
-                    for (const pe of allPerks) {
-                      if (pe.dataset.perkId === rid) {
-                        target = pe;
-                        break;
-                      }
-                    }
-                    if (!target) return;
-                    hideTooltip();
-                    target.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'center',
-                    });
-                    setTimeout(() => {
-                      let fo = document.getElementById('focus-overlay');
-                      if (!fo) {
-                        fo = document.createElement('div');
-                        fo.id = 'focus-overlay';
-                        fo.style.cssText =
-                          'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
-                        document.body.appendChild(fo);
-                      }
-                      requestAnimationFrame(() => {
-                        fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
-                      });
-                      target.style.position = 'relative';
-                      target.style.zIndex = '51';
-                      const _ic2 = target.querySelector('.perk-icon');
-                      const _cm2 = {
-                        'ic-o': '#e09040',
-                        'ic-r': '#cc3838',
-                        'ic-b': '#3e80d0',
-                        'ic-g': '#28a860',
-                        'ic-p': '#7840c8',
-                        'ic-y': '#b89030',
-                      };
-                      const _hex2 =
-                        Object.entries(_cm2).find(
-                          ([k]) => _ic2 && _ic2.classList.contains(k),
-                        )?.[1] || '#e09040';
-                      target.style.transition = 'box-shadow .35s ease';
-                      target.style.boxShadow = `0 0 0 2px ${_hex2}, 0 0 30px ${_hex2}80`;
-                      function clearFocus() {
-                        fo.style.background = 'rgba(0,0,0,0)';
-                        target.style.boxShadow = '';
-                        window.removeEventListener('scroll', clearFocus, {
-                          passive: true,
-                        });
-                        window.removeEventListener('click', clearFocus);
-                        window.removeEventListener('keydown', clearFocus);
-                        setTimeout(() => {
-                          fo.remove();
-                          target.style.position = '';
-                          target.style.zIndex = '';
-                          target.style.transition = '';
-                        }, 350);
-                      }
-                      fo.addEventListener('click', clearFocus);
-                      setTimeout(() => {
-                        window.addEventListener('scroll', clearFocus, {
-                          once: true,
-                          passive: true,
-                        });
-                        window.addEventListener('keydown', clearFocus, {
-                          once: true,
-                        });
-                      }, 400);
-                    }, 500);
-                  });
-                });
-            }, 50);
-          // position: below and right of main tooltip
-          const mainR = tooltipEl.getBoundingClientRect();
-          const cw = 320,
-            vh2 = window.innerHeight;
-          const extraVisible = extraBox.style.display === 'flex';
-          const extraRight = extraVisible
-            ? extraBox.getBoundingClientRect().right
-            : mainR.right;
-          let cx2 = extraRight + 20;
-          if (cx2 + cw > window.innerWidth - 4) cx2 = mainR.left - cw - 20;
-          comboBox.style.maxHeight = Math.floor(vh2 * 0.7) + 'px';
-          const ch = Math.min(comboBox.scrollHeight, Math.floor(vh2 * 0.7));
-          // align top of combo with top of main tooltip header
-          let cy2 = mainR.top;
-          if (cy2 + ch > vh2 - 8) cy2 = vh2 - ch - 8;
-          if (cy2 < 8) cy2 = 8;
-          comboBox.style.left = cx2 + 'px';
-          comboBox.style.top = cy2 + 'px';
-
-          // draw connector: from right edge of tt-header → right → down to combo top-left
+        requestAnimationFrame(() =>
           requestAnimationFrame(() => {
-            const mr = tooltipEl.getBoundingClientRect();
-            const cr = comboBox.getBoundingClientRect();
-            const vw3 = window.innerWidth,
-              vh3 = window.innerHeight;
-            const startX = mr.right,
-              startY = mr.top + 18; // header mid
-            const endX = cr.left,
-              endY = cr.top + 18;
-            const midX = (startX + endX) / 2;
-            comboSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vw3}px;height:${vh3}px;pointer-events:none;z-index:499;overflow:visible;`;
-            comboSvg.setAttribute('viewBox', `0 0 ${vw3} ${vh3}`);
-            const pts = `${startX},${startY} ${midX},${startY} ${midX},${endY} ${endX},${endY}`;
-            const len =
-              Math.abs(midX - startX) +
-              Math.abs(endY - startY) +
-              Math.abs(endX - midX);
-            comboSvg.innerHTML = `
-        <polyline points="${pts}" fill="none" stroke="#50556a" stroke-width="1.2"
-          stroke-dasharray="${len}" stroke-dashoffset="${len}"
-          style="animation:dashIn .4s ease forwards"/>`;
-          });
-        }
+            // double rAF: img box is fully laid out now
+            if (perkData?.extra) {
+              const md =
+                typeof marked !== 'undefined'
+                  ? marked.parse(perkData.extra)
+                  : perkData.extra.replace(/\n/g, '<br>');
+              extraContent.innerHTML = md;
+              extraBox.style.display = 'flex';
+              extraBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
+              const ew = 320,
+                eh = Math.min(extraBox.scrollHeight || 300, vhC * 0.7);
+              if (!secondBox) {
+                placeSecond(extraBox, ew, eh);
+                drawLine(
+                  extraSvg,
+                  tooltipEl.getBoundingClientRect(),
+                  extraBox.getBoundingClientRect(),
+                );
+                secondBox = extraBox;
+              } else {
+                // place strictly below secondBox using its REAL rendered rect
+                placeBelow(extraBox, secondBox.getBoundingClientRect(), ew, eh);
+                drawLine(
+                  extraSvg,
+                  secondBox.getBoundingClientRect(),
+                  extraBox.getBoundingClientRect(),
+                );
+              }
+            }
+
+            if (combo && Object.keys(combo).length) {
+              comboLvls.innerHTML = Object.entries(combo)
+                .map(([partnerId, info]) => {
+                  let pname = partnerId,
+                    pcol = 'o';
+                  for (const skill of D.skills) {
+                    const found = skill.perks.find((pp) => pp.id === partnerId);
+                    if (found) {
+                      pname = found.name;
+                      const CM = {
+                        orange: 'o',
+                        red: 'r',
+                        blue: 'b',
+                        green: 'g',
+                        purple: 'p',
+                        yellow: 'y',
+                        black: 'k',
+                        o: 'o',
+                        r: 'r',
+                        b: 'b',
+                        g: 'g',
+                        p: 'p',
+                        y: 'y',
+                        k: 'k',
+                      };
+                      pcol = skill.color
+                        ? CM[skill.color.toLowerCase()] || skill.color[0]
+                        : chapterColour.get(skill);
+                      break;
+                    }
+                  }
+                  const hex =
+                    {
+                      o: '#e09040',
+                      r: '#cc3838',
+                      b: '#3e80d0',
+                      g: '#28a860',
+                      p: '#7840c8',
+                      y: '#b89030',
+                      k: '#1a0000',
+                    }[pcol] || '#888';
+                  return `<div class="combo-item">
+              <div class="combo-item-hdr" style="--combo-glow:0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44">
+                <span class="combo-sq" data-rid="${partnerId}"
+                  style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer;transition:box-shadow .2s"
+                  onmouseenter="this.style.boxShadow='0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44'"
+                  onmouseleave="this.style.boxShadow=''"></span>
+                <span class="combo-item-name" data-rid="${partnerId}" style="cursor:pointer">${pname}</span>
+                ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
+              </div>
+              <div class="combo-item-desc">${info.desc || ''}</div>
+            </div>`;
+                })
+                .join('');
+              comboBox.style.display = 'flex';
+              comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
+              const cw = 320,
+                ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
+              // combo always goes below secondBox (real rect now available in rAF)
+              const comboAnchor = secondBox || tooltipEl;
+              if (secondBox) {
+                placeBelow(
+                  comboBox,
+                  comboAnchor.getBoundingClientRect(),
+                  cw,
+                  ch,
+                );
+              } else {
+                placeSecond(comboBox, cw, ch);
+              }
+              drawLine(
+                comboSvg,
+                comboAnchor.getBoundingClientRect(),
+                comboBox.getBoundingClientRect(),
+              );
+
+              comboLvls.querySelectorAll &&
+                setTimeout(() => {
+                  comboLvls
+                    .querySelectorAll('.combo-sq, .combo-item-name')
+                    .forEach((sq) => {
+                      sq.addEventListener('click', () => {
+                        const rid = sq.dataset.rid;
+                        const allPerks = document.querySelectorAll('.perk');
+                        let target = null;
+                        for (const pe of allPerks) {
+                          if (pe.dataset.perkId === rid) {
+                            target = pe;
+                            break;
+                          }
+                        }
+                        if (!target) return;
+                        hideTooltip();
+                        target.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center',
+                        });
+                        setTimeout(() => {
+                          let fo = document.getElementById('focus-overlay');
+                          if (!fo) {
+                            fo = document.createElement('div');
+                            fo.id = 'focus-overlay';
+                            fo.style.cssText =
+                              'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
+                            document.body.appendChild(fo);
+                          }
+                          requestAnimationFrame(() => {
+                            fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+                          });
+                          target.style.position = 'relative';
+                          target.style.zIndex = '51';
+                          target.style.transition = 'box-shadow .35s ease';
+                          const _ic = target.querySelector('.perk-icon');
+                          const _cm = {
+                            'ic-o': '#e09040',
+                            'ic-r': '#cc3838',
+                            'ic-b': '#3e80d0',
+                            'ic-g': '#28a860',
+                            'ic-p': '#7840c8',
+                            'ic-y': '#b89030',
+                            'ic-k': '#1a0000',
+                          };
+                          const _hex =
+                            Object.entries(_cm).find(
+                              ([k]) => _ic && _ic.classList.contains(k),
+                            )?.[1] || '#e09040';
+                          target.style.boxShadow = `0 0 0 2px ${_hex},0 0 30px ${_hex}80`;
+                          function clearFocus() {
+                            fo.style.background = 'rgba(0,0,0,0)';
+                            target.style.boxShadow = '';
+                            window.removeEventListener('scroll', clearFocus, {
+                              passive: true,
+                            });
+                            window.removeEventListener('click', clearFocus);
+                            window.removeEventListener('keydown', clearFocus);
+                            setTimeout(() => {
+                              fo.remove();
+                              target.style.position = '';
+                              target.style.zIndex = '';
+                              target.style.transition = '';
+                            }, 350);
+                          }
+                          fo.addEventListener('click', clearFocus);
+                          setTimeout(() => {
+                            window.addEventListener('scroll', clearFocus, {
+                              once: true,
+                              passive: true,
+                            });
+                            window.addEventListener('keydown', clearFocus, {
+                              once: true,
+                            });
+                          }, 400);
+                        }, 500);
+                      });
+                    });
+                }, 50);
+            }
+          }),
+        ); // end requestAnimationFrame
 
         // draw L-line
         const ttHeaderMidY = y + 18;
