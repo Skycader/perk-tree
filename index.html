@@ -2238,7 +2238,8 @@
                   drawLine(imgArwSvg, mainR, imgRect);
                 }
 
-                // COMBO: to the right of the column, else below the column
+                // COMBO: ALWAYS stacks below the column (extra/img), never beside it.
+                // This guarantees a consistent "3rd window below 2nd" rule with zero overlap risk.
                 if (hasCombo) {
                   const colRect =
                     imgRect && extraRect
@@ -2254,25 +2255,8 @@
                   comboBox.style.display = 'flex';
                   comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
 
-                  // respect the SAME side as the rest of the chain (goRight/placedLeft)
-                  let cx,
-                    cy = colRect.top;
-                  if (!placedLeft) {
-                    cx = colRect.right + 20;
-                    if (cx + cw > vwC - 4) {
-                      cx = colRect.left - cw - 20;
-                    }
-                  } else {
-                    cx = colRect.left - cw - 20;
-                    if (cx < 4) {
-                      cx = colRect.right + 20;
-                    }
-                  }
-                  // if neither side fits at all, fall back to stacking below the column
-                  if (cx < 4 || cx + cw > vwC - 4) {
-                    cx = colRect.left;
-                    cy = colRect.bottom + 16;
-                  }
+                  let cx = colRect.left;
+                  let cy = colRect.bottom + 16;
 
                   const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
                   if (cy + ch > vhC - 8) cy = vhC - ch - 8;
@@ -2282,7 +2266,7 @@
                   comboBox.style.left = cx + 'px';
                   comboBox.style.top = cy + 'px';
                   const comboRect = comboBox.getBoundingClientRect();
-                  drawLine(comboSvg, colRect, comboRect);
+                  drawLine(comboSvg, colRect, comboRect, true);
 
                   comboLvls
                     .querySelectorAll('.combo-sq, .combo-item-name')
