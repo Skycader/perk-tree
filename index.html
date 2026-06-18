@@ -2253,17 +2253,32 @@
                   const cw = 320;
                   comboBox.style.display = 'flex';
                   comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-                  let cx = colRect.right + 20,
+
+                  // respect the SAME side as the rest of the chain (goRight/placedLeft)
+                  let cx,
                     cy = colRect.top;
-                  if (cx + cw > vwC - 4) {
-                    // no room to the right → place below the column
+                  if (!placedLeft) {
+                    cx = colRect.right + 20;
+                    if (cx + cw > vwC - 4) {
+                      cx = colRect.left - cw - 20;
+                    }
+                  } else {
+                    cx = colRect.left - cw - 20;
+                    if (cx < 4) {
+                      cx = colRect.right + 20;
+                    }
+                  }
+                  // if neither side fits at all, fall back to stacking below the column
+                  if (cx < 4 || cx + cw > vwC - 4) {
                     cx = colRect.left;
                     cy = colRect.bottom + 16;
                   }
+
                   const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
                   if (cy + ch > vhC - 8) cy = vhC - ch - 8;
                   if (cy < 8) cy = 8;
                   if (cx < 4) cx = 4;
+                  if (cx + cw > vwC - 4) cx = vwC - cw - 4;
                   comboBox.style.left = cx + 'px';
                   comboBox.style.top = cy + 'px';
                   const comboRect = comboBox.getBoundingClientRect();
