@@ -823,11 +823,25 @@
         padding: 10px;
         overflow: hidden;
       }
-      #img-content img {
+      #img-content img,
+      #img-content video {
         max-width: 100%;
         max-height: 340px;
         object-fit: contain;
         border-radius: 2px;
+      }
+      /* hide any native video chrome (progress bar / controls) on hover or otherwise */
+      #img-content video::-webkit-media-controls,
+      #img-content video::-webkit-media-controls-panel,
+      #img-content video::-webkit-media-controls-play-button,
+      #img-content video::-webkit-media-controls-timeline,
+      #img-content video::-webkit-media-controls-volume-slider {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+      #img-content video {
+        pointer-events: none;
       }
 
       #extra-box {
@@ -2107,21 +2121,45 @@
           let colTop = mainR.top;
           if (colTop < TOP_MARGIN) colTop = TOP_MARGIN;
 
-          // populate content
+          // populate content — supports static images AND mp4 (auto-looped, muted, no controls)
           const imgLoadPromises = [];
           if (hasImg) {
             imgHeader.textContent = perkData.name || 'Иллюстрация';
-            const imgEl = document.createElement('img');
-            imgEl.alt = perkData.name || '';
             imgContent.innerHTML = '';
-            imgContent.appendChild(imgEl);
-            imgLoadPromises.push(
-              new Promise((resolve) => {
-                imgEl.addEventListener('load', resolve, { once: true });
-                imgEl.addEventListener('error', resolve, { once: true });
-              }),
-            );
-            imgEl.src = perkData.img;
+            const isVideo = /\.mp4($|\?)/i.test(perkData.img);
+
+            if (isVideo) {
+              const vidEl = document.createElement('video');
+              vidEl.src = perkData.img;
+              vidEl.autoplay = true;
+              vidEl.loop = true;
+              vidEl.muted = true;
+              vidEl.playsInline = true;
+              vidEl.controls = false;
+              vidEl.disablePictureInPicture = true;
+              vidEl.setAttribute(
+                'controlsList',
+                'nodownload nofullscreen noremoteplayback',
+              );
+              imgContent.appendChild(vidEl);
+              imgLoadPromises.push(
+                new Promise((resolve) => {
+                  vidEl.addEventListener('loadeddata', resolve, { once: true });
+                  vidEl.addEventListener('error', resolve, { once: true });
+                }),
+              );
+            } else {
+              const imgEl = document.createElement('img');
+              imgEl.alt = perkData.name || '';
+              imgContent.appendChild(imgEl);
+              imgLoadPromises.push(
+                new Promise((resolve) => {
+                  imgEl.addEventListener('load', resolve, { once: true });
+                  imgEl.addEventListener('error', resolve, { once: true });
+                }),
+              );
+              imgEl.src = perkData.img;
+            }
           }
           if (hasExtra) {
             const md =
