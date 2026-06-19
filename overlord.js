@@ -77,7 +77,11 @@ const STAND_DATA = {
         {
           id: 'standLifeSupport',
           name: 'Жизнеобеспечение',
-          requiredPerks: ['standHealing', 'standMirrorStorage'],
+          requiredPerks: [
+            'standHealing',
+            'standMirrorStorage',
+            'standKineticContour',
+          ],
           description:
             'Определяет автономность биологического организма хозяина в экстремальных средах. Включает расчет длительности работы органов без кислорода, воды и нутриентов, параметры термодинамического поглощения или рассеивания внешнего тепла до 50 000 К, а также барьерную защиту от радиационного фона в Зивертах.',
         },
