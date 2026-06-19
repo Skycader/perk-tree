@@ -2311,20 +2311,21 @@
                   } else {
                     // single window → try beside it on the same side as the rest of the chain
                     cy = colRect.top;
+                    function overlapsMain(testX) {
+                      return (
+                        testX < mainR.right + 16 && testX + cw > mainR.left - 16
+                      );
+                    }
                     if (!placedLeft) {
                       cx = colRect.right + 20;
-                      if (cx + cw > vwC - 4) cx = colRect.left - cw - 20;
+                      if (cx + cw > vwC - 4 || overlapsMain(cx))
+                        cx = colRect.left - cw - 20;
                     } else {
                       cx = colRect.left - cw - 20;
-                      // if going left would overlap the main tooltip (mainR), there's no room there
-                      if (cx < 4 || cx < mainR.right + 20) {
-                        cx = colRect.right + 20;
-                      }
+                      if (cx < 4 || overlapsMain(cx)) cx = colRect.right + 20;
                     }
-                    // truly no horizontal room either side, or it would overlap mainR → stack below
-                    const wouldOverlapMain =
-                      cx < mainR.right + 20 && cx + cw > mainR.left - 20;
-                    if (cx < 4 || cx + cw > vwC - 4 || wouldOverlapMain) {
+                    // truly no room on either side, or both candidates collide with mainR → stack below
+                    if (cx < 4 || cx + cw > vwC - 4 || overlapsMain(cx)) {
                       cx = colRect.left;
                       cy = colRect.bottom + 16;
                     }
