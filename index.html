@@ -2283,10 +2283,9 @@
                   drawLine(imgArwSvg, mainR, imgRect);
                 }
 
-                // COMBO placement rule:
-                //  - if the column has BOTH extra+img (stacked, full height used) → combo goes BELOW the column
-                //  - if the column has only ONE of them → combo goes beside it (same side as goRight),
-                //    falling back to below only if there's truly no horizontal room
+                // COMBO placement rule: ALWAYS strictly below the column (extra/img), no exceptions.
+                // This is the only rule that can never overlap anything, regardless of which
+                // column the perk is in or how many secondary windows precede it.
                 if (hasCombo) {
                   const colRect =
                     imgRect && extraRect
@@ -2298,38 +2297,12 @@
                         }
                       : extraRect || imgRect || mainR;
 
-                  const bothStacked = !!(imgRect && extraRect);
                   const cw = 320;
                   comboBox.style.display = 'flex';
                   comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
 
-                  let cx, cy;
-                  if (bothStacked) {
-                    // column is already fully used top-to-bottom → only room is below
-                    cx = colRect.left;
-                    cy = colRect.bottom + 16;
-                  } else {
-                    // single window → try beside it on the same side as the rest of the chain
-                    cy = colRect.top;
-                    function overlapsMain(testX) {
-                      return (
-                        testX < mainR.right + 16 && testX + cw > mainR.left - 16
-                      );
-                    }
-                    if (!placedLeft) {
-                      cx = colRect.right + 20;
-                      if (cx + cw > vwC - 4 || overlapsMain(cx))
-                        cx = colRect.left - cw - 20;
-                    } else {
-                      cx = colRect.left - cw - 20;
-                      if (cx < 4 || overlapsMain(cx)) cx = colRect.right + 20;
-                    }
-                    // truly no room on either side, or both candidates collide with mainR → stack below
-                    if (cx < 4 || cx + cw > vwC - 4 || overlapsMain(cx)) {
-                      cx = colRect.left;
-                      cy = colRect.bottom + 16;
-                    }
-                  }
+                  let cx = colRect.left;
+                  let cy = colRect.bottom + 16;
 
                   const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
                   if (cy + ch > vhC - 8) cy = vhC - ch - 8;
