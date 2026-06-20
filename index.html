@@ -2283,10 +2283,12 @@
                   drawLine(imgArwSvg, mainR, imgRect);
                 }
 
-                // COMBO placement rule: ALWAYS strictly below the column (extra/img), no exceptions.
-                // This is the only rule that can never overlap anything, regardless of which
-                // column the perk is in or how many secondary windows precede it.
+                // COMBO placement rule:
+                //  - if there IS a column (extra and/or img already shown) → combo goes BELOW that column
+                //  - if combo is the ONLY secondary window (no extra, no img) → it IS the "2nd window",
+                //    so it goes BESIDE the levels tooltip, same side as the rest of the chain (placedLeft)
                 if (hasCombo) {
+                  const isOnlySecondary = !extraRect && !imgRect;
                   const colRect =
                     imgRect && extraRect
                       ? {
@@ -2301,8 +2303,22 @@
                   comboBox.style.display = 'flex';
                   comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
 
-                  let cx = colRect.left;
-                  let cy = colRect.bottom + 16;
+                  let cx, cy, isBelow;
+                  if (isOnlySecondary) {
+                    // act as the 2nd window: beside the levels tooltip, same side as placedLeft
+                    cy = mainR.top;
+                    if (!placedLeft) {
+                      cx = mainR.right + 36;
+                    } else {
+                      cx = mainR.left - cw - 36;
+                    }
+                    isBelow = false;
+                  } else {
+                    // act as 3rd window: strictly below the existing column
+                    cx = colRect.left;
+                    cy = colRect.bottom + 16;
+                    isBelow = true;
+                  }
 
                   const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
                   if (cy + ch > vhC - 8) cy = vhC - ch - 8;
@@ -2312,9 +2328,12 @@
                   comboBox.style.left = cx + 'px';
                   comboBox.style.top = cy + 'px';
                   const comboRect = comboBox.getBoundingClientRect();
-                  const isBelow =
-                    Math.abs(comboRect.top - colRect.bottom - 16) < 2;
-                  drawLine(comboSvg, colRect, comboRect, isBelow);
+                  drawLine(
+                    comboSvg,
+                    isOnlySecondary ? mainR : colRect,
+                    comboRect,
+                    isBelow,
+                  );
 
                   comboLvls
                     .querySelectorAll('.combo-sq, .combo-item-name')
