@@ -191,7 +191,8 @@ const STAND_DATA = {
         },
         {
           id: 'standSizeDensityManipulation',
-          name: 'Изменение размеров и плотности',
+          name: 'Молекулярная плотность',
+          img: 'assets/seth.mp4',
           requiredPerks: [
             'standStrength',
             'standDurability',
@@ -210,7 +211,7 @@ const STAND_DATA = {
           id: 'standEnergyShield',
           name: 'Энергетический щит',
           img: 'assets/shield.mp4',
-          requiredPerks: ['standDurability'],
+          requiredPerks: ['standDurability', 'standEnergyCapacity'],
           description:
             'Определяет способность Тени генерировать пространственный силовой купол для поглощения внешних воздействий. Включает расчет радиуса барьера, времени удержания и спектра угроз от пистолетных калибров до ударов молний и ракет. Функционал купола в первую очередь предназначен для защиты союзников, бронетехники и тактических позиций, дублируя собственную прочность Властителя.',
         },
