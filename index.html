@@ -829,11 +829,15 @@
         justify-content: center;
         padding: 10px;
         overflow: hidden;
+        flex: 1;
+        min-height: 0;
       }
       #img-content img,
       #img-content video {
         max-width: 100%;
-        max-height: 340px;
+        max-height: 100%;
+        width: auto;
+        height: auto;
         object-fit: contain;
         border-radius: 2px;
       }
@@ -2406,19 +2410,26 @@
                   drawLine(extraSvg, mainR, extraRect);
                   drawLine(imgArwSvg, extraRect, imgRect, true);
                 } else if (hasExtra) {
+                  // if combo follows, reserve roughly half the column height for it;
+                  // otherwise this single window may use the full available height.
+                  const reserveForCombo = hasCombo
+                    ? Math.floor((usableFromTop - ROW_GAP) / 2)
+                    : vhC - colTop - BOTTOM_MARGIN;
                   extraBox.style.left = colX + 'px';
                   extraBox.style.top = colTop + 'px';
                   extraBox.style.width = colW + 'px';
-                  extraBox.style.maxHeight =
-                    vhC - colTop - BOTTOM_MARGIN + 'px';
+                  extraBox.style.maxHeight = reserveForCombo + 'px';
                   extraBox.style.display = 'flex';
                   extraRect = extraBox.getBoundingClientRect();
                   drawLine(extraSvg, mainR, extraRect);
                 } else if (hasImg) {
+                  const reserveForCombo = hasCombo
+                    ? Math.floor((usableFromTop - ROW_GAP) / 2)
+                    : vhC - colTop - BOTTOM_MARGIN;
                   imgBox.style.left = colX + 'px';
                   imgBox.style.top = colTop + 'px';
                   imgBox.style.width = colW + 'px';
-                  imgBox.style.maxHeight = vhC - colTop - BOTTOM_MARGIN + 'px';
+                  imgBox.style.maxHeight = reserveForCombo + 'px';
                   imgBox.style.display = 'flex';
                   imgRect = imgBox.getBoundingClientRect();
                   drawLine(imgArwSvg, mainR, imgRect);
@@ -2462,7 +2473,15 @@
                   }
 
                   const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
-                  if (cy + ch > vhC - 8) cy = vhC - ch - 8;
+                  // If it would overflow the bottom, shrink its max-height to fit
+                  // INSTEAD of moving it upward (which would re-overlap the window above it).
+                  const availableBelow = vhC - cy - 8;
+                  if (isBelow && ch > availableBelow) {
+                    comboBox.style.maxHeight =
+                      Math.max(availableBelow, 80) + 'px';
+                  } else if (cy + ch > vhC - 8) {
+                    cy = vhC - ch - 8;
+                  }
                   if (cy < 8) cy = 8;
                   if (cx < 4) cx = 4;
                   if (cx + cw > vwC - 4) cx = vwC - cw - 4;

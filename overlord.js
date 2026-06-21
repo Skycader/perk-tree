@@ -83,6 +83,7 @@ const STAND_DATA = {
         {
           id: 'standLifeSupport',
           name: 'Жизнеобеспечение',
+          img: 'assets/harmons.mp4',
           requiredPerks: [
             'standHealing',
             'standMirrorStorage',
