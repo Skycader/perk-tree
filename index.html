@@ -1984,6 +1984,7 @@
         ttHeader.appendChild(_sqSpan);
         ttHeader.appendChild(document.createTextNode(name));
         ttLevels.innerHTML = Object.entries(lvlDesc)
+          .filter(([lvl]) => lvl !== 'combo' && /^\d+$/.test(lvl))
           .map(([lvl, txt]) => {
             const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
             return `<div class="tt-row"><span class="tt-lvl" style="color:${col}">${lvl}</span><span class="tt-text">${txt}</span></div>`;
