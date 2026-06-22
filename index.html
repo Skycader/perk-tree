@@ -2407,12 +2407,18 @@
           : perkData?.img
             ? [perkData.img]
             : [];
-        // normalize each entry to {src, title}: plain strings keep title=null (falls back to perk name)
+        // normalize each entry to {src, title, audio}: plain strings keep title/audio=null,
+        // meaning they fall back to the perk-level perkData.audio flag.
         function normalizeImgEntry(entry) {
-          if (typeof entry === 'string') return { src: entry, title: null };
+          if (typeof entry === 'string')
+            return { src: entry, title: null, audio: null };
           if (entry && typeof entry === 'object')
-            return { src: entry.src || '', title: entry.title || null };
-          return { src: '', title: null };
+            return {
+              src: entry.src || '',
+              title: entry.title || null,
+              audio: typeof entry.audio === 'boolean' ? entry.audio : null,
+            };
+          return { src: '', title: null, audio: null };
         }
         const imgSources = imgSourcesRaw.map(normalizeImgEntry);
 
@@ -2455,7 +2461,7 @@
 
           // populate content — supports static images AND mp4 (auto-looped, muted, no controls)
           // helper: create the right kind of media element (img or video) for a given src
-          function makeMediaEl(src, promises, altText) {
+          function makeMediaEl(src, promises, altText, audioOverride) {
             const isVideo = /\.mp4($|\?)/i.test(src);
             if (isVideo) {
               const vidEl = document.createElement('video');
@@ -2478,8 +2484,14 @@
                 }),
               );
 
-              // audio:true → wrap video with a speaker toggle button, bottom-right corner
-              if (perkData?.audio === true) {
+              // per-image audio (in imgs[] entries) overrides the perk-level perkData.audio flag.
+              // audioOverride === null means "not specified at this level" → fall back to perk-level.
+              const wantsAudio =
+                audioOverride !== null && audioOverride !== undefined
+                  ? audioOverride
+                  : perkData?.audio === true;
+
+              if (wantsAudio) {
                 const wrap = document.createElement('div');
                 wrap.className = 'media-audio-wrap';
                 wrap.appendChild(vidEl);
@@ -2532,9 +2544,20 @@
           let _sliderIndex = 0;
 
           function renderSliderImage(idx) {
+            // explicitly stop any currently playing video before swapping content
+            imgContent.querySelectorAll('video').forEach((v) => {
+              v.pause();
+              v.removeAttribute('src');
+              v.load();
+            });
             imgContent.innerHTML = '';
             const entry = imgSources[idx];
-            const el = makeMediaEl(entry.src, imgLoadPromises, entry.title);
+            const el = makeMediaEl(
+              entry.src,
+              imgLoadPromises,
+              entry.title,
+              entry.audio,
+            );
             imgContent.appendChild(el);
             imgHeader.textContent =
               entry.title || perkData.name || 'Иллюстрация';
@@ -2568,7 +2591,12 @@
               const entry0 = imgSources[0];
               imgHeader.textContent =
                 entry0.title || perkData.name || 'Иллюстрация';
-              const el = makeMediaEl(entry0.src, imgLoadPromises, entry0.title);
+              const el = makeMediaEl(
+                entry0.src,
+                imgLoadPromises,
+                entry0.title,
+                entry0.audio,
+              );
               imgContent.appendChild(el);
             }
           }
@@ -2578,7 +2606,12 @@
             img2Header.textContent =
               entry1.title || perkData.name || 'Иллюстрация';
             img2Content.innerHTML = '';
-            const el2 = makeMediaEl(entry1.src, imgLoadPromises, entry1.title);
+            const el2 = makeMediaEl(
+              entry1.src,
+              imgLoadPromises,
+              entry1.title,
+              entry1.audio,
+            );
             img2Content.appendChild(el2);
           }
           if (hasExtra) {
@@ -2936,6 +2969,14 @@
         document.getElementById('img-dots').classList.remove('visible');
         document.getElementById('img2-box').style.display = 'none';
         document.getElementById('img2-arrow-svg').style.display = 'none';
+        // stop any playing video so audio doesn't keep going in the background
+        document
+          .querySelectorAll('#img-content video, #img2-content video')
+          .forEach((v) => {
+            v.pause();
+            v.removeAttribute('src');
+            v.load();
+          });
         document.getElementById('combo-box').style.display = 'none';
         document.getElementById('combo-arrow-svg').style.display = 'none';
         document.body.style.overflow = '';
