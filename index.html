@@ -1333,7 +1333,7 @@
             "
           ></span
           >ДРЕВО</span
-        ><span class="tb-sub">Матрица способностей</span>
+        ><span class="tb-sub">0.9</span>
       </div>
       <div class="tb-stats">
         <span class="tb-stat">Перков: <span id="stat-perks">—</span></span>
@@ -1547,6 +1547,72 @@
       </div>
     </div>
     <script>
+      // ════════════════════════════════════════════════════════════════
+      // ДРЕВО — APP VERSION 0.9.0
+      // ════════════════════════════════════════════════════════════════
+      //
+      // CHANGELOG (app, this revision):
+      //
+      // Layout / windows
+      //  - Tiled secondary-window system: img / extra / combo can appear
+      //    together without overlapping. Order driven by WINDOW_ORDER const.
+      //  - Two-window column (img+extra) splits height in half, second
+      //    window snaps to the FIRST's real rendered height + gap (no more
+      //    giant empty space when content is smaller than its slot).
+      //  - perkData.windows.{extra,combo} = 'left'|'right' forces a window
+      //    beside the levels tooltip instead of stacked below the column —
+      //    always checked against real overlap before applying, silent
+      //    fallback to default placement otherwise.
+      //  - Beside-placed windows drop 40px below the tooltip's header and
+      //    connect via a straight horizontal line anchored to icX (avoids
+      //    doubling up with the main icon→tooltip connector).
+      //  - All connector lines are strict 90°, coordinates rounded to whole
+      //    pixels (sub-pixel positions were anti-aliasing into see-through
+      //    lines).
+      //
+      // Media
+      //  - img / imgs[] support both plain string and {title, src, audio}
+      //    object entries.
+      //  - imgs[] + slider:true → one window, dot navigation between frames.
+      //  - imgs[] + slider:false → two separate windows (img-box / img2-box).
+      //  - .mp4 sources auto-render as <video autoplay loop muted playsinline>,
+      //    native controls fully suppressed.
+      //  - fit:false opts OUT of object-fit:cover (keeps letterboxing);
+      //    default crops to fill the box.
+      //  - audio:true adds a speaker-toggle button (bottom-right corner);
+      //    starts muted (autoplay policy), per-image override via
+      //    imgs[].audio. Videos are explicitly paused+unloaded on tooltip
+      //    close and on slider navigation, so audio never keeps playing
+      //    in the background.
+      //
+      // Combo / dependencies
+      //  - combo entries support perks: [{ lvl, perk }, ...] for multi-perk
+      //    co-dependencies — one square+name+level row per dependent perk,
+      //    all under one shared description, identical styling (no special
+      //    connector glyphs).
+      //  - Chain-dependency icon (requiredPerks) shows a hover tooltip
+      //    listing required perks with coloured squares; click focuses
+      //    and highlights the target perk with a full-screen dim
+      //    (FOCUS_DIM constant) that fades smoothly in/out.
+      //
+      // Colour system
+      //  - 7 chapter colours incl. 'black' (k) — rendered as deep blood-red,
+      //    not flat grey, per design direction.
+      //  - Spectre legend (title-box icon click) cascades from the main
+      //    tooltip header square, sharing the same connector-line language.
+      //
+      // Known soft spots / not yet 1.0:
+      //  - Config grammar is still evolving (perks:[] format changed mid-
+      //    session from string[] to {lvl,perk}[] — expect more churn).
+      //  - No validation/warning for dangling ids (requiredPerks, combo
+      //    keys, perks[].perk) that don't resolve to a real perk — fails
+      //    silently rather than flagging a config error.
+      //  - windows.extra forced-side only splits EXTRA out of the img/extra
+      //    column; the reverse (forcing IMG out while EXTRA stays) isn't
+      //    implemented.
+      //
+      // ════════════════════════════════════════════════════════════════
+
       // ── BACKGROUND (GRID::RUNNER sky only) ──
       (function () {
         const cv = document.getElementById('bg-canvas');
