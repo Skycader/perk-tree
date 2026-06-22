@@ -2695,8 +2695,71 @@
                 const boxOf = { IMG: imgBox, EXTRA: extraBox };
                 const svgOf = { IMG: imgArwSvg, EXTRA: extraSvg };
 
-                if (slots === 2) {
-                  // split usable height in half, with a gap between, in WINDOW_ORDER sequence
+                // windows.extra forces EXTRA out of the shared img/extra column into its own
+                // beside-the-tooltip slot, even when img is also present (slots===2).
+                // Only takes effect if that side is actually free; otherwise falls back
+                // to the normal stacked-column behaviour below.
+                const extraForcedSide2 = perkData?.windows?.extra;
+                let extraSplitOut = false;
+                if (slots === 2 && extraForcedSide2) {
+                  const rightX3 = mainR.right + COL_GAP;
+                  const leftX3 = mainR.left - colW - COL_GAP;
+                  const rightFits3 = rightX3 + colW <= vwC - 4;
+                  const leftFits3 = leftX3 >= 4;
+                  let exX = null;
+                  if (extraForcedSide2 === 'left' && leftFits3) exX = leftX3;
+                  else if (extraForcedSide2 === 'right' && rightFits3)
+                    exX = rightX3;
+
+                  if (exX !== null) {
+                    extraSplitOut = true;
+                    // EXTRA: standalone, beside the tooltip — offset below its header,
+                    // same visual treatment as combo's "beside" placement.
+                    const exTop = mainR.top + 40; // matches combo's BESIDE_HEADER_OFFSET
+                    extraBox.style.left = exX + 'px';
+                    extraBox.style.top = exTop + 'px';
+                    extraBox.style.width = colW + 'px';
+                    extraBox.style.maxHeight =
+                      vhC - exTop - BOTTOM_MARGIN + 'px';
+                    extraBox.style.display = 'flex';
+                    extraRect = extraBox.getBoundingClientRect();
+
+                    // straight horizontal line at extra's own header height, anchored to icX
+                    // (same approach as combo's beside-line, avoids doubling the vertical connector)
+                    const lineY3 = Math.round(extraRect.top + 18);
+                    const fromX3 = Math.round(icX);
+                    const toX3 = Math.round(
+                      extraForcedSide2 === 'left'
+                        ? extraRect.right
+                        : extraRect.left,
+                    );
+                    const len3 = Math.abs(toX3 - fromX3);
+                    extraSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+                    extraSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                    extraSvg.innerHTML = `<line x1="${fromX3}" y1="${lineY3}" x2="${toX3}" y2="${lineY3}"
+                  stroke="#50556a" stroke-width="1.5"
+                  stroke-dasharray="${len3}" stroke-dashoffset="${len3}"
+                  style="animation:dashIn .4s ease forwards"/>`;
+
+                    // IMG: takes the full column on its own, at colX/colTop
+                    imgBox.style.left = colX + 'px';
+                    imgBox.style.top = colTop + 'px';
+                    imgBox.style.width = colW + 'px';
+                    imgBox.style.maxHeight =
+                      vhC - colTop - BOTTOM_MARGIN + 'px';
+                    imgBox.style.display = 'flex';
+                    imgRect = imgBox.getBoundingClientRect();
+                    drawLine(imgArwSvg, mainR, imgRect);
+                  }
+                }
+
+                if (extraSplitOut) {
+                  // already placed above — nothing more to do for this branch
+                } else if (slots === 2) {
+                  // split usable height in half — slotH is the MAX each window may use,
+                  // but the second window is placed right after the FIRST's actual
+                  // rendered height (not the full slot), so small content doesn't
+                  // leave a huge empty gap before the next window.
                   const slotH = Math.floor((usableFromTop - ROW_GAP) / 2);
                   const [firstKind, secondKind] = colKinds;
                   const firstBox = boxOf[firstKind],
@@ -2708,14 +2771,21 @@
                   firstBox.style.maxHeight = slotH + 'px';
                   firstBox.style.display = 'flex';
 
-                  const secondTop = colTop + slotH + ROW_GAP;
+                  const firstRect = firstBox.getBoundingClientRect();
+                  const actualFirstH = firstRect.height; // real height, may be < slotH
+
+                  const secondTop = colTop + actualFirstH + ROW_GAP;
+                  // second window still capped so it can't overflow the bottom margin
+                  const secondMaxH = Math.max(
+                    80,
+                    vhC - secondTop - BOTTOM_MARGIN,
+                  );
                   secondBox.style.left = colX + 'px';
                   secondBox.style.top = secondTop + 'px';
                   secondBox.style.width = colW + 'px';
-                  secondBox.style.maxHeight = slotH + 'px';
+                  secondBox.style.maxHeight = secondMaxH + 'px';
                   secondBox.style.display = 'flex';
 
-                  const firstRect = firstBox.getBoundingClientRect();
                   const secondRect = secondBox.getBoundingClientRect();
                   if (firstKind === 'EXTRA') extraRect = firstRect;
                   else imgRect = firstRect;
@@ -2730,7 +2800,23 @@
                   const reserveForCombo = hasCombo
                     ? Math.floor((usableFromTop - ROW_GAP) / 2)
                     : vhC - colTop - BOTTOM_MARGIN;
-                  box.style.left = colX + 'px';
+
+                  // windows.extra forces a side for the SINGLE extra window, same pattern as combo:
+                  // only applies if extra is alone in the column, and only if that side is free.
+                  let boxX = colX;
+                  if (kind === 'EXTRA' && perkData?.windows?.extra) {
+                    const extraForcedSide = perkData.windows.extra; // 'left' | 'right'
+                    const rightX2 = mainR.right + COL_GAP;
+                    const leftX2 = mainR.left - colW - COL_GAP;
+                    const rightFits2 = rightX2 + colW <= vwC - 4;
+                    const leftFits2 = leftX2 >= 4;
+                    if (extraForcedSide === 'left' && leftFits2) boxX = leftX2;
+                    else if (extraForcedSide === 'right' && rightFits2)
+                      boxX = rightX2;
+                    // else: keep default colX (no room on the requested side)
+                  }
+
+                  box.style.left = boxX + 'px';
                   box.style.top = colTop + 'px';
                   box.style.width = colW + 'px';
                   box.style.maxHeight = reserveForCombo + 'px';
