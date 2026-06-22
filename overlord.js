@@ -216,7 +216,16 @@ const STAND_DATA = {
         {
           id: 'standSizeManipulation',
           name: 'Гравитационное линзирование',
-          imgs: ['assets/size.mp4', 'assets/size-2.mp4'],
+          imgs: [
+            {
+              title: 'Гравитационное линзирование ■ ⟶ ▪',
+              src: 'assets/size.mp4',
+            },
+            {
+              title: 'Гравитационное линзирование ▪ ⟶ ■',
+              src: 'assets/size-2.mp4',
+            },
+          ],
           // slider: true,
           requiredPerks: [
             'standStrength',
