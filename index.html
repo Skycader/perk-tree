@@ -2622,57 +2622,84 @@
             extraContent.innerHTML = md;
           }
           if (hasCombo) {
-            comboLvls.innerHTML = Object.entries(combo)
-              .map(([partnerId, info]) => {
-                let pname = partnerId,
-                  pcol = 'o';
-                for (const skill of D.skills) {
-                  const found = skill.perks.find((pp) => pp.id === partnerId);
-                  if (found) {
-                    pname = found.name;
-                    const CM = {
-                      orange: 'o',
-                      red: 'r',
-                      blue: 'b',
-                      green: 'g',
-                      purple: 'p',
-                      yellow: 'y',
-                      black: 'k',
-                      o: 'o',
-                      r: 'r',
-                      b: 'b',
-                      g: 'g',
-                      p: 'p',
-                      y: 'y',
-                      k: 'k',
-                    };
-                    pcol = skill.color
-                      ? CM[skill.color.toLowerCase()] || skill.color[0]
-                      : chapterColour.get(skill);
-                    break;
-                  }
+            // resolve {name, colourHex} for any perk id, searching all chapters
+            function resolvePerk(pid) {
+              let pname = pid,
+                pcol = 'o';
+              for (const skill of D.skills) {
+                const found = skill.perks.find((pp) => pp.id === pid);
+                if (found) {
+                  pname = found.name;
+                  const CM = {
+                    orange: 'o',
+                    red: 'r',
+                    blue: 'b',
+                    green: 'g',
+                    purple: 'p',
+                    yellow: 'y',
+                    black: 'k',
+                    o: 'o',
+                    r: 'r',
+                    b: 'b',
+                    g: 'g',
+                    p: 'p',
+                    y: 'y',
+                    k: 'k',
+                  };
+                  pcol = skill.color
+                    ? CM[skill.color.toLowerCase()] || skill.color[0]
+                    : chapterColour.get(skill);
+                  break;
                 }
-                const hex =
-                  {
-                    o: '#e09040',
-                    r: '#cc3838',
-                    b: '#3e80d0',
-                    g: '#28a860',
-                    p: '#7840c8',
-                    y: '#b89030',
-                    k: '#1a0000',
-                  }[pcol] || '#888';
-                return `<div class="combo-item">
-                <div class="combo-item-hdr" style="--combo-glow:0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44">
-                  <span class="combo-sq" data-rid="${partnerId}"
+              }
+              const hex =
+                {
+                  o: '#e09040',
+                  r: '#cc3838',
+                  b: '#3e80d0',
+                  g: '#28a860',
+                  p: '#7840c8',
+                  y: '#b89030',
+                  k: '#1a0000',
+                }[pcol] || '#888';
+              return { name: pname, hex };
+            }
+
+            // one combo-item row: a square+name+own-level for EACH dependent perk
+            // (the combo key itself, plus any extras listed in info.perks as {lvl, perk}),
+            // all sharing one description. Every row looks identical — no connectors.
+            function renderComboRow(rows) {
+              const rowsHtml = rows
+                .map(({ pid, lvl }) => {
+                  const { name, hex } = resolvePerk(pid);
+                  return `<div class="combo-item-hdr" style="--combo-glow:0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44">
+                  <span class="combo-sq" data-rid="${pid}"
                     style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;cursor:pointer;transition:box-shadow .2s"
                     onmouseenter="this.style.boxShadow='0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44'"
                     onmouseleave="this.style.boxShadow=''"></span>
-                  <span class="combo-item-name" data-rid="${partnerId}" style="cursor:pointer">${pname}</span>
-                  ${info.reqLvl ? `<span class="combo-item-lvl">от ур. ${info.reqLvl}</span>` : ''}
-                </div>
-                <div class="combo-item-desc">${info.desc || ''}</div>
-              </div>`;
+                  <span class="combo-item-name" data-rid="${pid}" style="cursor:pointer">${name}</span>
+                  ${lvl ? `<span class="combo-item-lvl">от ур. ${lvl}</span>` : ''}
+                </div>`;
+                })
+                .join('');
+              const desc = rows[0]?.desc || '';
+              return `<div class="combo-item">${rowsHtml}<div class="combo-item-desc">${desc}</div></div>`;
+            }
+
+            comboLvls.innerHTML = Object.entries(combo)
+              .map(([partnerId, info]) => {
+                // info.perks (optional): [{ lvl, perk }, ...] — additional co-dependent perks,
+                // each with its OWN required level. The combo key itself uses info.reqLvl.
+                const extraRows = Array.isArray(info.perks)
+                  ? info.perks
+                      .filter((p) => p && p.perk)
+                      .map((p) => ({ pid: p.perk, lvl: p.lvl }))
+                  : [];
+                const rows = [
+                  { pid: partnerId, lvl: info.reqLvl, desc: info.desc },
+                  ...extraRows,
+                ];
+                return renderComboRow(rows);
               })
               .join('');
           }
