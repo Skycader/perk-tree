@@ -2812,20 +2812,60 @@
                   comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
 
                   let cx, cy, isBelow;
-                  if (isOnlySecondary) {
-                    // act as the 2nd window: beside the levels tooltip, same side as placedLeft
-                    cy = mainR.top;
-                    if (!placedLeft) {
-                      cx = mainR.right + 36;
-                    } else {
-                      cx = mainR.left - cw - 36;
-                    }
+
+                  // perkData.windows.combo === 'left' / 'right' forces combo to sit
+                  // BESIDE the levels tooltip (not below the img/extra column),
+                  // as long as that side is actually free — i.e. nothing (img/extra/img2 column)
+                  // already occupies that space. This applies REGARDLESS of whether combo
+                  // is the only secondary window or comes after img/extra.
+                  const forcedSide = perkData?.windows?.combo; // 'left' | 'right' | undefined
+                  const rightX = mainR.right + 36;
+                  const leftX = mainR.left - cw - 36;
+                  const rightFits = rightX + cw <= vwC - 4;
+                  const leftFits = leftX >= 4;
+                  // does the forced side overlap the column that's already placed (img/extra)?
+                  function overlapsColumn(testX) {
+                    if (!colRect || colRect === mainR) return false;
+                    return testX < colRect.right && testX + cw > colRect.left;
+                  }
+
+                  // when forced beside, drop slightly below the main tooltip's header
+                  // instead of aligning flush with its top edge.
+                  const BESIDE_HEADER_OFFSET = 40;
+
+                  let placedBeside = false;
+                  if (
+                    forcedSide === 'left' &&
+                    leftFits &&
+                    !overlapsColumn(leftX)
+                  ) {
+                    cx = leftX;
+                    cy = mainR.top + BESIDE_HEADER_OFFSET;
                     isBelow = false;
-                  } else {
-                    // act as 3rd window: strictly below the existing column
-                    cx = colRect.left;
-                    cy = colRect.bottom + 16;
-                    isBelow = true;
+                    placedBeside = true;
+                  } else if (
+                    forcedSide === 'right' &&
+                    rightFits &&
+                    !overlapsColumn(rightX)
+                  ) {
+                    cx = rightX;
+                    cy = mainR.top + BESIDE_HEADER_OFFSET;
+                    isBelow = false;
+                    placedBeside = true;
+                  }
+
+                  if (!placedBeside) {
+                    if (isOnlySecondary) {
+                      // act as the 2nd window: beside the levels tooltip, default side = placedLeft
+                      cy = mainR.top;
+                      cx = placedLeft ? leftX : rightX;
+                      isBelow = false;
+                    } else {
+                      // act as 3rd window: strictly below the existing column
+                      cx = colRect.left;
+                      cy = colRect.bottom + 16;
+                      isBelow = true;
+                    }
                   }
 
                   const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
@@ -2844,12 +2884,28 @@
                   comboBox.style.left = cx + 'px';
                   comboBox.style.top = cy + 'px';
                   const comboRect = comboBox.getBoundingClientRect();
-                  drawLine(
-                    comboSvg,
-                    isOnlySecondary ? mainR : colRect,
-                    comboRect,
-                    isBelow,
-                  );
+                  if (placedBeside) {
+                    // straight horizontal line at the combo box's OWN header height —
+                    // drawn directly (not via drawLine's generic L-shape helper) to avoid
+                    // a vertical segment that visually doubles up with the main connector.
+                    const R2 = Math.round;
+                    const lineY = R2(comboRect.top + 18);
+                    // anchor to the SAME vertical line (icX) that connects the perk icon
+                    // to the main tooltip, rather than to the tooltip's own edge.
+                    const fromX = R2(icX);
+                    const toX = R2(
+                      forcedSide === 'left' ? comboRect.right : comboRect.left,
+                    );
+                    const len2 = Math.abs(toX - fromX);
+                    comboSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+                    comboSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                    comboSvg.innerHTML = `<line x1="${fromX}" y1="${lineY}" x2="${toX}" y2="${lineY}"
+                  stroke="#50556a" stroke-width="1.5"
+                  stroke-dasharray="${len2}" stroke-dashoffset="${len2}"
+                  style="animation:dashIn .4s ease forwards"/>`;
+                  } else {
+                    drawLine(comboSvg, colRect, comboRect, isBelow);
+                  }
 
                   comboLvls
                     .querySelectorAll('.combo-sq, .combo-item-name')
