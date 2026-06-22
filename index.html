@@ -1560,6 +1560,11 @@
       const SPINE = '#2e3448';
       const FOCUS_DIM = 0.75; // затемнение фона при фокусе (0–1)
 
+      // Порядок появления вторичных окон тултипа (img / extra / combo).
+      // Меняя порядок строк здесь, можно поменять очерёдность окон —
+      // используется при построении queue в showTooltip().
+      const WINDOW_ORDER = ['IMG', 'EXTRA', 'COMBO'];
+
       // ── PROCESS CONFIG ──
       const D = STAND_DATA;
       const totalPerks = D.skills.reduce((s, ch) => s + ch.perks.length, 0);
@@ -2240,6 +2245,10 @@
         const hasImg = !!perkData?.img;
         const hasCombo = !!(combo && Object.keys(combo).length);
 
+        // ordered list of which secondary window "slots" are present, per WINDOW_ORDER
+        const hasFlags = { IMG: hasImg, EXTRA: hasExtra, COMBO: hasCombo };
+        const activeKinds = WINDOW_ORDER.filter((k) => hasFlags[k]);
+
         if (hasExtra || hasImg || hasCombo) {
           const TOP_MARGIN = 8,
             BOTTOM_MARGIN = 8,
@@ -2380,59 +2389,64 @@
             requestAnimationFrame(() =>
               requestAnimationFrame(() => {
                 // ── TILED LAYOUT: column slots are HARD-capped, never overlap, never off-screen ──
-                const slots = [hasExtra, hasImg].filter(Boolean).length;
+                // Order of IMG vs EXTRA within the column is driven by WINDOW_ORDER.
+                const colKinds = activeKinds.filter(
+                  (k) => k === 'IMG' || k === 'EXTRA',
+                );
+                const slots = colKinds.length;
 
                 // actual usable height FROM colTop down to the bottom margin
                 const usableFromTop = vhC - colTop - BOTTOM_MARGIN;
 
                 let extraRect = null,
                   imgRect = null;
+                const boxOf = { IMG: imgBox, EXTRA: extraBox };
+                const svgOf = { IMG: imgArwSvg, EXTRA: extraSvg };
 
                 if (slots === 2) {
-                  // split usable height in half, with a gap between
+                  // split usable height in half, with a gap between, in WINDOW_ORDER sequence
                   const slotH = Math.floor((usableFromTop - ROW_GAP) / 2);
-                  // EXTRA = top half
-                  extraBox.style.left = colX + 'px';
-                  extraBox.style.top = colTop + 'px';
-                  extraBox.style.width = colW + 'px';
-                  extraBox.style.maxHeight = slotH + 'px';
-                  extraBox.style.display = 'flex';
-                  // IMG = bottom half
-                  const imgTop = colTop + slotH + ROW_GAP;
-                  imgBox.style.left = colX + 'px';
-                  imgBox.style.top = imgTop + 'px';
-                  imgBox.style.width = colW + 'px';
-                  imgBox.style.maxHeight = slotH + 'px';
-                  imgBox.style.display = 'flex';
+                  const [firstKind, secondKind] = colKinds;
+                  const firstBox = boxOf[firstKind],
+                    secondBox = boxOf[secondKind];
 
-                  extraRect = extraBox.getBoundingClientRect();
-                  imgRect = imgBox.getBoundingClientRect();
-                  drawLine(extraSvg, mainR, extraRect);
-                  drawLine(imgArwSvg, extraRect, imgRect, true);
-                } else if (hasExtra) {
-                  // if combo follows, reserve roughly half the column height for it;
-                  // otherwise this single window may use the full available height.
+                  firstBox.style.left = colX + 'px';
+                  firstBox.style.top = colTop + 'px';
+                  firstBox.style.width = colW + 'px';
+                  firstBox.style.maxHeight = slotH + 'px';
+                  firstBox.style.display = 'flex';
+
+                  const secondTop = colTop + slotH + ROW_GAP;
+                  secondBox.style.left = colX + 'px';
+                  secondBox.style.top = secondTop + 'px';
+                  secondBox.style.width = colW + 'px';
+                  secondBox.style.maxHeight = slotH + 'px';
+                  secondBox.style.display = 'flex';
+
+                  const firstRect = firstBox.getBoundingClientRect();
+                  const secondRect = secondBox.getBoundingClientRect();
+                  if (firstKind === 'EXTRA') extraRect = firstRect;
+                  else imgRect = firstRect;
+                  if (secondKind === 'EXTRA') extraRect = secondRect;
+                  else imgRect = secondRect;
+
+                  drawLine(svgOf[firstKind], mainR, firstRect);
+                  drawLine(svgOf[secondKind], firstRect, secondRect, true);
+                } else if (slots === 1) {
+                  const kind = colKinds[0];
+                  const box = boxOf[kind];
                   const reserveForCombo = hasCombo
                     ? Math.floor((usableFromTop - ROW_GAP) / 2)
                     : vhC - colTop - BOTTOM_MARGIN;
-                  extraBox.style.left = colX + 'px';
-                  extraBox.style.top = colTop + 'px';
-                  extraBox.style.width = colW + 'px';
-                  extraBox.style.maxHeight = reserveForCombo + 'px';
-                  extraBox.style.display = 'flex';
-                  extraRect = extraBox.getBoundingClientRect();
-                  drawLine(extraSvg, mainR, extraRect);
-                } else if (hasImg) {
-                  const reserveForCombo = hasCombo
-                    ? Math.floor((usableFromTop - ROW_GAP) / 2)
-                    : vhC - colTop - BOTTOM_MARGIN;
-                  imgBox.style.left = colX + 'px';
-                  imgBox.style.top = colTop + 'px';
-                  imgBox.style.width = colW + 'px';
-                  imgBox.style.maxHeight = reserveForCombo + 'px';
-                  imgBox.style.display = 'flex';
-                  imgRect = imgBox.getBoundingClientRect();
-                  drawLine(imgArwSvg, mainR, imgRect);
+                  box.style.left = colX + 'px';
+                  box.style.top = colTop + 'px';
+                  box.style.width = colW + 'px';
+                  box.style.maxHeight = reserveForCombo + 'px';
+                  box.style.display = 'flex';
+                  const rect = box.getBoundingClientRect();
+                  if (kind === 'EXTRA') extraRect = rect;
+                  else imgRect = rect;
+                  drawLine(svgOf[kind], mainR, rect);
                 }
 
                 // COMBO placement rule:
