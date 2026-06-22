@@ -1330,19 +1330,106 @@
         color: #e09040;
         border-bottom-color: #e09040;
       }
-      #license-content,
-      #changelog-content {
+      #license-panes {
         overflow-y: auto;
         flex: 1;
         min-height: 0;
-        margin: 0;
-        padding: 14px 16px;
+      }
+      .license-pane {
+        display: none;
         font-family: 'JetBrains Mono', monospace;
         font-size: 10.5px;
         line-height: 1.6;
         color: #8a9098;
-        white-space: pre-wrap;
-        word-break: break-word;
+      }
+      .license-pane.active {
+        display: block;
+      }
+      /* reuse the same MD rendering rules as #extra-content */
+      .license-pane p {
+        padding: 6px 12px 0;
+        margin: 0;
+      }
+      .license-pane h1,
+      .license-pane h2,
+      .license-pane h3 {
+        font-family: 'JetBrains Mono', monospace;
+        color: #c0bdb4;
+        padding: 8px 12px 2px;
+        margin: 0;
+        font-size: 11px;
+        border-bottom: 1px solid #1e2235;
+      }
+      .license-pane strong {
+        color: #c0bdb4;
+      }
+      .license-pane em {
+        color: #8898b0;
+      }
+      .license-pane code {
+        font-family: 'JetBrains Mono', monospace;
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 9px;
+        color: #7ab0d0;
+      }
+      .license-pane pre {
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        margin: 4px 12px;
+        padding: 6px 8px;
+        overflow-x: auto;
+        border-radius: 2px;
+      }
+      .license-pane pre code {
+        border: none;
+        background: none;
+        padding: 0;
+      }
+      .license-pane ul,
+      .license-pane ol {
+        padding: 4px 12px 4px 28px;
+        margin: 0;
+      }
+      .license-pane li {
+        margin: 2px 0;
+      }
+      .license-pane blockquote {
+        border-left: 2px solid #3a4570;
+        padding: 4px 10px;
+        margin: 4px 12px;
+        color: #7a8090;
+      }
+      .license-pane hr {
+        border: none;
+        border-top: 1px solid #1e2235;
+        margin: 6px 12px;
+      }
+      .license-pane table {
+        border-collapse: collapse;
+        width: calc(100% - 24px);
+        margin: 6px 12px;
+        font-size: 10px;
+      }
+      .license-pane th {
+        background: #0f1020;
+        border: 1px solid #1e2235;
+        padding: 3px 7px;
+        color: #8090a0;
+        font-weight: 600;
+        text-align: left;
+      }
+      .license-pane td {
+        border: 1px solid #1a1d2e;
+        padding: 3px 7px;
+      }
+      .license-pane tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .license-pane > :first-child {
+        padding-top: 12px;
       }
       #license-footer {
         flex-shrink: 0;
@@ -1582,7 +1669,7 @@
 
     <!-- Load config -->
     <script src="overlord.js"></script>
-    <!-- LICENSE modal -->
+    <!-- LICENSE / docs modal — tabs and content are generated from the MODAL constant -->
     <div id="license-overlay"></div>
     <div id="license-modal">
       <div class="tt-header">
@@ -1591,14 +1678,10 @@
           ✕
         </button>
       </div>
-      <div id="license-tabs">
-        <button class="license-tab active" data-tab="license">Лицензия</button>
-        <button class="license-tab" data-tab="changelog">Обновления</button>
-      </div>
-      <pre id="license-content">Загрузка…</pre>
-      <pre id="changelog-content" style="display: none">Загрузка…</pre>
+      <div id="license-tabs"></div>
+      <div id="license-panes"></div>
       <div id="license-footer">
-        <a id="license-download" download="LICENSE">⬇ Скачать LICENSE</a>
+        <a id="license-download" download>⬇ Скачать</a>
       </div>
     </div>
 
@@ -3558,74 +3641,88 @@
           st.textContent = '';
         }, 3000);
       }
-      // ── LICENSE / CHANGELOG modal (tabbed) ──
-      let _licenseLoaded = false;
-      let _changelogLoaded = false;
+      // ── DOCUMENTATION MODAL ──
+      // Tabs and their source files are declared here. Add/remove entries to
+      // change what shows up in the modal — tabs, panes, and fetch calls are
+      // all generated from this list, nothing else needs editing.
+      const MODAL = [
+        { title: 'Лицензия', src: 'LICENSE' },
+        { title: 'Обновления', src: 'CHANGELOG' },
+      ];
+
       const licenseToolbar = document.getElementById('license-toolbar');
       const licenseOverlay = document.getElementById('license-overlay');
       const licenseModal = document.getElementById('license-modal');
-      const licenseContent = document.getElementById('license-content');
-      const changelogContent = document.getElementById('changelog-content');
+      const licenseTabsEl = document.getElementById('license-tabs');
+      const licensePanesEl = document.getElementById('license-panes');
       const licenseDownload = document.getElementById('license-download');
-      const licenseTabs = document.querySelectorAll('.license-tab');
 
-      async function loadLicenseTab() {
-        if (_licenseLoaded) return;
+      // build tabs + panes once, from MODAL
+      const _modalState = MODAL.map((entry, i) => ({
+        ...entry,
+        loaded: false,
+        rawText: '',
+      }));
+
+      licenseTabsEl.innerHTML = _modalState
+        .map(
+          (m, i) =>
+            `<button class="license-tab${i === 0 ? ' active' : ''}" data-idx="${i}">${m.title}</button>`,
+        )
+        .join('');
+
+      licensePanesEl.innerHTML = _modalState
+        .map(
+          (m, i) =>
+            `<div class="license-pane${i === 0 ? ' active' : ''}" id="license-pane-${i}">Загрузка…</div>`,
+        )
+        .join('');
+
+      const licenseTabs = licenseTabsEl.querySelectorAll('.license-tab');
+
+      async function loadModalTab(idx) {
+        const m = _modalState[idx];
+        const pane = document.getElementById('license-pane-' + idx);
+        if (m.loaded) return;
         try {
-          const res = await fetch('LICENSE');
+          const res = await fetch(m.src);
           if (!res.ok) throw new Error('not found');
           const text = await res.text();
-          licenseContent.textContent = text;
-          const blob = new Blob([text], { type: 'text/plain' });
-          licenseDownload.href = URL.createObjectURL(blob);
-          licenseDownload.download = 'LICENSE';
-          _licenseLoaded = true;
+          m.rawText = text;
+          pane.innerHTML =
+            typeof marked !== 'undefined'
+              ? marked.parse(text)
+              : text.replace(/\n/g, '<br>');
+          m.loaded = true;
         } catch (e) {
-          licenseContent.textContent =
-            'Не удалось загрузить файл LICENSE.\nУбедитесь, что он лежит рядом с этой страницей в той же папке/репозитории.';
+          pane.textContent = `Не удалось загрузить файл ${m.src}.\nУбедитесь, что он лежит рядом с этой страницей в той же папке/репозитории.`;
         }
       }
 
-      async function loadChangelogTab() {
-        if (_changelogLoaded) return;
-        try {
-          const res = await fetch('CHANGELOG');
-          if (!res.ok) throw new Error('not found');
-          const text = await res.text();
-          changelogContent.textContent = text;
-          _changelogLoaded = true;
-        } catch (e) {
-          changelogContent.textContent =
-            'Не удалось загрузить файл CHANGELOG.\nУбедитесь, что он лежит рядом с этой страницей в той же папке/репозитории.';
-        }
+      function switchModalTab(idx) {
+        licenseTabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+        _modalState.forEach((m, i) => {
+          document
+            .getElementById('license-pane-' + i)
+            .classList.toggle('active', i === idx);
+        });
+        const m = _modalState[idx];
+        licenseDownload.href = m.loaded
+          ? URL.createObjectURL(new Blob([m.rawText], { type: 'text/plain' }))
+          : '#';
+        licenseDownload.download = m.src;
+        loadModalTab(idx);
       }
 
-      function switchLicenseTab(tab) {
-        licenseTabs.forEach((t) =>
-          t.classList.toggle('active', t.dataset.tab === tab),
-        );
-        if (tab === 'license') {
-          licenseContent.style.display = 'block';
-          changelogContent.style.display = 'none';
-          licenseDownload.style.display = '';
-          loadLicenseTab();
-        } else {
-          licenseContent.style.display = 'none';
-          changelogContent.style.display = 'block';
-          licenseDownload.style.display = 'none'; // download button is LICENSE-specific
-          loadChangelogTab();
-        }
-      }
-
-      licenseTabs.forEach((tab) => {
-        tab.addEventListener('click', () => switchLicenseTab(tab.dataset.tab));
+      licenseTabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => switchModalTab(i));
       });
 
       function showLicense() {
         licenseModal.classList.add('visible');
         licenseOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
-        switchLicenseTab('license'); // always open on the License tab
+        switchModalTab(0); // always open on the first tab
       }
       function hideLicense() {
         licenseModal.classList.remove('visible');
