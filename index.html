@@ -125,6 +125,14 @@
         background: rgba(224, 144, 64, 0.16);
         border-color: #e09040;
       }
+      .tb-app-version {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: #454a60;
+        letter-spacing: 0.04em;
+        margin-right: 4px;
+      }
+
       #exp-st {
         font-size: 10px;
         color: #454a60;
@@ -152,6 +160,7 @@
         gap: 8px;
       }
       .title-box {
+        position: relative;
         flex-shrink: 0;
         width: 175px;
         border: 1px solid rgba(200, 120, 48, 0.5);
@@ -164,6 +173,15 @@
           0 4px 20px rgba(200, 120, 48, 0.15),
           inset 0 1px 0 rgba(255, 255, 255, 0.05);
         padding: 10px 12px;
+      }
+      .title-box-version {
+        position: absolute;
+        right: 8px;
+        bottom: 6px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 8px;
+        color: rgba(224, 144, 64, 0.5);
+        letter-spacing: 0.03em;
       }
       .title-box-name {
         font-family: 'JetBrains Mono', monospace;
@@ -1283,7 +1301,37 @@
         color: #dedad2;
         font-family: 'JetBrains Mono', monospace;
       }
-      #license-content {
+      #license-tabs {
+        flex-shrink: 0;
+        display: flex;
+        border-bottom: 1px solid #1c1f2e;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .license-tab {
+        flex: 1;
+        padding: 8px 0;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: #585e72;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition:
+          color 0.15s,
+          border-color 0.15s;
+      }
+      .license-tab:hover {
+        color: #8a9098;
+      }
+      .license-tab.active {
+        color: #e09040;
+        border-bottom-color: #e09040;
+      }
+      #license-content,
+      #changelog-content {
         overflow-y: auto;
         flex: 1;
         min-height: 0;
@@ -1333,7 +1381,7 @@
             "
           ></span
           >ДРЕВО</span
-        ><span class="tb-sub">0.9</span>
+        ><span class="tb-sub">Матрица способностей</span>
       </div>
       <div class="tb-stats">
         <span class="tb-stat">Перков: <span id="stat-perks">—</span></span>
@@ -1346,6 +1394,7 @@
       </div>
       <div class="tb-right">
         <span id="exp-st"></span>
+        <span class="tb-app-version" title="Версия программы">0.9</span>
         <button class="btn" onclick="exportPNG()">⬇ PNG</button>
         <button
           class="btn"
@@ -1419,6 +1468,7 @@
                 >—
               </div>
               <div class="title-box-sub" id="title-desc">—</div>
+              <div class="title-box-version" id="title-version"></div>
             </div>
             <div class="altnames-box" id="altnames-box"></div>
           </div>
@@ -1536,83 +1586,23 @@
     <div id="license-overlay"></div>
     <div id="license-modal">
       <div class="tt-header">
-        <span>📄 LICENSE</span>
+        <span>📄 Документация</span>
         <button class="tt-close" onclick="hideLicense()" title="Закрыть">
           ✕
         </button>
       </div>
+      <div id="license-tabs">
+        <button class="license-tab active" data-tab="license">Лицензия</button>
+        <button class="license-tab" data-tab="changelog">Обновления</button>
+      </div>
       <pre id="license-content">Загрузка…</pre>
+      <pre id="changelog-content" style="display: none">Загрузка…</pre>
       <div id="license-footer">
         <a id="license-download" download="LICENSE">⬇ Скачать LICENSE</a>
       </div>
     </div>
-    <script>
-      // ════════════════════════════════════════════════════════════════
-      // ДРЕВО — APP VERSION 0.9.0
-      // ════════════════════════════════════════════════════════════════
-      //
-      // CHANGELOG (app, this revision):
-      //
-      // Layout / windows
-      //  - Tiled secondary-window system: img / extra / combo can appear
-      //    together without overlapping. Order driven by WINDOW_ORDER const.
-      //  - Two-window column (img+extra) splits height in half, second
-      //    window snaps to the FIRST's real rendered height + gap (no more
-      //    giant empty space when content is smaller than its slot).
-      //  - perkData.windows.{extra,combo} = 'left'|'right' forces a window
-      //    beside the levels tooltip instead of stacked below the column —
-      //    always checked against real overlap before applying, silent
-      //    fallback to default placement otherwise.
-      //  - Beside-placed windows drop 40px below the tooltip's header and
-      //    connect via a straight horizontal line anchored to icX (avoids
-      //    doubling up with the main icon→tooltip connector).
-      //  - All connector lines are strict 90°, coordinates rounded to whole
-      //    pixels (sub-pixel positions were anti-aliasing into see-through
-      //    lines).
-      //
-      // Media
-      //  - img / imgs[] support both plain string and {title, src, audio}
-      //    object entries.
-      //  - imgs[] + slider:true → one window, dot navigation between frames.
-      //  - imgs[] + slider:false → two separate windows (img-box / img2-box).
-      //  - .mp4 sources auto-render as <video autoplay loop muted playsinline>,
-      //    native controls fully suppressed.
-      //  - fit:false opts OUT of object-fit:cover (keeps letterboxing);
-      //    default crops to fill the box.
-      //  - audio:true adds a speaker-toggle button (bottom-right corner);
-      //    starts muted (autoplay policy), per-image override via
-      //    imgs[].audio. Videos are explicitly paused+unloaded on tooltip
-      //    close and on slider navigation, so audio never keeps playing
-      //    in the background.
-      //
-      // Combo / dependencies
-      //  - combo entries support perks: [{ lvl, perk }, ...] for multi-perk
-      //    co-dependencies — one square+name+level row per dependent perk,
-      //    all under one shared description, identical styling (no special
-      //    connector glyphs).
-      //  - Chain-dependency icon (requiredPerks) shows a hover tooltip
-      //    listing required perks with coloured squares; click focuses
-      //    and highlights the target perk with a full-screen dim
-      //    (FOCUS_DIM constant) that fades smoothly in/out.
-      //
-      // Colour system
-      //  - 7 chapter colours incl. 'black' (k) — rendered as deep blood-red,
-      //    not flat grey, per design direction.
-      //  - Spectre legend (title-box icon click) cascades from the main
-      //    tooltip header square, sharing the same connector-line language.
-      //
-      // Known soft spots / not yet 1.0:
-      //  - Config grammar is still evolving (perks:[] format changed mid-
-      //    session from string[] to {lvl,perk}[] — expect more churn).
-      //  - No validation/warning for dangling ids (requiredPerks, combo
-      //    keys, perks[].perk) that don't resolve to a real perk — fails
-      //    silently rather than flagging a config error.
-      //  - windows.extra forced-side only splits EXTRA out of the img/extra
-      //    column; the reverse (forcing IMG out while EXTRA stays) isn't
-      //    implemented.
-      //
-      // ════════════════════════════════════════════════════════════════
 
+    <script>
       // ── BACKGROUND (GRID::RUNNER sky only) ──
       (function () {
         const cv = document.getElementById('bg-canvas');
@@ -1782,6 +1772,11 @@
         '<span style="display:inline-block;width:10px;height:10px;background:#e09040;border-radius:1px;margin-right:7px;vertical-align:middle"></span>' +
         standName;
       document.getElementById('title-desc').textContent = D.desc || '';
+
+      // config-version badge, bottom-right corner — shows standName / desc / version from the config
+      if (D.version) {
+        document.getElementById('title-version').textContent = D.version;
+      }
 
       // spectre tooltip on title-box icon click
       if (D.spectre) {
@@ -3563,34 +3558,74 @@
           st.textContent = '';
         }, 3000);
       }
-      // ── LICENSE modal ──
+      // ── LICENSE / CHANGELOG modal (tabbed) ──
       let _licenseLoaded = false;
+      let _changelogLoaded = false;
       const licenseToolbar = document.getElementById('license-toolbar');
       const licenseOverlay = document.getElementById('license-overlay');
       const licenseModal = document.getElementById('license-modal');
       const licenseContent = document.getElementById('license-content');
+      const changelogContent = document.getElementById('changelog-content');
       const licenseDownload = document.getElementById('license-download');
+      const licenseTabs = document.querySelectorAll('.license-tab');
 
-      async function showLicense() {
+      async function loadLicenseTab() {
+        if (_licenseLoaded) return;
+        try {
+          const res = await fetch('LICENSE');
+          if (!res.ok) throw new Error('not found');
+          const text = await res.text();
+          licenseContent.textContent = text;
+          const blob = new Blob([text], { type: 'text/plain' });
+          licenseDownload.href = URL.createObjectURL(blob);
+          licenseDownload.download = 'LICENSE';
+          _licenseLoaded = true;
+        } catch (e) {
+          licenseContent.textContent =
+            'Не удалось загрузить файл LICENSE.\nУбедитесь, что он лежит рядом с этой страницей в той же папке/репозитории.';
+        }
+      }
+
+      async function loadChangelogTab() {
+        if (_changelogLoaded) return;
+        try {
+          const res = await fetch('CHANGELOG');
+          if (!res.ok) throw new Error('not found');
+          const text = await res.text();
+          changelogContent.textContent = text;
+          _changelogLoaded = true;
+        } catch (e) {
+          changelogContent.textContent =
+            'Не удалось загрузить файл CHANGELOG.\nУбедитесь, что он лежит рядом с этой страницей в той же папке/репозитории.';
+        }
+      }
+
+      function switchLicenseTab(tab) {
+        licenseTabs.forEach((t) =>
+          t.classList.toggle('active', t.dataset.tab === tab),
+        );
+        if (tab === 'license') {
+          licenseContent.style.display = 'block';
+          changelogContent.style.display = 'none';
+          licenseDownload.style.display = '';
+          loadLicenseTab();
+        } else {
+          licenseContent.style.display = 'none';
+          changelogContent.style.display = 'block';
+          licenseDownload.style.display = 'none'; // download button is LICENSE-specific
+          loadChangelogTab();
+        }
+      }
+
+      licenseTabs.forEach((tab) => {
+        tab.addEventListener('click', () => switchLicenseTab(tab.dataset.tab));
+      });
+
+      function showLicense() {
         licenseModal.classList.add('visible');
         licenseOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
-
-        if (!_licenseLoaded) {
-          try {
-            const res = await fetch('LICENSE');
-            if (!res.ok) throw new Error('not found');
-            const text = await res.text();
-            licenseContent.textContent = text;
-            const blob = new Blob([text], { type: 'text/plain' });
-            licenseDownload.href = URL.createObjectURL(blob);
-            _licenseLoaded = true;
-          } catch (e) {
-            licenseContent.textContent =
-              'Не удалось загрузить файл LICENSE.\nУбедитесь, что он лежит рядом с этой страницей в той же папке/репозитории.';
-            licenseDownload.href = '#';
-          }
-        }
+        switchLicenseTab('license'); // always open on the License tab
       }
       function hideLicense() {
         licenseModal.classList.remove('visible');
