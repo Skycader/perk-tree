@@ -893,6 +893,54 @@
         pointer-events: none;
       }
 
+      /* fit:true (default) on video — fill the box, crop overflow, no black bars */
+      #img-content video.fit-cover,
+      #img2-content video.fit-cover {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+      }
+
+      /* ── audio:true — speaker toggle wrapper for video ── */
+      .media-audio-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+      }
+      .media-audio-wrap video {
+        pointer-events: none;
+      }
+      .media-audio-btn {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 3px;
+        background: rgba(13, 14, 24, 0.85);
+        border: 1px solid #2a3050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        pointer-events: auto;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+        z-index: 2;
+      }
+      .media-audio-btn:hover {
+        border-color: #e09040;
+        background: rgba(20, 16, 10, 0.9);
+      }
+
       /* ── slider dots (used when imgs[] has >=2 items and slider:true) ── */
       #img-dots {
         display: none;
@@ -2414,7 +2462,7 @@
               vidEl.src = src;
               vidEl.autoplay = true;
               vidEl.loop = true;
-              vidEl.muted = true;
+              vidEl.muted = true; // always starts muted; unmuted only via the speaker toggle below
               vidEl.playsInline = true;
               vidEl.controls = false;
               vidEl.disablePictureInPicture = true;
@@ -2422,12 +2470,34 @@
                 'controlsList',
                 'nodownload nofullscreen noremoteplayback',
               );
+              if (perkData?.fit !== false) vidEl.classList.add('fit-cover');
               promises.push(
                 new Promise((resolve) => {
                   vidEl.addEventListener('loadeddata', resolve, { once: true });
                   vidEl.addEventListener('error', resolve, { once: true });
                 }),
               );
+
+              // audio:true → wrap video with a speaker toggle button, bottom-right corner
+              if (perkData?.audio === true) {
+                const wrap = document.createElement('div');
+                wrap.className = 'media-audio-wrap';
+                wrap.appendChild(vidEl);
+
+                const btn = document.createElement('button');
+                btn.className = 'media-audio-btn';
+                btn.title = 'Включить звук';
+                btn.innerHTML = svgSpeakerIcon(true); // muted icon initially
+                btn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  vidEl.muted = !vidEl.muted;
+                  btn.innerHTML = svgSpeakerIcon(vidEl.muted);
+                  btn.title = vidEl.muted ? 'Включить звук' : 'Выключить звук';
+                });
+                wrap.appendChild(btn);
+                return wrap;
+              }
+
               return vidEl;
             } else {
               const imgEl = document.createElement('img');
@@ -2441,6 +2511,21 @@
               imgEl.src = src;
               return imgEl;
             }
+          }
+
+          // small speaker SVG, toggles between muted/unmuted glyph
+          function svgSpeakerIcon(muted) {
+            return muted
+              ? `<svg viewBox="0 0 16 16" width="13" height="13">
+                   <path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="#c0bdb4"/>
+                   <line x1="10.5" y1="6" x2="14" y2="9.5" stroke="#c0bdb4" stroke-width="1.3"/>
+                   <line x1="14" y1="6" x2="10.5" y2="9.5" stroke="#c0bdb4" stroke-width="1.3"/>
+                 </svg>`
+              : `<svg viewBox="0 0 16 16" width="13" height="13">
+                   <path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="#e09040"/>
+                   <path d="M10.5 5.5a3.2 3.2 0 0 1 0 5" fill="none" stroke="#e09040" stroke-width="1.2"/>
+                   <path d="M12 4a5.4 5.4 0 0 1 0 8" fill="none" stroke="#e09040" stroke-width="1.1" opacity="0.7"/>
+                 </svg>`;
           }
 
           const imgLoadPromises = [];
