@@ -846,10 +846,81 @@
       #img-content video::-webkit-media-controls-panel,
       #img-content video::-webkit-media-controls-play-button,
       #img-content video::-webkit-media-controls-timeline,
-      #img-content video::-webkit-media-controls-volume-slider {
+      #img-content video::-webkit-media-controls-volume-slider,
+      #img2-content video::-webkit-media-controls,
+      #img2-content video::-webkit-media-controls-panel,
+      #img2-content video::-webkit-media-controls-play-button,
+      #img2-content video::-webkit-media-controls-timeline,
+      #img2-content video::-webkit-media-controls-volume-slider {
         display: none !important;
         opacity: 0 !important;
         pointer-events: none !important;
+      }
+
+      /* ── second image/video window (used when imgs[] has >=2 items and slider:false) ── */
+      #img2-box {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 280px;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #img2-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        overflow: hidden;
+        flex: 1;
+        min-height: 0;
+      }
+      #img2-content img,
+      #img2-content video {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 2px;
+      }
+      #img-content video,
+      #img2-content video {
+        pointer-events: none;
+      }
+
+      /* ── slider dots (used when imgs[] has >=2 items and slider:true) ── */
+      #img-dots {
+        display: none;
+        flex-shrink: 0;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 0 10px;
+      }
+      #img-dots.visible {
+        display: flex;
+      }
+      .img-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #2a3050;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.15s;
+      }
+      .img-dot:hover {
+        background: #4a5580;
+      }
+      .img-dot.active {
+        background: #e09040;
+        transform: scale(1.2);
       }
       #img-content video {
         pointer-events: none;
@@ -1335,9 +1406,26 @@
     <div id="img-box">
       <div class="tt-header" id="img-header">Иллюстрация</div>
       <div id="img-content"></div>
+      <div id="img-dots"></div>
     </div>
     <svg
       id="img-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 499;
+        overflow: visible;
+      "
+    ></svg>
+    <div id="img2-box">
+      <div class="tt-header" id="img2-header">Иллюстрация</div>
+      <div id="img2-content"></div>
+    </div>
+    <svg
+      id="img2-arrow-svg"
       style="
         display: none;
         position: fixed;
@@ -2186,6 +2274,11 @@
         const imgContent = document.getElementById('img-content');
         const imgHeader = document.getElementById('img-header');
         const imgArwSvg = document.getElementById('img-arrow-svg');
+        const imgDots = document.getElementById('img-dots');
+        const img2Box = document.getElementById('img2-box');
+        const img2Content = document.getElementById('img2-content');
+        const img2Header = document.getElementById('img2-header');
+        const img2ArwSvg = document.getElementById('img2-arrow-svg');
         const comboBox = document.getElementById('combo-box');
         const comboLvls = document.getElementById('combo-levels');
         const comboSvg = document.getElementById('combo-arrow-svg');
@@ -2194,11 +2287,16 @@
         extraSvg.style.display = 'none';
         imgBox.style.display = 'none';
         imgArwSvg.style.display = 'none';
+        img2Box.style.display = 'none';
+        img2ArwSvg.style.display = 'none';
+        imgDots.classList.remove('visible');
+        imgDots.innerHTML = '';
         comboBox.style.display = 'none';
         comboSvg.style.display = 'none';
         // reset any maxHeight left over from previous opens
         extraBox.style.maxHeight = '';
         imgBox.style.maxHeight = '';
+        img2Box.style.maxHeight = '';
         comboBox.style.maxHeight = '';
 
         const perkData = D.skills
@@ -2242,8 +2340,25 @@
         }
 
         const hasExtra = !!perkData?.extra;
-        const hasImg = !!perkData?.img;
+        // imgs[] takes priority over the single img key when both happen to be present
+        const imgsList = Array.isArray(perkData?.imgs)
+          ? perkData.imgs.filter(Boolean)
+          : [];
+        const useSlider = imgsList.length >= 2 && perkData?.slider === true;
+        const useDualImg = imgsList.length >= 2 && perkData?.slider !== true; // separate windows
+        const hasImg = imgsList.length >= 1 || !!perkData?.img;
+        const hasImg2 = useDualImg && imgsList.length >= 2; // second SEPARATE window only
         const hasCombo = !!(combo && Object.keys(combo).length);
+
+        // resolve the actual list of image sources to render for the (single) #img-box.
+        // - imgs[] + slider:true  → all images go into ONE box, navigated via dots
+        // - imgs[] + slider:false → first image goes to #img-box, second to #img2-box
+        // - plain img             → single image, as before
+        const imgSources = imgsList.length
+          ? imgsList
+          : perkData?.img
+            ? [perkData.img]
+            : [];
 
         // ordered list of which secondary window "slots" are present, per WINDOW_ORDER
         const hasFlags = { IMG: hasImg, EXTRA: hasExtra, COMBO: hasCombo };
@@ -2283,15 +2398,12 @@
           if (colTop < TOP_MARGIN) colTop = TOP_MARGIN;
 
           // populate content — supports static images AND mp4 (auto-looped, muted, no controls)
-          const imgLoadPromises = [];
-          if (hasImg) {
-            imgHeader.textContent = perkData.name || 'Иллюстрация';
-            imgContent.innerHTML = '';
-            const isVideo = /\.mp4($|\?)/i.test(perkData.img);
-
+          // helper: create the right kind of media element (img or video) for a given src
+          function makeMediaEl(src, promises) {
+            const isVideo = /\.mp4($|\?)/i.test(src);
             if (isVideo) {
               const vidEl = document.createElement('video');
-              vidEl.src = perkData.img;
+              vidEl.src = src;
               vidEl.autoplay = true;
               vidEl.loop = true;
               vidEl.muted = true;
@@ -2302,25 +2414,72 @@
                 'controlsList',
                 'nodownload nofullscreen noremoteplayback',
               );
-              imgContent.appendChild(vidEl);
-              imgLoadPromises.push(
+              promises.push(
                 new Promise((resolve) => {
                   vidEl.addEventListener('loadeddata', resolve, { once: true });
                   vidEl.addEventListener('error', resolve, { once: true });
                 }),
               );
+              return vidEl;
             } else {
               const imgEl = document.createElement('img');
               imgEl.alt = perkData.name || '';
-              imgContent.appendChild(imgEl);
-              imgLoadPromises.push(
+              promises.push(
                 new Promise((resolve) => {
                   imgEl.addEventListener('load', resolve, { once: true });
                   imgEl.addEventListener('error', resolve, { once: true });
                 }),
               );
-              imgEl.src = perkData.img;
+              imgEl.src = src;
+              return imgEl;
             }
+          }
+
+          const imgLoadPromises = [];
+          let _sliderIndex = 0;
+
+          function renderSliderImage(idx) {
+            imgContent.innerHTML = '';
+            const el = makeMediaEl(imgSources[idx], imgLoadPromises);
+            imgContent.appendChild(el);
+            imgDots
+              .querySelectorAll('.img-dot')
+              .forEach((d, i) => d.classList.toggle('active', i === idx));
+          }
+
+          if (hasImg) {
+            imgHeader.textContent = perkData.name || 'Иллюстрация';
+            imgContent.innerHTML = '';
+
+            if (useSlider) {
+              // ONE window, multiple images, dot navigation
+              _sliderIndex = 0;
+              renderSliderImage(0);
+              imgDots.innerHTML = imgSources
+                .map(
+                  (_, i) =>
+                    `<span class="img-dot${i === 0 ? ' active' : ''}" data-idx="${i}"></span>`,
+                )
+                .join('');
+              imgDots.classList.add('visible');
+              imgDots.querySelectorAll('.img-dot').forEach((dot) => {
+                dot.addEventListener('click', () => {
+                  _sliderIndex = parseInt(dot.dataset.idx, 10);
+                  renderSliderImage(_sliderIndex);
+                });
+              });
+            } else {
+              // single image (or first of imgs[] when useDualImg)
+              const el = makeMediaEl(imgSources[0], imgLoadPromises);
+              imgContent.appendChild(el);
+            }
+          }
+
+          if (hasImg2) {
+            img2Header.textContent = perkData.name || 'Иллюстрация';
+            img2Content.innerHTML = '';
+            const el2 = makeMediaEl(imgSources[1], imgLoadPromises);
+            img2Content.appendChild(el2);
           }
           if (hasExtra) {
             const md =
@@ -2449,21 +2608,71 @@
                   drawLine(svgOf[kind], mainR, rect);
                 }
 
+                // base column rect (extra and/or img), or mainR if neither is present
+                const baseColRect =
+                  imgRect && extraRect
+                    ? {
+                        left: Math.min(extraRect.left, imgRect.left),
+                        right: Math.max(extraRect.right, imgRect.right),
+                        top: Math.min(extraRect.top, imgRect.top),
+                        bottom: Math.max(extraRect.bottom, imgRect.bottom),
+                      }
+                    : extraRect || imgRect || mainR;
+
+                // IMG2 (separate window for imgs[1] when slider:false) — same rule as combo's
+                // "3rd window below" pattern, but always anchored to baseColRect (not combo).
+                let img2Rect = null;
+                if (hasImg2) {
+                  const noColumnYet = !extraRect && !imgRect;
+                  img2Box.style.display = 'flex';
+                  img2Box.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
+                  const i2w = colW; // match the width used for img-box/extra-box, not the smaller default
+                  img2Box.style.width = i2w + 'px';
+                  let i2x, i2y, i2Below;
+                  if (noColumnYet) {
+                    i2y = mainR.top;
+                    i2x = placedLeft ? mainR.left - i2w - 36 : mainR.right + 36;
+                    i2Below = false;
+                  } else {
+                    i2x = baseColRect.left;
+                    i2y = baseColRect.bottom + 16;
+                    i2Below = true;
+                  }
+                  const i2h = Math.min(img2Box.scrollHeight || 200, vhC * 0.7);
+                  const i2AvailBelow = vhC - i2y - 8;
+                  if (i2Below && i2h > i2AvailBelow) {
+                    img2Box.style.maxHeight = Math.max(i2AvailBelow, 80) + 'px';
+                  } else if (i2y + i2h > vhC - 8) {
+                    i2y = vhC - i2h - 8;
+                  }
+                  if (i2y < 8) i2y = 8;
+                  if (i2x < 4) i2x = 4;
+                  if (i2x + i2w > vwC - 4) i2x = vwC - i2w - 4;
+                  img2Box.style.left = i2x + 'px';
+                  img2Box.style.top = i2y + 'px';
+                  img2Rect = img2Box.getBoundingClientRect();
+                  drawLine(
+                    img2ArwSvg,
+                    noColumnYet ? mainR : baseColRect,
+                    img2Rect,
+                    i2Below,
+                  );
+                }
+
                 // COMBO placement rule:
-                //  - if there IS a column (extra and/or img already shown) → combo goes BELOW that column
-                //  - if combo is the ONLY secondary window (no extra, no img) → it IS the "2nd window",
-                //    so it goes BESIDE the levels tooltip, same side as the rest of the chain (placedLeft)
+                //  - if there IS a column (extra and/or img and/or img2 already shown) → combo goes BELOW it
+                //  - if combo is the ONLY secondary window → it IS the "2nd window",
+                //    beside the levels tooltip, same side as the rest of the chain (placedLeft)
                 if (hasCombo) {
-                  const isOnlySecondary = !extraRect && !imgRect;
-                  const colRect =
-                    imgRect && extraRect
-                      ? {
-                          left: Math.min(extraRect.left, imgRect.left),
-                          right: Math.max(extraRect.right, imgRect.right),
-                          top: Math.min(extraRect.top, imgRect.top),
-                          bottom: Math.max(extraRect.bottom, imgRect.bottom),
-                        }
-                      : extraRect || imgRect || mainR;
+                  const isOnlySecondary = !extraRect && !imgRect && !img2Rect;
+                  const colRect = img2Rect
+                    ? {
+                        left: Math.min(baseColRect.left, img2Rect.left),
+                        right: Math.max(baseColRect.right, img2Rect.right),
+                        top: Math.min(baseColRect.top, img2Rect.top),
+                        bottom: Math.max(baseColRect.bottom, img2Rect.bottom),
+                      }
+                    : baseColRect;
 
                   const cw = 320;
                   comboBox.style.display = 'flex';
@@ -2624,6 +2833,9 @@
         document.getElementById('extra-arrow-svg').style.display = 'none';
         document.getElementById('img-box').style.display = 'none';
         document.getElementById('img-arrow-svg').style.display = 'none';
+        document.getElementById('img-dots').classList.remove('visible');
+        document.getElementById('img2-box').style.display = 'none';
+        document.getElementById('img2-arrow-svg').style.display = 'none';
         document.getElementById('combo-box').style.display = 'none';
         document.getElementById('combo-arrow-svg').style.display = 'none';
         document.body.style.overflow = '';
