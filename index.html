@@ -846,7 +846,8 @@
         align-items: center;
         justify-content: center;
         padding: 10px;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
         flex: 1;
         min-height: 0;
       }
@@ -858,6 +859,17 @@
         height: auto;
         object-fit: contain;
         border-radius: 2px;
+      }
+      /* applied via JS when natural content height exceeds the available space:
+         drop the max-height cap so the image renders at its real (width-limited)
+         size, letting the container's overflow-y:auto actually scroll the excess
+         instead of squeezing the whole image into a sliver that still gets clipped. */
+      #img-content img.media-overflow,
+      #img-content video.media-overflow,
+      #img2-content img.media-overflow,
+      #img2-content video.media-overflow {
+        max-height: none;
+        align-self: flex-start;
       }
       /* hide any native video chrome (progress bar / controls) on hover or otherwise */
       #img-content video::-webkit-media-controls,
@@ -893,7 +905,8 @@
         align-items: center;
         justify-content: center;
         padding: 10px;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
         flex: 1;
         min-height: 0;
       }
@@ -2499,6 +2512,43 @@
         const vwC = window.innerWidth,
           vhC = window.innerHeight;
 
+        // Explicitly pin #img-content / #img2-content / #extra-content to a real
+        // px height derived from their box's actual maxHeight, MINUS the header
+        // and padding. max-height:% inside them is unreliable when the box's own
+        // height comes from a JS-set maxHeight on a flex:1 ancestor — browsers
+        // don't always resolve that percentage chain correctly, which let the
+        // <img>/<video> render at its natural (larger) size and get clipped by
+        // the box's overflow:hidden instead of being shrunk to fit.
+        function pinContentHeight(box, contentSelector) {
+          const content = box.querySelector(contentSelector);
+          if (!content) return;
+          const header = box.querySelector('.tt-header');
+          const headerH = header ? header.getBoundingClientRect().height : 0;
+          const boxMaxH =
+            parseFloat(box.style.maxHeight) ||
+            box.getBoundingClientRect().height;
+          const contentH = Math.max(40, boxMaxH - headerH);
+          content.style.height = contentH + 'px';
+          content.style.maxHeight = contentH + 'px';
+
+          // If the media's natural (width-constrained) height would exceed the
+          // available contentH, drop its max-height cap so it renders at full
+          // natural size and the container actually scrolls the overflow,
+          // instead of object-fit:contain squeezing it into a tiny sliver.
+          const media = content.querySelector('img,video');
+          if (media) {
+            const cw = content.clientWidth - 20; // minus the container's own padding
+            const naturalW =
+              media.tagName === 'IMG' ? media.naturalWidth : media.videoWidth;
+            const naturalH =
+              media.tagName === 'IMG' ? media.naturalHeight : media.videoHeight;
+            if (naturalW && naturalH) {
+              const renderedH = cw * (naturalH / naturalW); // height if scaled to fit width
+              media.classList.toggle('media-overflow', renderedH > contentH);
+            }
+          }
+        }
+
         function drawLine(svg, fromRect, toRect, vertical) {
           // strict 90deg L-shape: one horizontal + one vertical segment
           // ALL coordinates rounded to whole pixels — sub-pixel positions get
@@ -2919,6 +2969,7 @@
                     imgBox.style.maxHeight =
                       vhC - colTop - BOTTOM_MARGIN + 'px';
                     imgBox.style.display = 'flex';
+                    pinContentHeight(imgBox, '#img-content');
                     imgRect = imgBox.getBoundingClientRect();
                     drawLine(imgArwSvg, mainR, imgRect);
                   }
@@ -2941,6 +2992,10 @@
                   firstBox.style.width = colW + 'px';
                   firstBox.style.maxHeight = slotH + 'px';
                   firstBox.style.display = 'flex';
+                  pinContentHeight(
+                    firstBox,
+                    firstKind === 'IMG' ? '#img-content' : '#extra-content',
+                  );
 
                   const firstRect = firstBox.getBoundingClientRect();
                   const actualFirstH = firstRect.height; // real height, may be < slotH
@@ -2956,6 +3011,10 @@
                   secondBox.style.width = colW + 'px';
                   secondBox.style.maxHeight = secondMaxH + 'px';
                   secondBox.style.display = 'flex';
+                  pinContentHeight(
+                    secondBox,
+                    secondKind === 'IMG' ? '#img-content' : '#extra-content',
+                  );
 
                   const secondRect = secondBox.getBoundingClientRect();
                   if (firstKind === 'EXTRA') extraRect = firstRect;
@@ -2990,8 +3049,34 @@
                   box.style.left = boxX + 'px';
                   box.style.top = colTop + 'px';
                   box.style.width = colW + 'px';
-                  box.style.maxHeight = reserveForCombo + 'px';
+
+                  // Don't pre-reserve half the space for combo "just in case" — give this
+                  // window the height it actually needs (up to the full available space),
+                  // then combo gets whatever's left below it. The content itself can still
+                  // scroll if it genuinely doesn't fit (handled by overflow-y on #*-content).
+                  const fullAvail = vhC - colTop - BOTTOM_MARGIN;
+                  box.style.maxHeight = fullAvail + 'px';
                   box.style.display = 'flex';
+                  pinContentHeight(
+                    box,
+                    kind === 'IMG' ? '#img-content' : '#extra-content',
+                  );
+
+                  // measure what this window ACTUALLY needs, then re-cap it so combo
+                  // gets the remaining room instead of an arbitrary 50/50 split.
+                  if (hasCombo) {
+                    const naturalNeed = box.scrollHeight; // includes header + content's natural size
+                    const desiredH = Math.min(
+                      naturalNeed,
+                      fullAvail - ROW_GAP - 80,
+                    ); // leave room for combo (min 80px)
+                    box.style.maxHeight = Math.max(80, desiredH) + 'px';
+                    pinContentHeight(
+                      box,
+                      kind === 'IMG' ? '#img-content' : '#extra-content',
+                    );
+                  }
+
                   const rect = box.getBoundingClientRect();
                   if (kind === 'EXTRA') extraRect = rect;
                   else imgRect = rect;
@@ -3040,6 +3125,7 @@
                   if (i2x + i2w > vwC - 4) i2x = vwC - i2w - 4;
                   img2Box.style.left = i2x + 'px';
                   img2Box.style.top = i2y + 'px';
+                  pinContentHeight(img2Box, '#img2-content');
                   img2Rect = img2Box.getBoundingClientRect();
                   drawLine(
                     img2ArwSvg,
