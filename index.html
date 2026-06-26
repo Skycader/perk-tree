@@ -3025,12 +3025,24 @@
               .join('');
           }
 
-          // The layout below only needs the SPINNER PLACEHOLDER to be in the DOM
-          // (already true at this point) — it does NOT need to wait for the real
-          // image/video to finish loading. Media elements update in place once
-          // loaded; the box's geometry was already fixed using the spinner's
-          // (small, known) size, so nothing needs to wait on network speed.
-          requestAnimationFrame(() =>
+          // The layout's geometry (box maxHeight, combo position) is computed
+          // from box.scrollHeight, which must reflect the REAL media size, not
+          // the small spinner placeholder — otherwise windows get permanently
+          // stuck at spinner-sized height even after the media loads.
+          // So: wait for media to load OR a short timeout, whichever comes first,
+          // before computing layout. This keeps things fast (no indefinite wait)
+          // while avoiding the "stuck tiny window" bug.
+          const LAYOUT_WAIT_TIMEOUT_MS = 600;
+          const layoutGuard = Promise.all(
+            imgLoadPromises.map((p) =>
+              Promise.race([
+                p,
+                new Promise((res) => setTimeout(res, LAYOUT_WAIT_TIMEOUT_MS)),
+              ]),
+            ),
+          );
+
+          layoutGuard.then(() =>
             requestAnimationFrame(() =>
               requestAnimationFrame(() => {
                 // ── TILED LAYOUT: column slots are HARD-capped, never overlap, never off-screen ──
