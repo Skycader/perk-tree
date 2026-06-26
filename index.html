@@ -847,6 +847,61 @@
         overflow-x: hidden;
         flex: 1;
         min-height: 0;
+        position: relative;
+      }
+      /* loading spinner shown in img-content/img2-content while media is fetching */
+      .media-loading-wrap {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+      }
+      .media-loading-svg {
+        width: 26px;
+        height: 26px;
+        animation: media-spin 0.8s linear infinite;
+      }
+      .media-loading-svg circle {
+        fill: none;
+        stroke: #50556a;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-dasharray: 60 200;
+      }
+      @keyframes media-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── GLOBAL PAGE LOADER ── */
+      #page-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #070810;
+        transition: opacity 0.3s ease;
+      }
+      #page-loader.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .page-loader-svg {
+        width: 48px;
+        height: 48px;
+        animation: media-spin 1s linear infinite;
+      }
+      .page-loader-svg circle {
+        fill: none;
+        stroke: #e09040;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-dasharray: 80 200;
       }
       #img-content img,
       #img-content video {
@@ -906,6 +961,7 @@
         overflow-x: hidden;
         flex: 1;
         min-height: 0;
+        position: relative;
       }
       #img2-content img,
       #img2-content video {
@@ -1463,6 +1519,13 @@
     </style>
   </head>
   <body>
+    <!-- global page-loading spinner: hidden by the inline script once init finishes -->
+    <div id="page-loader">
+      <svg class="page-loader-svg" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="18"></circle>
+      </svg>
+    </div>
+
     <div class="topbar">
       <div class="tb-left">
         <span class="tb-title" id="tb-title"
@@ -1849,6 +1912,11 @@
       // Меняя порядок строк здесь, можно поменять очерёдность окон —
       // используется при построении queue в showTooltip().
       const WINDOW_ORDER = ['IMG', 'EXTRA', 'COMBO'];
+
+      // Spinner shown inside img/img2 content boxes while their media is loading.
+      const MEDIA_LOADING_SVG = `<svg class="media-loading-svg" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"></circle>
+      </svg>`;
 
       // ── PROCESS CONFIG ──
       const D = STAND_DATA;
@@ -2674,6 +2742,20 @@
                   vidEl.addEventListener('error', resolve, { once: true });
                 }),
               );
+              // once real dimensions are known, re-check overflow/scroll sizing
+              // for whichever box this video ends up living in
+              vidEl.addEventListener(
+                'loadeddata',
+                () => {
+                  const box = vidEl.closest('#img-box, #img2-box, #extra-box');
+                  if (box) {
+                    const sel =
+                      box.id === 'img2-box' ? '#img2-content' : '#img-content';
+                    pinContentHeight(box, sel);
+                  }
+                },
+                { once: true },
+              );
 
               // per-image audio (in imgs[] entries) overrides the perk-level perkData.audio flag.
               // audioOverride === null means "not specified at this level" → fall back to perk-level.
@@ -2710,6 +2792,18 @@
                   imgEl.addEventListener('load', resolve, { once: true });
                   imgEl.addEventListener('error', resolve, { once: true });
                 }),
+              );
+              imgEl.addEventListener(
+                'load',
+                () => {
+                  const box = imgEl.closest('#img-box, #img2-box, #extra-box');
+                  if (box) {
+                    const sel =
+                      box.id === 'img2-box' ? '#img2-content' : '#img-content';
+                    pinContentHeight(box, sel);
+                  }
+                },
+                { once: true },
               );
               imgEl.src = src;
               return imgEl;
@@ -2749,7 +2843,7 @@
               entry.title,
               entry.audio,
             );
-            imgContent.appendChild(el);
+            withLoadingSpinner(el, imgContent);
             imgHeader.textContent =
               entry.title || perkData.name || 'Иллюстрация';
             imgDots
@@ -2757,9 +2851,44 @@
               .forEach((d, i) => d.classList.toggle('active', i === idx));
           }
 
-          if (hasImg) {
-            imgContent.innerHTML = '';
+          // helper: wraps a media element with a spinner that's visible until
+          // the media actually finishes loading (load/loadeddata/error), then
+          // removes itself. The spinner and the media element coexist in the
+          // DOM the whole time — nothing overwrites innerHTML after this point,
+          // so the spinner isn't wiped out before the browser gets to paint it.
+          function withLoadingSpinner(mediaEl, container) {
+            const spinnerWrap = document.createElement('div');
+            spinnerWrap.className = 'media-loading-wrap';
+            spinnerWrap.innerHTML = MEDIA_LOADING_SVG;
+            container.appendChild(spinnerWrap);
+            container.appendChild(mediaEl);
 
+            const removeSpinner = () => spinnerWrap.remove();
+            const tag = mediaEl.tagName;
+            if (tag === 'IMG') {
+              mediaEl.addEventListener('load', removeSpinner, { once: true });
+              mediaEl.addEventListener('error', removeSpinner, { once: true });
+              if (mediaEl.complete) removeSpinner(); // already cached/loaded
+            } else if (tag === 'VIDEO') {
+              mediaEl.addEventListener('loadeddata', removeSpinner, {
+                once: true,
+              });
+              mediaEl.addEventListener('error', removeSpinner, { once: true });
+            } else {
+              // audio:true wraps the <video> in a .media-audio-wrap div
+              const inner = mediaEl.querySelector('video');
+              if (inner) {
+                inner.addEventListener('loadeddata', removeSpinner, {
+                  once: true,
+                });
+                inner.addEventListener('error', removeSpinner, { once: true });
+              } else {
+                removeSpinner();
+              }
+            }
+          }
+
+          if (hasImg) {
             if (useSlider) {
               // ONE window, multiple images, dot navigation
               _sliderIndex = 0;
@@ -2788,7 +2917,8 @@
                 entry0.title,
                 entry0.audio,
               );
-              imgContent.appendChild(el);
+              imgContent.innerHTML = '';
+              withLoadingSpinner(el, imgContent);
             }
           }
 
@@ -2796,14 +2926,14 @@
             const entry1 = imgSources[1];
             img2Header.textContent =
               entry1.title || perkData.name || 'Иллюстрация';
-            img2Content.innerHTML = '';
             const el2 = makeMediaEl(
               entry1.src,
               imgLoadPromises,
               entry1.title,
               entry1.audio,
             );
-            img2Content.appendChild(el2);
+            img2Content.innerHTML = '';
+            withLoadingSpinner(el2, img2Content);
           }
           if (hasExtra) {
             const md =
@@ -2895,7 +3025,12 @@
               .join('');
           }
 
-          Promise.all(imgLoadPromises).then(() =>
+          // The layout below only needs the SPINNER PLACEHOLDER to be in the DOM
+          // (already true at this point) — it does NOT need to wait for the real
+          // image/video to finish loading. Media elements update in place once
+          // loaded; the box's geometry was already fixed using the spinner's
+          // (small, known) size, so nothing needs to wait on network speed.
+          requestAnimationFrame(() =>
             requestAnimationFrame(() =>
               requestAnimationFrame(() => {
                 // ── TILED LAYOUT: column slots are HARD-capped, never overlap, never off-screen ──
@@ -3690,7 +3825,14 @@
 
       window.addEventListener('resize', () => requestAnimationFrame(redrawAll));
       document.fonts.ready.then(() =>
-        requestAnimationFrame(() => requestAnimationFrame(redrawAll)),
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            redrawAll();
+            // initial layout is complete — hide the global page loader
+            const pageLoader = document.getElementById('page-loader');
+            if (pageLoader) pageLoader.classList.add('hidden');
+          }),
+        ),
       );
 
       // ── PNG EXPORT ──
