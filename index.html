@@ -3025,456 +3025,468 @@
               .join('');
           }
 
-          // The layout's geometry (box maxHeight, combo position) is computed
-          // from box.scrollHeight, which must reflect the REAL media size, not
-          // the small spinner placeholder — otherwise windows get permanently
-          // stuck at spinner-sized height even after the media loads.
-          // So: wait for media to load OR a short timeout, whichever comes first,
-          // before computing layout. This keeps things fast (no indefinite wait)
-          // while avoiding the "stuck tiny window" bug.
-          const LAYOUT_WAIT_TIMEOUT_MS = 600;
-          const layoutGuard = Promise.all(
-            imgLoadPromises.map((p) =>
-              Promise.race([
-                p,
-                new Promise((res) => setTimeout(res, LAYOUT_WAIT_TIMEOUT_MS)),
-              ]),
-            ),
-          );
-
-          layoutGuard.then(() =>
+          // Layout runs IMMEDIATELY (no waiting on media at all) so every window,
+          // including combo, appears with zero delay. If img/extra's box used the
+          // spinner's tiny scrollHeight to size itself, runLayout() re-runs once
+          // any media finishes loading AFTER the first pass, fixing the size
+          // (and repositioning combo accordingly) without ever blocking first paint.
+          function runLayout() {
             requestAnimationFrame(() =>
-              requestAnimationFrame(() => {
-                // ── TILED LAYOUT: column slots are HARD-capped, never overlap, never off-screen ──
-                // Order of IMG vs EXTRA within the column is driven by WINDOW_ORDER.
-                const colKinds = activeKinds.filter(
-                  (k) => k === 'IMG' || k === 'EXTRA',
-                );
-                const slots = colKinds.length;
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() => {
+                  // ── TILED LAYOUT: column slots are HARD-capped, never overlap, never off-screen ──
+                  // Order of IMG vs EXTRA within the column is driven by WINDOW_ORDER.
+                  const colKinds = activeKinds.filter(
+                    (k) => k === 'IMG' || k === 'EXTRA',
+                  );
+                  const slots = colKinds.length;
 
-                // actual usable height FROM colTop down to the bottom margin
-                const usableFromTop = vhC - colTop - BOTTOM_MARGIN;
+                  // actual usable height FROM colTop down to the bottom margin
+                  const usableFromTop = vhC - colTop - BOTTOM_MARGIN;
 
-                let extraRect = null,
-                  imgRect = null;
-                const boxOf = { IMG: imgBox, EXTRA: extraBox };
-                const svgOf = { IMG: imgArwSvg, EXTRA: extraSvg };
+                  let extraRect = null,
+                    imgRect = null;
+                  const boxOf = { IMG: imgBox, EXTRA: extraBox };
+                  const svgOf = { IMG: imgArwSvg, EXTRA: extraSvg };
 
-                // windows.extra forces EXTRA out of the shared img/extra column into its own
-                // beside-the-tooltip slot, even when img is also present (slots===2).
-                // Only takes effect if that side is actually free; otherwise falls back
-                // to the normal stacked-column behaviour below.
-                const extraForcedSide2 = perkData?.windows?.extra;
-                let extraSplitOut = false;
-                if (slots === 2 && extraForcedSide2) {
-                  const rightX3 = mainR.right + COL_GAP;
-                  const leftX3 = mainR.left - colW - COL_GAP;
-                  const rightFits3 = rightX3 + colW <= vwC - 4;
-                  const leftFits3 = leftX3 >= 4;
-                  let exX = null;
-                  if (extraForcedSide2 === 'left' && leftFits3) exX = leftX3;
-                  else if (extraForcedSide2 === 'right' && rightFits3)
-                    exX = rightX3;
+                  // windows.extra forces EXTRA out of the shared img/extra column into its own
+                  // beside-the-tooltip slot, even when img is also present (slots===2).
+                  // Only takes effect if that side is actually free; otherwise falls back
+                  // to the normal stacked-column behaviour below.
+                  const extraForcedSide2 = perkData?.windows?.extra;
+                  let extraSplitOut = false;
+                  if (slots === 2 && extraForcedSide2) {
+                    const rightX3 = mainR.right + COL_GAP;
+                    const leftX3 = mainR.left - colW - COL_GAP;
+                    const rightFits3 = rightX3 + colW <= vwC - 4;
+                    const leftFits3 = leftX3 >= 4;
+                    let exX = null;
+                    if (extraForcedSide2 === 'left' && leftFits3) exX = leftX3;
+                    else if (extraForcedSide2 === 'right' && rightFits3)
+                      exX = rightX3;
 
-                  if (exX !== null) {
-                    extraSplitOut = true;
-                    // EXTRA: standalone, beside the tooltip — offset below its header,
-                    // same visual treatment as combo's "beside" placement.
-                    const exTop = mainR.top + 40; // matches combo's BESIDE_HEADER_OFFSET
-                    extraBox.style.left = exX + 'px';
-                    extraBox.style.top = exTop + 'px';
-                    extraBox.style.width = colW + 'px';
-                    extraBox.style.maxHeight =
-                      vhC - exTop - BOTTOM_MARGIN + 'px';
-                    extraBox.style.display = 'flex';
-                    extraRect = extraBox.getBoundingClientRect();
+                    if (exX !== null) {
+                      extraSplitOut = true;
+                      // EXTRA: standalone, beside the tooltip — offset below its header,
+                      // same visual treatment as combo's "beside" placement.
+                      const exTop = mainR.top + 40; // matches combo's BESIDE_HEADER_OFFSET
+                      extraBox.style.left = exX + 'px';
+                      extraBox.style.top = exTop + 'px';
+                      extraBox.style.width = colW + 'px';
+                      extraBox.style.maxHeight =
+                        vhC - exTop - BOTTOM_MARGIN + 'px';
+                      extraBox.style.display = 'flex';
+                      extraRect = extraBox.getBoundingClientRect();
 
-                    // straight horizontal line at extra's own header height, anchored to icX
-                    // (same approach as combo's beside-line, avoids doubling the vertical connector)
-                    const lineY3 = Math.round(extraRect.top + 18);
-                    const fromX3 = Math.round(icX);
-                    const toX3 = Math.round(
-                      extraForcedSide2 === 'left'
-                        ? extraRect.right
-                        : extraRect.left,
-                    );
-                    const len3 = Math.abs(toX3 - fromX3);
-                    extraSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
-                    extraSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-                    extraSvg.innerHTML = `<line x1="${fromX3}" y1="${lineY3}" x2="${toX3}" y2="${lineY3}"
+                      // straight horizontal line at extra's own header height, anchored to icX
+                      // (same approach as combo's beside-line, avoids doubling the vertical connector)
+                      const lineY3 = Math.round(extraRect.top + 18);
+                      const fromX3 = Math.round(icX);
+                      const toX3 = Math.round(
+                        extraForcedSide2 === 'left'
+                          ? extraRect.right
+                          : extraRect.left,
+                      );
+                      const len3 = Math.abs(toX3 - fromX3);
+                      extraSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+                      extraSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                      extraSvg.innerHTML = `<line x1="${fromX3}" y1="${lineY3}" x2="${toX3}" y2="${lineY3}"
                   stroke="#50556a" stroke-width="1.5"
                   stroke-dasharray="${len3}" stroke-dashoffset="${len3}"
                   style="animation:dashIn .4s ease forwards"/>`;
 
-                    // IMG: takes the full column on its own, at colX/colTop
-                    imgBox.style.left = colX + 'px';
-                    imgBox.style.top = colTop + 'px';
-                    imgBox.style.width = colW + 'px';
-                    imgBox.style.maxHeight =
-                      vhC - colTop - BOTTOM_MARGIN + 'px';
-                    imgBox.style.display = 'flex';
-                    pinContentHeight(imgBox, '#img-content');
-                    imgRect = imgBox.getBoundingClientRect();
-                    drawLine(imgArwSvg, mainR, imgRect);
-                  }
-                }
-
-                if (extraSplitOut) {
-                  // already placed above — nothing more to do for this branch
-                } else if (slots === 2) {
-                  // split usable height in half — slotH is the MAX each window may use,
-                  // but the second window is placed right after the FIRST's actual
-                  // rendered height (not the full slot), so small content doesn't
-                  // leave a huge empty gap before the next window.
-                  const slotH = Math.floor((usableFromTop - ROW_GAP) / 2);
-                  const [firstKind, secondKind] = colKinds;
-                  const firstBox = boxOf[firstKind],
-                    secondBox = boxOf[secondKind];
-
-                  firstBox.style.left = colX + 'px';
-                  firstBox.style.top = colTop + 'px';
-                  firstBox.style.width = colW + 'px';
-                  firstBox.style.maxHeight = slotH + 'px';
-                  firstBox.style.display = 'flex';
-                  pinContentHeight(
-                    firstBox,
-                    firstKind === 'IMG' ? '#img-content' : '#extra-content',
-                  );
-
-                  const firstRect = firstBox.getBoundingClientRect();
-                  const actualFirstH = firstRect.height; // real height, may be < slotH
-
-                  const secondTop = colTop + actualFirstH + ROW_GAP;
-                  // second window still capped so it can't overflow the bottom margin
-                  const secondMaxH = Math.max(
-                    80,
-                    vhC - secondTop - BOTTOM_MARGIN,
-                  );
-                  secondBox.style.left = colX + 'px';
-                  secondBox.style.top = secondTop + 'px';
-                  secondBox.style.width = colW + 'px';
-                  secondBox.style.maxHeight = secondMaxH + 'px';
-                  secondBox.style.display = 'flex';
-                  pinContentHeight(
-                    secondBox,
-                    secondKind === 'IMG' ? '#img-content' : '#extra-content',
-                  );
-
-                  const secondRect = secondBox.getBoundingClientRect();
-                  if (firstKind === 'EXTRA') extraRect = firstRect;
-                  else imgRect = firstRect;
-                  if (secondKind === 'EXTRA') extraRect = secondRect;
-                  else imgRect = secondRect;
-
-                  drawLine(svgOf[firstKind], mainR, firstRect);
-                  drawLine(svgOf[secondKind], firstRect, secondRect, true);
-                } else if (slots === 1) {
-                  const kind = colKinds[0];
-                  const box = boxOf[kind];
-                  const reserveForCombo = hasCombo
-                    ? Math.floor((usableFromTop - ROW_GAP) / 2)
-                    : vhC - colTop - BOTTOM_MARGIN;
-
-                  // windows.extra forces a side for the SINGLE extra window, same pattern as combo:
-                  // only applies if extra is alone in the column, and only if that side is free.
-                  let boxX = colX;
-                  if (kind === 'EXTRA' && perkData?.windows?.extra) {
-                    const extraForcedSide = perkData.windows.extra; // 'left' | 'right'
-                    const rightX2 = mainR.right + COL_GAP;
-                    const leftX2 = mainR.left - colW - COL_GAP;
-                    const rightFits2 = rightX2 + colW <= vwC - 4;
-                    const leftFits2 = leftX2 >= 4;
-                    if (extraForcedSide === 'left' && leftFits2) boxX = leftX2;
-                    else if (extraForcedSide === 'right' && rightFits2)
-                      boxX = rightX2;
-                    // else: keep default colX (no room on the requested side)
+                      // IMG: takes the full column on its own, at colX/colTop
+                      imgBox.style.left = colX + 'px';
+                      imgBox.style.top = colTop + 'px';
+                      imgBox.style.width = colW + 'px';
+                      imgBox.style.maxHeight =
+                        vhC - colTop - BOTTOM_MARGIN + 'px';
+                      imgBox.style.display = 'flex';
+                      pinContentHeight(imgBox, '#img-content');
+                      imgRect = imgBox.getBoundingClientRect();
+                      drawLine(imgArwSvg, mainR, imgRect);
+                    }
                   }
 
-                  box.style.left = boxX + 'px';
-                  box.style.top = colTop + 'px';
-                  box.style.width = colW + 'px';
+                  if (extraSplitOut) {
+                    // already placed above — nothing more to do for this branch
+                  } else if (slots === 2) {
+                    // split usable height in half — slotH is the MAX each window may use,
+                    // but the second window is placed right after the FIRST's actual
+                    // rendered height (not the full slot), so small content doesn't
+                    // leave a huge empty gap before the next window.
+                    const slotH = Math.floor((usableFromTop - ROW_GAP) / 2);
+                    const [firstKind, secondKind] = colKinds;
+                    const firstBox = boxOf[firstKind],
+                      secondBox = boxOf[secondKind];
 
-                  // Don't pre-reserve half the space for combo "just in case" — give this
-                  // window the height it actually needs (up to the full available space),
-                  // then combo gets whatever's left below it. The content itself can still
-                  // scroll if it genuinely doesn't fit (handled by overflow-y on #*-content).
-                  const fullAvail = vhC - colTop - BOTTOM_MARGIN;
-                  box.style.maxHeight = fullAvail + 'px';
-                  box.style.display = 'flex';
-                  pinContentHeight(
-                    box,
-                    kind === 'IMG' ? '#img-content' : '#extra-content',
-                  );
+                    firstBox.style.left = colX + 'px';
+                    firstBox.style.top = colTop + 'px';
+                    firstBox.style.width = colW + 'px';
+                    firstBox.style.maxHeight = slotH + 'px';
+                    firstBox.style.display = 'flex';
+                    pinContentHeight(
+                      firstBox,
+                      firstKind === 'IMG' ? '#img-content' : '#extra-content',
+                    );
 
-                  // measure what this window ACTUALLY needs, then re-cap it so combo
-                  // gets the remaining room instead of an arbitrary 50/50 split.
-                  if (hasCombo) {
-                    const naturalNeed = box.scrollHeight; // includes header + content's natural size
-                    const desiredH = Math.min(
-                      naturalNeed,
-                      fullAvail - ROW_GAP - 80,
-                    ); // leave room for combo (min 80px)
-                    box.style.maxHeight = Math.max(80, desiredH) + 'px';
+                    const firstRect = firstBox.getBoundingClientRect();
+                    const actualFirstH = firstRect.height; // real height, may be < slotH
+
+                    const secondTop = colTop + actualFirstH + ROW_GAP;
+                    // second window still capped so it can't overflow the bottom margin
+                    const secondMaxH = Math.max(
+                      80,
+                      vhC - secondTop - BOTTOM_MARGIN,
+                    );
+                    secondBox.style.left = colX + 'px';
+                    secondBox.style.top = secondTop + 'px';
+                    secondBox.style.width = colW + 'px';
+                    secondBox.style.maxHeight = secondMaxH + 'px';
+                    secondBox.style.display = 'flex';
+                    pinContentHeight(
+                      secondBox,
+                      secondKind === 'IMG' ? '#img-content' : '#extra-content',
+                    );
+
+                    const secondRect = secondBox.getBoundingClientRect();
+                    if (firstKind === 'EXTRA') extraRect = firstRect;
+                    else imgRect = firstRect;
+                    if (secondKind === 'EXTRA') extraRect = secondRect;
+                    else imgRect = secondRect;
+
+                    drawLine(svgOf[firstKind], mainR, firstRect);
+                    drawLine(svgOf[secondKind], firstRect, secondRect, true);
+                  } else if (slots === 1) {
+                    const kind = colKinds[0];
+                    const box = boxOf[kind];
+                    const reserveForCombo = hasCombo
+                      ? Math.floor((usableFromTop - ROW_GAP) / 2)
+                      : vhC - colTop - BOTTOM_MARGIN;
+
+                    // windows.extra forces a side for the SINGLE extra window, same pattern as combo:
+                    // only applies if extra is alone in the column, and only if that side is free.
+                    let boxX = colX;
+                    if (kind === 'EXTRA' && perkData?.windows?.extra) {
+                      const extraForcedSide = perkData.windows.extra; // 'left' | 'right'
+                      const rightX2 = mainR.right + COL_GAP;
+                      const leftX2 = mainR.left - colW - COL_GAP;
+                      const rightFits2 = rightX2 + colW <= vwC - 4;
+                      const leftFits2 = leftX2 >= 4;
+                      if (extraForcedSide === 'left' && leftFits2)
+                        boxX = leftX2;
+                      else if (extraForcedSide === 'right' && rightFits2)
+                        boxX = rightX2;
+                      // else: keep default colX (no room on the requested side)
+                    }
+
+                    box.style.left = boxX + 'px';
+                    box.style.top = colTop + 'px';
+                    box.style.width = colW + 'px';
+
+                    // Don't pre-reserve half the space for combo "just in case" — give this
+                    // window the height it actually needs (up to the full available space),
+                    // then combo gets whatever's left below it. The content itself can still
+                    // scroll if it genuinely doesn't fit (handled by overflow-y on #*-content).
+                    const fullAvail = vhC - colTop - BOTTOM_MARGIN;
+                    box.style.maxHeight = fullAvail + 'px';
+                    box.style.display = 'flex';
                     pinContentHeight(
                       box,
                       kind === 'IMG' ? '#img-content' : '#extra-content',
                     );
-                  }
 
-                  const rect = box.getBoundingClientRect();
-                  if (kind === 'EXTRA') extraRect = rect;
-                  else imgRect = rect;
-                  drawLine(svgOf[kind], mainR, rect);
-                }
-
-                // base column rect (extra and/or img), or mainR if neither is present
-                const baseColRect =
-                  imgRect && extraRect
-                    ? {
-                        left: Math.min(extraRect.left, imgRect.left),
-                        right: Math.max(extraRect.right, imgRect.right),
-                        top: Math.min(extraRect.top, imgRect.top),
-                        bottom: Math.max(extraRect.bottom, imgRect.bottom),
-                      }
-                    : extraRect || imgRect || mainR;
-
-                // IMG2 (separate window for imgs[1] when slider:false) — same rule as combo's
-                // "3rd window below" pattern, but always anchored to baseColRect (not combo).
-                let img2Rect = null;
-                if (hasImg2) {
-                  const noColumnYet = !extraRect && !imgRect;
-                  img2Box.style.display = 'flex';
-                  img2Box.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-                  const i2w = colW; // match the width used for img-box/extra-box, not the smaller default
-                  img2Box.style.width = i2w + 'px';
-                  let i2x, i2y, i2Below;
-                  if (noColumnYet) {
-                    i2y = mainR.top;
-                    i2x = placedLeft ? mainR.left - i2w - 36 : mainR.right + 36;
-                    i2Below = false;
-                  } else {
-                    i2x = baseColRect.left;
-                    i2y = baseColRect.bottom + 16;
-                    i2Below = true;
-                  }
-                  const i2h = Math.min(img2Box.scrollHeight || 200, vhC * 0.7);
-                  const i2AvailBelow = vhC - i2y - 8;
-                  if (i2Below && i2h > i2AvailBelow) {
-                    img2Box.style.maxHeight = Math.max(i2AvailBelow, 80) + 'px';
-                  } else if (i2y + i2h > vhC - 8) {
-                    i2y = vhC - i2h - 8;
-                  }
-                  if (i2y < 8) i2y = 8;
-                  if (i2x < 4) i2x = 4;
-                  if (i2x + i2w > vwC - 4) i2x = vwC - i2w - 4;
-                  img2Box.style.left = i2x + 'px';
-                  img2Box.style.top = i2y + 'px';
-                  pinContentHeight(img2Box, '#img2-content');
-                  img2Rect = img2Box.getBoundingClientRect();
-                  drawLine(
-                    img2ArwSvg,
-                    noColumnYet ? mainR : baseColRect,
-                    img2Rect,
-                    i2Below,
-                  );
-                }
-
-                // COMBO placement rule:
-                //  - if there IS a column (extra and/or img and/or img2 already shown) → combo goes BELOW it
-                //  - if combo is the ONLY secondary window → it IS the "2nd window",
-                //    beside the levels tooltip, same side as the rest of the chain (placedLeft)
-                if (hasCombo) {
-                  const isOnlySecondary = !extraRect && !imgRect && !img2Rect;
-                  const colRect = img2Rect
-                    ? {
-                        left: Math.min(baseColRect.left, img2Rect.left),
-                        right: Math.max(baseColRect.right, img2Rect.right),
-                        top: Math.min(baseColRect.top, img2Rect.top),
-                        bottom: Math.max(baseColRect.bottom, img2Rect.bottom),
-                      }
-                    : baseColRect;
-
-                  const cw = 320;
-                  comboBox.style.display = 'flex';
-                  comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-
-                  let cx, cy, isBelow;
-
-                  // perkData.windows.combo === 'left' / 'right' forces combo to sit
-                  // BESIDE the levels tooltip (not below the img/extra column),
-                  // as long as that side is actually free — i.e. nothing (img/extra/img2 column)
-                  // already occupies that space. This applies REGARDLESS of whether combo
-                  // is the only secondary window or comes after img/extra.
-                  const forcedSide = perkData?.windows?.combo; // 'left' | 'right' | undefined
-                  const rightX = mainR.right + 36;
-                  const leftX = mainR.left - cw - 36;
-                  const rightFits = rightX + cw <= vwC - 4;
-                  const leftFits = leftX >= 4;
-                  // does the forced side overlap the column that's already placed (img/extra)?
-                  function overlapsColumn(testX) {
-                    if (!colRect || colRect === mainR) return false;
-                    return testX < colRect.right && testX + cw > colRect.left;
-                  }
-
-                  // when forced beside, drop slightly below the main tooltip's header
-                  // instead of aligning flush with its top edge.
-                  const BESIDE_HEADER_OFFSET = 40;
-
-                  let placedBeside = false;
-                  if (
-                    forcedSide === 'left' &&
-                    leftFits &&
-                    !overlapsColumn(leftX)
-                  ) {
-                    cx = leftX;
-                    cy = mainR.top + BESIDE_HEADER_OFFSET;
-                    isBelow = false;
-                    placedBeside = true;
-                  } else if (
-                    forcedSide === 'right' &&
-                    rightFits &&
-                    !overlapsColumn(rightX)
-                  ) {
-                    cx = rightX;
-                    cy = mainR.top + BESIDE_HEADER_OFFSET;
-                    isBelow = false;
-                    placedBeside = true;
-                  }
-
-                  if (!placedBeside) {
-                    if (isOnlySecondary) {
-                      // act as the 2nd window: beside the levels tooltip, default side = placedLeft
-                      cy = mainR.top;
-                      cx = placedLeft ? leftX : rightX;
-                      isBelow = false;
-                    } else {
-                      // act as 3rd window: strictly below the existing column
-                      cx = colRect.left;
-                      cy = colRect.bottom + 16;
-                      isBelow = true;
+                    // measure what this window ACTUALLY needs, then re-cap it so combo
+                    // gets the remaining room instead of an arbitrary 50/50 split.
+                    if (hasCombo) {
+                      const naturalNeed = box.scrollHeight; // includes header + content's natural size
+                      const desiredH = Math.min(
+                        naturalNeed,
+                        fullAvail - ROW_GAP - 80,
+                      ); // leave room for combo (min 80px)
+                      box.style.maxHeight = Math.max(80, desiredH) + 'px';
+                      pinContentHeight(
+                        box,
+                        kind === 'IMG' ? '#img-content' : '#extra-content',
+                      );
                     }
+
+                    const rect = box.getBoundingClientRect();
+                    if (kind === 'EXTRA') extraRect = rect;
+                    else imgRect = rect;
+                    drawLine(svgOf[kind], mainR, rect);
                   }
 
-                  const ch = Math.min(comboBox.scrollHeight || 200, vhC * 0.7);
-                  // If it would overflow the bottom, shrink its max-height to fit
-                  // INSTEAD of moving it upward (which would re-overlap the window above it).
-                  const availableBelow = vhC - cy - 8;
-                  if (isBelow && ch > availableBelow) {
-                    comboBox.style.maxHeight =
-                      Math.max(availableBelow, 80) + 'px';
-                  } else if (cy + ch > vhC - 8) {
-                    cy = vhC - ch - 8;
-                  }
-                  if (cy < 8) cy = 8;
-                  if (cx < 4) cx = 4;
-                  if (cx + cw > vwC - 4) cx = vwC - cw - 4;
-                  comboBox.style.left = cx + 'px';
-                  comboBox.style.top = cy + 'px';
-                  const comboRect = comboBox.getBoundingClientRect();
-                  if (placedBeside) {
-                    // straight horizontal line at the combo box's OWN header height —
-                    // drawn directly (not via drawLine's generic L-shape helper) to avoid
-                    // a vertical segment that visually doubles up with the main connector.
-                    const R2 = Math.round;
-                    const lineY = R2(comboRect.top + 18);
-                    // anchor to the SAME vertical line (icX) that connects the perk icon
-                    // to the main tooltip, rather than to the tooltip's own edge.
-                    const fromX = R2(icX);
-                    const toX = R2(
-                      forcedSide === 'left' ? comboRect.right : comboRect.left,
+                  // base column rect (extra and/or img), or mainR if neither is present
+                  const baseColRect =
+                    imgRect && extraRect
+                      ? {
+                          left: Math.min(extraRect.left, imgRect.left),
+                          right: Math.max(extraRect.right, imgRect.right),
+                          top: Math.min(extraRect.top, imgRect.top),
+                          bottom: Math.max(extraRect.bottom, imgRect.bottom),
+                        }
+                      : extraRect || imgRect || mainR;
+
+                  // IMG2 (separate window for imgs[1] when slider:false) — same rule as combo's
+                  // "3rd window below" pattern, but always anchored to baseColRect (not combo).
+                  let img2Rect = null;
+                  if (hasImg2) {
+                    const noColumnYet = !extraRect && !imgRect;
+                    img2Box.style.display = 'flex';
+                    img2Box.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
+                    const i2w = colW; // match the width used for img-box/extra-box, not the smaller default
+                    img2Box.style.width = i2w + 'px';
+                    let i2x, i2y, i2Below;
+                    if (noColumnYet) {
+                      i2y = mainR.top;
+                      i2x = placedLeft
+                        ? mainR.left - i2w - 36
+                        : mainR.right + 36;
+                      i2Below = false;
+                    } else {
+                      i2x = baseColRect.left;
+                      i2y = baseColRect.bottom + 16;
+                      i2Below = true;
+                    }
+                    const i2h = Math.min(
+                      img2Box.scrollHeight || 200,
+                      vhC * 0.7,
                     );
-                    const len2 = Math.abs(toX - fromX);
-                    comboSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
-                    comboSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-                    comboSvg.innerHTML = `<line x1="${fromX}" y1="${lineY}" x2="${toX}" y2="${lineY}"
+                    const i2AvailBelow = vhC - i2y - 8;
+                    if (i2Below && i2h > i2AvailBelow) {
+                      img2Box.style.maxHeight =
+                        Math.max(i2AvailBelow, 80) + 'px';
+                    } else if (i2y + i2h > vhC - 8) {
+                      i2y = vhC - i2h - 8;
+                    }
+                    if (i2y < 8) i2y = 8;
+                    if (i2x < 4) i2x = 4;
+                    if (i2x + i2w > vwC - 4) i2x = vwC - i2w - 4;
+                    img2Box.style.left = i2x + 'px';
+                    img2Box.style.top = i2y + 'px';
+                    pinContentHeight(img2Box, '#img2-content');
+                    img2Rect = img2Box.getBoundingClientRect();
+                    drawLine(
+                      img2ArwSvg,
+                      noColumnYet ? mainR : baseColRect,
+                      img2Rect,
+                      i2Below,
+                    );
+                  }
+
+                  // COMBO placement rule:
+                  //  - if there IS a column (extra and/or img and/or img2 already shown) → combo goes BELOW it
+                  //  - if combo is the ONLY secondary window → it IS the "2nd window",
+                  //    beside the levels tooltip, same side as the rest of the chain (placedLeft)
+                  if (hasCombo) {
+                    const isOnlySecondary = !extraRect && !imgRect && !img2Rect;
+                    const colRect = img2Rect
+                      ? {
+                          left: Math.min(baseColRect.left, img2Rect.left),
+                          right: Math.max(baseColRect.right, img2Rect.right),
+                          top: Math.min(baseColRect.top, img2Rect.top),
+                          bottom: Math.max(baseColRect.bottom, img2Rect.bottom),
+                        }
+                      : baseColRect;
+
+                    const cw = 320;
+                    comboBox.style.display = 'flex';
+                    comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
+
+                    let cx, cy, isBelow;
+
+                    // perkData.windows.combo === 'left' / 'right' forces combo to sit
+                    // BESIDE the levels tooltip (not below the img/extra column),
+                    // as long as that side is actually free — i.e. nothing (img/extra/img2 column)
+                    // already occupies that space. This applies REGARDLESS of whether combo
+                    // is the only secondary window or comes after img/extra.
+                    const forcedSide = perkData?.windows?.combo; // 'left' | 'right' | undefined
+                    const rightX = mainR.right + 36;
+                    const leftX = mainR.left - cw - 36;
+                    const rightFits = rightX + cw <= vwC - 4;
+                    const leftFits = leftX >= 4;
+                    // does the forced side overlap the column that's already placed (img/extra)?
+                    function overlapsColumn(testX) {
+                      if (!colRect || colRect === mainR) return false;
+                      return testX < colRect.right && testX + cw > colRect.left;
+                    }
+
+                    // when forced beside, drop slightly below the main tooltip's header
+                    // instead of aligning flush with its top edge.
+                    const BESIDE_HEADER_OFFSET = 40;
+
+                    let placedBeside = false;
+                    if (
+                      forcedSide === 'left' &&
+                      leftFits &&
+                      !overlapsColumn(leftX)
+                    ) {
+                      cx = leftX;
+                      cy = mainR.top + BESIDE_HEADER_OFFSET;
+                      isBelow = false;
+                      placedBeside = true;
+                    } else if (
+                      forcedSide === 'right' &&
+                      rightFits &&
+                      !overlapsColumn(rightX)
+                    ) {
+                      cx = rightX;
+                      cy = mainR.top + BESIDE_HEADER_OFFSET;
+                      isBelow = false;
+                      placedBeside = true;
+                    }
+
+                    if (!placedBeside) {
+                      if (isOnlySecondary) {
+                        // act as the 2nd window: beside the levels tooltip, default side = placedLeft
+                        cy = mainR.top;
+                        cx = placedLeft ? leftX : rightX;
+                        isBelow = false;
+                      } else {
+                        // act as 3rd window: strictly below the existing column
+                        cx = colRect.left;
+                        cy = colRect.bottom + 16;
+                        isBelow = true;
+                      }
+                    }
+
+                    const ch = Math.min(
+                      comboBox.scrollHeight || 200,
+                      vhC * 0.7,
+                    );
+                    // If it would overflow the bottom, shrink its max-height to fit
+                    // INSTEAD of moving it upward (which would re-overlap the window above it).
+                    const availableBelow = vhC - cy - 8;
+                    if (isBelow && ch > availableBelow) {
+                      comboBox.style.maxHeight =
+                        Math.max(availableBelow, 80) + 'px';
+                    } else if (cy + ch > vhC - 8) {
+                      cy = vhC - ch - 8;
+                    }
+                    if (cy < 8) cy = 8;
+                    if (cx < 4) cx = 4;
+                    if (cx + cw > vwC - 4) cx = vwC - cw - 4;
+                    comboBox.style.left = cx + 'px';
+                    comboBox.style.top = cy + 'px';
+                    const comboRect = comboBox.getBoundingClientRect();
+                    if (placedBeside) {
+                      // straight horizontal line at the combo box's OWN header height —
+                      // drawn directly (not via drawLine's generic L-shape helper) to avoid
+                      // a vertical segment that visually doubles up with the main connector.
+                      const R2 = Math.round;
+                      const lineY = R2(comboRect.top + 18);
+                      // anchor to the SAME vertical line (icX) that connects the perk icon
+                      // to the main tooltip, rather than to the tooltip's own edge.
+                      const fromX = R2(icX);
+                      const toX = R2(
+                        forcedSide === 'left'
+                          ? comboRect.right
+                          : comboRect.left,
+                      );
+                      const len2 = Math.abs(toX - fromX);
+                      comboSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+                      comboSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                      comboSvg.innerHTML = `<line x1="${fromX}" y1="${lineY}" x2="${toX}" y2="${lineY}"
                   stroke="#50556a" stroke-width="1.5"
                   stroke-dasharray="${len2}" stroke-dashoffset="${len2}"
                   style="animation:dashIn .4s ease forwards"/>`;
-                  } else {
-                    drawLine(comboSvg, colRect, comboRect, isBelow);
-                  }
+                    } else {
+                      drawLine(comboSvg, colRect, comboRect, isBelow);
+                    }
 
-                  comboLvls
-                    .querySelectorAll('.combo-sq, .combo-item-name')
-                    .forEach((sq) => {
-                      sq.addEventListener('click', () => {
-                        const rid = sq.dataset.rid;
-                        const allPerks = document.querySelectorAll('.perk');
-                        let target = null;
-                        for (const pe of allPerks) {
-                          if (pe.dataset.perkId === rid) {
-                            target = pe;
-                            break;
+                    comboLvls
+                      .querySelectorAll('.combo-sq, .combo-item-name')
+                      .forEach((sq) => {
+                        sq.addEventListener('click', () => {
+                          const rid = sq.dataset.rid;
+                          const allPerks = document.querySelectorAll('.perk');
+                          let target = null;
+                          for (const pe of allPerks) {
+                            if (pe.dataset.perkId === rid) {
+                              target = pe;
+                              break;
+                            }
                           }
-                        }
-                        if (!target) return;
-                        hideTooltip();
-                        target.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'center',
-                        });
-                        setTimeout(() => {
-                          let fo = document.getElementById('focus-overlay');
-                          if (!fo) {
-                            fo = document.createElement('div');
-                            fo.id = 'focus-overlay';
-                            fo.style.cssText =
-                              'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
-                            document.body.appendChild(fo);
-                          }
-                          requestAnimationFrame(() => {
-                            fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+                          if (!target) return;
+                          hideTooltip();
+                          target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
                           });
-                          target.style.position = 'relative';
-                          target.style.zIndex = '51';
-                          target.style.transition = 'box-shadow .35s ease';
-                          const _ic = target.querySelector('.perk-icon');
-                          const _cm = {
-                            'ic-o': '#e09040',
-                            'ic-r': '#cc3838',
-                            'ic-b': '#3e80d0',
-                            'ic-g': '#28a860',
-                            'ic-p': '#7840c8',
-                            'ic-y': '#b89030',
-                            'ic-k': '#1a0000',
-                          };
-                          const _hex =
-                            Object.entries(_cm).find(
-                              ([k]) => _ic && _ic.classList.contains(k),
-                            )?.[1] || '#e09040';
-                          target.style.boxShadow = `0 0 0 2px ${_hex},0 0 30px ${_hex}80`;
-                          function clearFocus() {
-                            fo.style.background = 'rgba(0,0,0,0)';
-                            target.style.boxShadow = '';
-                            window.removeEventListener('scroll', clearFocus, {
-                              passive: true,
-                            });
-                            window.removeEventListener('click', clearFocus);
-                            window.removeEventListener('keydown', clearFocus);
-                            setTimeout(() => {
-                              fo.remove();
-                              target.style.position = '';
-                              target.style.zIndex = '';
-                              target.style.transition = '';
-                            }, 350);
-                          }
-                          fo.addEventListener('click', clearFocus);
                           setTimeout(() => {
-                            window.addEventListener('scroll', clearFocus, {
-                              once: true,
-                              passive: true,
+                            let fo = document.getElementById('focus-overlay');
+                            if (!fo) {
+                              fo = document.createElement('div');
+                              fo.id = 'focus-overlay';
+                              fo.style.cssText =
+                                'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
+                              document.body.appendChild(fo);
+                            }
+                            requestAnimationFrame(() => {
+                              fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
                             });
-                            window.addEventListener('keydown', clearFocus, {
-                              once: true,
-                            });
-                          }, 400);
-                        }, 500);
+                            target.style.position = 'relative';
+                            target.style.zIndex = '51';
+                            target.style.transition = 'box-shadow .35s ease';
+                            const _ic = target.querySelector('.perk-icon');
+                            const _cm = {
+                              'ic-o': '#e09040',
+                              'ic-r': '#cc3838',
+                              'ic-b': '#3e80d0',
+                              'ic-g': '#28a860',
+                              'ic-p': '#7840c8',
+                              'ic-y': '#b89030',
+                              'ic-k': '#1a0000',
+                            };
+                            const _hex =
+                              Object.entries(_cm).find(
+                                ([k]) => _ic && _ic.classList.contains(k),
+                              )?.[1] || '#e09040';
+                            target.style.boxShadow = `0 0 0 2px ${_hex},0 0 30px ${_hex}80`;
+                            function clearFocus() {
+                              fo.style.background = 'rgba(0,0,0,0)';
+                              target.style.boxShadow = '';
+                              window.removeEventListener('scroll', clearFocus, {
+                                passive: true,
+                              });
+                              window.removeEventListener('click', clearFocus);
+                              window.removeEventListener('keydown', clearFocus);
+                              setTimeout(() => {
+                                fo.remove();
+                                target.style.position = '';
+                                target.style.zIndex = '';
+                                target.style.transition = '';
+                              }, 350);
+                            }
+                            fo.addEventListener('click', clearFocus);
+                            setTimeout(() => {
+                              window.addEventListener('scroll', clearFocus, {
+                                once: true,
+                                passive: true,
+                              });
+                              window.addEventListener('keydown', clearFocus, {
+                                once: true,
+                              });
+                            }, 400);
+                          }, 500);
+                        });
                       });
-                    });
-                }
-              }),
-            ),
-          );
+                  }
+                }),
+              ),
+            );
+          } // end runLayout
+
+          runLayout(); // run immediately — no waiting on media load
+          // if media loads AFTER this first pass (slow network), re-run layout
+          // once so the box resizes from spinner-height to its real size and
+          // combo/extra reposition accordingly. Cheap no-op if already sized right.
+          if (imgLoadPromises.length) {
+            Promise.all(imgLoadPromises).then(() =>
+              requestAnimationFrame(() => requestAnimationFrame(runLayout)),
+            );
+          }
         }
 
         // draw L-line — terminates at the NEAR edge of the tooltip, never runs underneath it
