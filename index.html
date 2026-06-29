@@ -1175,6 +1175,96 @@
         background: rgba(255, 255, 255, 0.02);
       }
 
+      /* ── TIP WINDOW (small hint, same visual language as extra) ── */
+      #tip-box {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 320px;
+        max-height: 50vh;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #tip-box .tt-header {
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid #1c1f2e;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #8090a0;
+        letter-spacing: 0.05em;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      #tip-content {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+        padding: 0;
+        font-size: 10px;
+        color: #7a8090;
+        line-height: 1.55;
+      }
+      #tip-content p {
+        padding: 6px 12px 0;
+        margin: 0;
+      }
+      #tip-content h1,
+      #tip-content h2,
+      #tip-content h3 {
+        font-family: 'JetBrains Mono', monospace;
+        color: #c0bdb4;
+        padding: 8px 12px 2px;
+        margin: 0;
+        font-size: 11px;
+        border-bottom: 1px solid #1e2235;
+      }
+      #tip-content strong {
+        color: #c0bdb4;
+      }
+      #tip-content em {
+        color: #8898b0;
+      }
+      #tip-content code {
+        font-family: 'JetBrains Mono', monospace;
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 9px;
+        color: #7ab0d0;
+      }
+      #tip-content ul,
+      #tip-content ol {
+        padding: 4px 12px 4px 28px;
+        margin: 0;
+      }
+      #tip-content li {
+        margin: 2px 0;
+      }
+      #tip-content blockquote {
+        border-left: 2px solid #3a4570;
+        padding: 4px 10px;
+        margin: 4px 12px;
+        color: #7a8090;
+      }
+      #tip-content hr {
+        border: none;
+        border-top: 1px solid #1e2235;
+        margin: 6px 12px;
+      }
+      /* explicit blank-line spacer support: <empty-line></empty-line> or <br> */
+      #extra-content .md-blank-line,
+      #tip-content .md-blank-line,
+      #combo-levels .md-blank-line {
+        display: block;
+        height: 10px;
+      }
+
       /* ── COMBO WINDOW ── */
       #combo-box {
         display: none;
@@ -1657,6 +1747,10 @@
       <div class="tt-header">📄 Расширенное описание</div>
       <div id="extra-content"></div>
     </div>
+    <div id="tip-box">
+      <div class="tt-header">💡 Подсказка</div>
+      <div id="tip-content"></div>
+    </div>
     <div id="combo-box">
       <div class="tt-header">⬡ Комбо-способности</div>
       <div id="combo-levels"></div>
@@ -1707,6 +1801,18 @@
     <svg id="tt-arrow-svg" style="display: none"></svg>
     <svg
       id="extra-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 499;
+        overflow: visible;
+      "
+    ></svg>
+    <svg
+      id="tip-arrow-svg"
       style="
         display: none;
         position: fixed;
@@ -1911,12 +2017,30 @@
       // Порядок появления вторичных окон тултипа (img / extra / combo).
       // Меняя порядок строк здесь, можно поменять очерёдность окон —
       // используется при построении queue в showTooltip().
-      const WINDOW_ORDER = ['IMG', 'EXTRA', 'COMBO'];
+      const WINDOW_ORDER = ['IMG', 'EXTRA', 'TIP', 'COMBO'];
 
       // Spinner shown inside img/img2 content boxes while their media is loading.
       const MEDIA_LOADING_SVG = `<svg class="media-loading-svg" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9"></circle>
       </svg>`;
+
+      // Render markdown text for extra/tip/combo content. Plain "\n\n" is
+      // collapsed by markdown into ordinary paragraph spacing — to get an
+      // EXPLICIT manual blank-line gap, the config can use <empty-line></empty-line>
+      // or <br> directly in the text. Both survive marked's HTML passthrough,
+      // so we just need to make sure <empty-line> renders as a visible spacer.
+      function renderMD(text) {
+        if (!text) return '';
+        // <empty-line> (any spelling/self-closing form) → a styled spacer span
+        const preprocessed = text.replace(
+          /<empty-line\s*\/?>(<\/empty-line>)?/gi,
+          '<span class="md-blank-line"></span>',
+        );
+        if (typeof marked !== 'undefined') {
+          return marked.parse(preprocessed);
+        }
+        return preprocessed.replace(/\n/g, '<br>');
+      }
 
       // ── PROCESS CONFIG ──
       const D = STAND_DATA;
@@ -2540,6 +2664,9 @@
         const extraBox = document.getElementById('extra-box');
         const extraContent = document.getElementById('extra-content');
         const extraSvg = document.getElementById('extra-arrow-svg');
+        const tipBox = document.getElementById('tip-box');
+        const tipContent = document.getElementById('tip-content');
+        const tipSvg = document.getElementById('tip-arrow-svg');
         const imgBox = document.getElementById('img-box');
         const imgContent = document.getElementById('img-content');
         const imgHeader = document.getElementById('img-header');
@@ -2555,6 +2682,8 @@
 
         extraBox.style.display = 'none';
         extraSvg.style.display = 'none';
+        tipBox.style.display = 'none';
+        tipSvg.style.display = 'none';
         imgBox.style.display = 'none';
         imgArwSvg.style.display = 'none';
         img2Box.style.display = 'none';
@@ -2565,6 +2694,7 @@
         comboSvg.style.display = 'none';
         // reset any maxHeight left over from previous opens
         extraBox.style.maxHeight = '';
+        tipBox.style.maxHeight = '';
         imgBox.style.maxHeight = '';
         img2Box.style.maxHeight = '';
         comboBox.style.maxHeight = '';
@@ -2647,6 +2777,7 @@
         }
 
         const hasExtra = !!perkData?.extra;
+        const hasTip = !!perkData?.tip;
         // imgs[] takes priority over the single img key when both happen to be present
         const imgsList = Array.isArray(perkData?.imgs)
           ? perkData.imgs.filter(Boolean)
@@ -2682,7 +2813,12 @@
         const imgSources = imgSourcesRaw.map(normalizeImgEntry);
 
         // ordered list of which secondary window "slots" are present, per WINDOW_ORDER
-        const hasFlags = { IMG: hasImg, EXTRA: hasExtra, COMBO: hasCombo };
+        const hasFlags = {
+          IMG: hasImg,
+          EXTRA: hasExtra,
+          TIP: hasTip,
+          COMBO: hasCombo,
+        };
         const activeKinds = WINDOW_ORDER.filter((k) => hasFlags[k]);
 
         if (hasExtra || hasImg || hasCombo) {
@@ -2936,11 +3072,10 @@
             withLoadingSpinner(el2, img2Content);
           }
           if (hasExtra) {
-            const md =
-              typeof marked !== 'undefined'
-                ? marked.parse(perkData.extra)
-                : perkData.extra.replace(/\n/g, '<br>');
-            extraContent.innerHTML = md;
+            extraContent.innerHTML = renderMD(perkData.extra);
+          }
+          if (hasTip) {
+            tipContent.innerHTML = renderMD(perkData.tip);
           }
           if (hasCombo) {
             // resolve {name, colourHex} for any perk id, searching all chapters
@@ -3003,7 +3138,10 @@
                 </div>`;
                 })
                 .join('');
-              const desc = rows[0]?.desc || '';
+              const desc = (rows[0]?.desc || '').replace(
+                /<empty-line\s*\/?>(<\/empty-line>)?/gi,
+                '<span class="md-blank-line"></span>',
+              );
               return `<div class="combo-item">${rowsHtml}<div class="combo-item-desc">${desc}</div></div>`;
             }
 
@@ -3275,13 +3413,14 @@
                     );
                   }
 
-                  // COMBO placement rule:
-                  //  - if there IS a column (extra and/or img and/or img2 already shown) → combo goes BELOW it
-                  //  - if combo is the ONLY secondary window → it IS the "2nd window",
-                  //    beside the levels tooltip, same side as the rest of the chain (placedLeft)
-                  if (hasCombo) {
-                    const isOnlySecondary = !extraRect && !imgRect && !img2Rect;
-                    const colRect = img2Rect
+                  // TIP placement rule: same as combo's own rule (beside the tooltip
+                  // if it's the only secondary window or windows.tip forces a side and
+                  // there's room; otherwise strictly below the existing column).
+                  // TIP is placed BEFORE combo in WINDOW_ORDER, so combo's own column
+                  // rect below will absorb tipRect the same way it absorbs img2Rect.
+                  let tipRect = null;
+                  if (hasTip) {
+                    const preColRect = img2Rect
                       ? {
                           left: Math.min(baseColRect.left, img2Rect.left),
                           right: Math.max(baseColRect.right, img2Rect.right),
@@ -3289,6 +3428,105 @@
                           bottom: Math.max(baseColRect.bottom, img2Rect.bottom),
                         }
                       : baseColRect;
+                    const isOnlySecondaryTip =
+                      !extraRect && !imgRect && !img2Rect;
+
+                    const tw2 = 320;
+                    tipBox.style.display = 'flex';
+                    tipBox.style.maxHeight = Math.floor(vhC * 0.5) + 'px';
+
+                    const forcedSideTip = perkData?.windows?.tip;
+                    const rightXt = mainR.right + 36;
+                    const leftXt = mainR.left - tw2 - 36;
+                    const rightFitsT = rightXt + tw2 <= vwC - 4;
+                    const leftFitsT = leftXt >= 4;
+                    function overlapsColumnTip(testX) {
+                      if (!preColRect || preColRect === mainR) return false;
+                      return (
+                        testX < preColRect.right &&
+                        testX + tw2 > preColRect.left
+                      );
+                    }
+
+                    let tx,
+                      ty,
+                      tBelow,
+                      tBeside = false;
+                    if (
+                      forcedSideTip === 'left' &&
+                      leftFitsT &&
+                      !overlapsColumnTip(leftXt)
+                    ) {
+                      tx = leftXt;
+                      ty = mainR.top + 40;
+                      tBelow = false;
+                      tBeside = true;
+                    } else if (
+                      forcedSideTip === 'right' &&
+                      rightFitsT &&
+                      !overlapsColumnTip(rightXt)
+                    ) {
+                      tx = rightXt;
+                      ty = mainR.top + 40;
+                      tBelow = false;
+                      tBeside = true;
+                    }
+                    if (!tBeside) {
+                      if (isOnlySecondaryTip) {
+                        ty = mainR.top;
+                        tx = placedLeft ? leftXt : rightXt;
+                        tBelow = false;
+                      } else {
+                        tx = preColRect.left;
+                        ty = preColRect.bottom + 16;
+                        tBelow = true;
+                      }
+                    }
+
+                    const th2 = Math.min(tipBox.scrollHeight || 120, vhC * 0.5);
+                    const availBelowT = vhC - ty - 8;
+                    if (tBelow && th2 > availBelowT) {
+                      tipBox.style.maxHeight = Math.max(availBelowT, 60) + 'px';
+                    } else if (ty + th2 > vhC - 8) {
+                      ty = vhC - th2 - 8;
+                    }
+                    if (ty < 8) ty = 8;
+                    if (tx < 4) tx = 4;
+                    if (tx + tw2 > vwC - 4) tx = vwC - tw2 - 4;
+                    tipBox.style.left = tx + 'px';
+                    tipBox.style.top = ty + 'px';
+                    tipRect = tipBox.getBoundingClientRect();
+                    drawLine(
+                      tipSvg,
+                      tBeside || isOnlySecondaryTip ? mainR : preColRect,
+                      tipRect,
+                      tBelow,
+                    );
+                  }
+
+                  // COMBO placement rule:
+                  //  - if there IS a column (extra and/or img and/or img2 and/or tip already shown) → combo goes BELOW it
+                  //  - if combo is the ONLY secondary window → it IS the "2nd window",
+                  //    beside the levels tooltip, same side as the rest of the chain (placedLeft)
+                  if (hasCombo) {
+                    const isOnlySecondary =
+                      !extraRect && !imgRect && !img2Rect && !tipRect;
+                    let colRect = img2Rect
+                      ? {
+                          left: Math.min(baseColRect.left, img2Rect.left),
+                          right: Math.max(baseColRect.right, img2Rect.right),
+                          top: Math.min(baseColRect.top, img2Rect.top),
+                          bottom: Math.max(baseColRect.bottom, img2Rect.bottom),
+                        }
+                      : baseColRect;
+                    if (tipRect) {
+                      colRect = {
+                        left: Math.min(colRect.left, tipRect.left),
+                        right: Math.max(colRect.right, tipRect.right),
+                        top: Math.min(colRect.top, tipRect.top),
+                        bottom: Math.max(colRect.bottom, tipRect.bottom),
+                      };
+                    }
 
                     const cw = 320;
                     comboBox.style.display = 'flex';
@@ -3519,6 +3757,8 @@
         ttArrowSvg.innerHTML = '';
         document.getElementById('extra-box').style.display = 'none';
         document.getElementById('extra-arrow-svg').style.display = 'none';
+        document.getElementById('tip-box').style.display = 'none';
+        document.getElementById('tip-arrow-svg').style.display = 'none';
         document.getElementById('img-box').style.display = 'none';
         document.getElementById('img-arrow-svg').style.display = 'none';
         document.getElementById('img-dots').classList.remove('visible');
