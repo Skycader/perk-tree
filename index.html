@@ -1333,7 +1333,94 @@
         white-space: nowrap;
       }
       .combo-item-desc {
-        white-space: pre-line;
+        font-size: 10px;
+        color: #7a8090;
+        line-height: 1.55;
+      }
+      .combo-item-desc p {
+        margin: 6px 0 0;
+        padding: 0;
+      }
+      .combo-item-desc p:first-child {
+        margin-top: 0;
+      }
+      .combo-item-desc h1,
+      .combo-item-desc h2,
+      .combo-item-desc h3 {
+        font-family: 'JetBrains Mono', monospace;
+        color: #c0bdb4;
+        margin: 8px 0 2px;
+        font-size: 11px;
+        border-bottom: 1px solid #1e2235;
+        padding-bottom: 2px;
+      }
+      .combo-item-desc strong {
+        color: #c0bdb4;
+      }
+      .combo-item-desc em {
+        color: #8898b0;
+      }
+      .combo-item-desc code {
+        font-family: 'JetBrains Mono', monospace;
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 9px;
+        color: #7ab0d0;
+      }
+      .combo-item-desc pre {
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        margin: 4px 0;
+        padding: 6px 8px;
+        overflow-x: auto;
+        border-radius: 2px;
+      }
+      .combo-item-desc pre code {
+        border: none;
+        background: none;
+        padding: 0;
+      }
+      .combo-item-desc ul,
+      .combo-item-desc ol {
+        padding: 0 0 0 18px;
+        margin: 4px 0;
+      }
+      .combo-item-desc li {
+        margin: 2px 0;
+      }
+      .combo-item-desc blockquote {
+        border-left: 2px solid #3a4570;
+        padding: 4px 10px;
+        margin: 4px 0;
+        color: #7a8090;
+      }
+      .combo-item-desc hr {
+        border: none;
+        border-top: 1px solid #1e2235;
+        margin: 6px 0;
+      }
+      .combo-item-desc table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 6px 0;
+        font-size: 10px;
+      }
+      .combo-item-desc th {
+        background: #0f1020;
+        border: 1px solid #1e2235;
+        padding: 3px 7px;
+        color: #8090a0;
+        font-weight: 600;
+        text-align: left;
+      }
+      .combo-item-desc td {
+        border: 1px solid #1a1d2e;
+        padding: 3px 7px;
+      }
+      .combo-item-desc tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.02);
       }
       #combo-levels {
         overflow-y: auto;
@@ -3138,10 +3225,7 @@
                 </div>`;
                 })
                 .join('');
-              const desc = (rows[0]?.desc || '').replace(
-                /<empty-line\s*\/?>(<\/empty-line>)?/gi,
-                '<span class="md-blank-line"></span>',
-              );
+              const desc = renderMD(rows[0]?.desc || '');
               return `<div class="combo-item">${rowsHtml}<div class="combo-item-desc">${desc}</div></div>`;
             }
 
@@ -3555,7 +3639,32 @@
                     const BESIDE_HEADER_OFFSET = 40;
 
                     let placedBeside = false;
+
+                    // 'side-image-right' / 'side-image-left': sit directly beside the
+                    // IMG window specifically (not the tooltip, not the whole column) —
+                    // useful when combo is conceptually paired with the illustration
+                    // rather than with the perk description. Falls through to the
+                    // normal rules below if there's no img window or no room.
                     if (
+                      (forcedSide === 'side-image-right' ||
+                        forcedSide === 'side-image-left') &&
+                      imgRect
+                    ) {
+                      const wantRight = forcedSide === 'side-image-right';
+                      const sx = wantRight
+                        ? imgRect.right + 36
+                        : imgRect.left - cw - 36;
+                      const sFits = wantRight ? sx + cw <= vwC - 4 : sx >= 4;
+                      if (sFits) {
+                        cx = sx;
+                        cy = imgRect.top;
+                        isBelow = false;
+                        placedBeside = true;
+                      }
+                    }
+
+                    if (
+                      !placedBeside &&
                       forcedSide === 'left' &&
                       leftFits &&
                       !overlapsColumn(leftX)
@@ -3565,6 +3674,7 @@
                       isBelow = false;
                       placedBeside = true;
                     } else if (
+                      !placedBeside &&
                       forcedSide === 'right' &&
                       rightFits &&
                       !overlapsColumn(rightX)
@@ -3608,7 +3718,16 @@
                     comboBox.style.left = cx + 'px';
                     comboBox.style.top = cy + 'px';
                     const comboRect = comboBox.getBoundingClientRect();
-                    if (placedBeside) {
+                    const isSideImageMode =
+                      forcedSide === 'side-image-right' ||
+                      forcedSide === 'side-image-left';
+
+                    if (placedBeside && isSideImageMode) {
+                      // simple direct connector from the IMG window's edge to combo's edge —
+                      // these two windows are conceptually paired, so the line goes
+                      // straight between them rather than back to the perk icon.
+                      drawLine(comboSvg, imgRect, comboRect, false);
+                    } else if (placedBeside) {
                       // straight horizontal line at the combo box's OWN header height —
                       // drawn directly (not via drawLine's generic L-shape helper) to avoid
                       // a vertical segment that visually doubles up with the main connector.
