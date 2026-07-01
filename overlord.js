@@ -1,7 +1,7 @@
 const STAND_DATA = {
   standName: 'Властитель',
   desc: 'Могуществено Властителя неоспоримо.', //Ужасающая сила стэнда!
-  version: '0.6',
+  version: '0.8',
   user: 'Yamighami',
   otherNames: [
     'Авторитет (Authority)',
