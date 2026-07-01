@@ -2502,21 +2502,22 @@
       // колонки дерева (0=левая, 1=средняя, 2=правая).
       // Остальные 4 слота свободны для вторичных окон.
       // Сетка: LT MT RT / LB MB RB
-      const LEVELS_COL = { 0: 'L', 1: 'M', 2: 'R' };
+      const LEVELS_COL = { 0: 'L', 1: 'M', 2: 'M' };
+      // колонка 2 (правая) теперь эквивалентна средней — TOOLTIP в MT+MB,
+      // справа от неё достаточно места для вторичных окон.
 
       // Дефолтный порядок заполнения свободных слотов (зигзаг) по колонке.
       const DEFAULT_SLOT_ORDER = {
-        0: ['RT', 'RB', 'MT', 'MB'], // левая: уровни=L, зигзаг вправо потом середина
+        0: ['RT', 'RB', 'MT', 'MB'], // левая:  уровни=L, зигзаг вправо потом середина
         1: ['RT', 'RB', 'LT', 'LB'], // средняя: уровни=M, сначала вправо потом влево
-        2: ['LT', 'LB', 'MT', 'MB'], // правая: уровни=R, зигзаг влево потом середина
+        2: ['RT', 'RB', 'LT', 'LB'], // правая:  уровни=M (как средняя), сначала вправо потом влево
       };
 
-      // Зарезервированные слоты (занятые окном уровней) — вторичные окна
-      // не могут их занять, попытка даёт console.warn.
+      // Зарезервированные слоты (занятые окном уровней).
       const RESERVED_SLOTS = {
         0: ['LT', 'LB'],
         1: ['MT', 'MB'],
-        2: ['RT', 'RB'],
+        2: ['MT', 'MB'],
       };
 
       // ── SLOT RESOLVER ──
@@ -4691,8 +4692,15 @@
                       // left-side windows (LT) drop 40px below mainR.top so the two
                       // horizontal lines visibly start at different heights on the same
                       // vertical connector — the original "Stylish left" look.
+                      // Stylish left: LT window in middle col drops 40px (lines diverge visually)
+                      // Stylish right: RT window in middle or right col drops 40px (same idea, mirrored)
                       const STYLISH_OFFSET =
-                        pos.side === 'left' && colIdx === 1 ? 40 : 0;
+                        pos.side === 'left' && colIdx === 1
+                          ? 40
+                          : pos.side === 'right' &&
+                              (colIdx === 1 || colIdx === 2)
+                            ? 40
+                            : 0;
                       if (STYLISH_OFFSET) {
                         // reposition the box itself to match the offset
                         box.style.top = pos.y + STYLISH_OFFSET + 'px';
@@ -4706,17 +4714,20 @@
                         placedRects[kind] = r2;
                       }
                       const finalRect = placedRects[kind];
-                      if (pos.side === 'right') {
-                        // RT: use drawLine (single polyline) so the join with the
-                        // vertical icon→tooltip connector renders as one clean path,
-                        // no sub-pixel stitch artifact at the meeting point.
-                        drawLine(svg, mainR, finalRect, false);
-                      } else {
-                        // LT (Stylish left): horizontal line from icX
+                      // Both RT (Stylish right) and LT (Stylish left) get a single
+                      // horizontal line only — the vertical part already exists as the
+                      // icon→tooltip connector. Drawing it again would double the stroke.
+                      {
                         const R2 = Math.round;
                         const lineY = R2(finalRect.top + 18);
+                        // Both RT and LT: horizontal line starts from icX (the vertical
+                        // connector runs through icX, so the horizontal meets it cleanly there).
                         const fromX = R2(icX);
-                        const toX = R2(finalRect.right);
+                        const toX = R2(
+                          pos.side === 'right'
+                            ? finalRect.left
+                            : finalRect.right,
+                        );
                         const len = Math.abs(toX - fromX);
                         svg.style.cssText =
                           `display:block;position:fixed;left:0;top:0;` +
