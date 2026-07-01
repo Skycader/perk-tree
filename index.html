@@ -786,7 +786,7 @@
         position: fixed;
         z-index: 500;
         width: 340px;
-        max-height: 82vh;
+        max-height: 70vh;
         background: #0f1018;
         border: 1px solid #2a3050;
         box-shadow:
@@ -1572,7 +1572,7 @@
         position: fixed;
         z-index: 520;
         width: 340px;
-        max-height: 82vh;
+        max-height: 70vh;
         background: #0f1018;
         border: 1px solid #2a3050;
         box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
@@ -1641,10 +1641,11 @@
       }
       /* MD elements inside level description rows */
       .tt-text p {
-        margin: 0 0 4px;
+        margin: 0;
+        padding: 0;
       }
-      .tt-text p:last-child {
-        margin-bottom: 0;
+      .tt-text p + p {
+        margin-top: 3px;
       }
       .tt-text strong {
         color: #c0bdb4;
@@ -2645,6 +2646,31 @@
         });
       }
 
+      // Lightweight MD renderer for level description rows — avoids wrapping
+      // everything in <p> blocks which inflate scrollHeight and break layout.
+      // Uses parseInline for simple text, full parse only when block MD detected.
+      function renderLevelMD(text) {
+        if (!text) return '';
+        const preprocessed = text
+          .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '<br>')
+          .replace(
+            /<empty-line\s*\/?>(<\/empty-line>)?/gi,
+            '<span class="md-blank-line"></span>',
+          );
+        const hasBlock = /^\s*(#{1,6} |[*\-+] |\d+\. |>|\|.*\|)/m.test(
+          preprocessed,
+        );
+        let html;
+        if (typeof marked !== 'undefined') {
+          html = hasBlock
+            ? marked.parse(preprocessed)
+            : marked.parseInline(preprocessed);
+        } else {
+          html = preprocessed.replace(/\n/g, '<br>');
+        }
+        return processPerkTags(html);
+      }
+
       function renderMD(text) {
         if (!text) return '';
         // normalise explicit line-break tags and \n before markdown parsing
@@ -3368,7 +3394,7 @@
 
               return `<div class="tt-row${isMain ? '' : ' tt-row-sub'}">
               <span class="tt-lvl-col">${leftHtml}</span>
-              <div class="tt-text">${txt ? renderMD(txt) : ''}</div>
+              <div class="tt-text">${txt ? renderLevelMD(txt) : ''}</div>
             </div>`;
             })
             .join('');
@@ -3460,9 +3486,10 @@
         if (x < 4) x = 4;
         tooltipEl.style.display = 'flex';
         tooltipEl.style.opacity = '0'; // measure without flash
-        const maxH = Math.floor(vh * 0.82);
+        const maxH = Math.floor(vh * 0.7);
         tooltipEl.style.maxHeight = maxH + 'px';
         const actualH = Math.min(tooltipEl.scrollHeight, maxH);
+
         // prefer top-anchored: start near the top of the viewport with a small
         // margin, rather than centering on the icon which pushes it down.
         const TOP_ANCHOR = 16;
