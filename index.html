@@ -1379,6 +1379,14 @@
         position: relative;
         cursor: pointer;
       }
+      .audio-progress-wrap::before {
+        content: '';
+        position: absolute;
+        top: -12px;
+        bottom: -12px;
+        left: 0;
+        right: 0;
+      }
       .audio-progress-wrap.no-seek {
         cursor: default;
         pointer-events: none;
@@ -1388,7 +1396,6 @@
         background: #e09040;
         border-radius: 2px;
         width: 0%;
-        transition: width 0.1s linear;
       }
       .audio-progress-thumb {
         position: absolute;
@@ -1399,7 +1406,6 @@
         background: #e09040;
         border-radius: 50%;
         left: 0%;
-        transition: left 0.1s linear;
       }
       .audio-time {
         font-size: 9px;
@@ -1442,6 +1448,14 @@
         border-radius: 2px;
         position: relative;
         cursor: pointer;
+      }
+      .audio-vol-track::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -12px;
+        right: -12px;
       }
       .audio-vol-fill {
         position: absolute;
@@ -4448,11 +4462,28 @@
               });
 
               if (canSeek && progWrap) {
-                progWrap.addEventListener('click', (e) => {
+                function seekFromEvent(e) {
                   const rect = progWrap.getBoundingClientRect();
-                  const ratio = (e.clientX - rect.left) / rect.width;
-                  audio.currentTime = ratio * audio.duration;
+                  const ratio = Math.min(
+                    1,
+                    Math.max(0, (e.clientX - rect.left) / rect.width),
+                  );
+                  if (audio.duration)
+                    audio.currentTime = ratio * audio.duration;
+                }
+                let seekDrag = false;
+                progWrap.addEventListener('mousedown', (e) => {
+                  seekDrag = true;
+                  seekFromEvent(e);
+                  e.preventDefault();
                 });
+                window.addEventListener('mousemove', (e) => {
+                  if (seekDrag) seekFromEvent(e);
+                });
+                window.addEventListener('mouseup', () => {
+                  seekDrag = false;
+                });
+                progWrap.addEventListener('click', seekFromEvent);
               }
 
               // store audio el on track for cleanup
