@@ -1284,6 +1284,133 @@
         height: 10px;
       }
 
+      /* ── AUDIO WINDOW ── */
+      #audio-box {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 320px;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #audio-box .tt-header {
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid #1c1f2e;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #8090a0;
+        letter-spacing: 0.05em;
+        font-family: 'JetBrains Mono', monospace;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .audio-header-srt {
+        font-size: 10px;
+        font-weight: 400;
+        color: #c0bdb4;
+        letter-spacing: 0.06em;
+        font-family: 'JetBrains Mono', monospace;
+        flex-shrink: 0;
+      }
+      #audio-content {
+        display: flex;
+        flex-direction: column;
+        padding: 3px 0;
+      }
+      /* one track row — compact */
+      .audio-track {
+        display: flex;
+        flex-direction: column;
+        padding: 5px 12px 6px;
+        border-bottom: 1px solid #1a1d2e;
+        gap: 4px;
+      }
+      .audio-track:last-child {
+        border-bottom: none;
+      }
+      .audio-track-title {
+        font-size: 9px;
+        font-weight: 600;
+        color: #8090a0;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      /* controls row */
+      .audio-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .audio-play-btn {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        opacity: 0.75;
+        transition: opacity 0.15s;
+      }
+      .audio-play-btn:hover {
+        opacity: 1;
+      }
+      .audio-play-btn svg {
+        display: block;
+      }
+      /* progress bar */
+      .audio-progress-wrap {
+        flex: 1;
+        height: 2px;
+        background: #1e2235;
+        border-radius: 2px;
+        position: relative;
+        cursor: pointer;
+      }
+      .audio-progress-wrap.no-seek {
+        cursor: default;
+        pointer-events: none;
+      }
+      .audio-progress-fill {
+        height: 100%;
+        background: #e09040;
+        border-radius: 2px;
+        width: 0%;
+        transition: width 0.1s linear;
+      }
+      .audio-progress-thumb {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        background: #e09040;
+        border-radius: 50%;
+        left: 0%;
+        transition: left 0.1s linear;
+      }
+      .audio-time {
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
+        color: #50556a;
+        flex-shrink: 0;
+        min-width: 34px;
+        text-align: right;
+      }
+      /* subtitle moved to header */
+
       /* ── EXTENDED WINDOW ── */
       #extended-box {
         display: none;
@@ -2084,6 +2211,23 @@
         overflow: visible;
       "
     ></svg>
+    <div id="audio-box">
+      <div class="tt-header" id="audio-header">▶ Аудио</div>
+      <div id="audio-content"></div>
+    </div>
+    <svg
+      id="audio-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 499;
+        overflow: visible;
+      "
+    ></svg>
+
     <div class="tooltip" id="sp-tooltip">
       <div class="tt-header">
         <span id="sp-header"></span>
@@ -2339,7 +2483,14 @@
       // следующий свободный по этому порядку. Слот НЕ считает основное
       // окно уровней — слот 1 это первое доп. окно, слот 2 под ним,
       // слот 3 это новый столбик (рядом со слотом 1), и т.д.
-      const WINDOW_PRIORITY = ['IMG', 'EXTRA', 'TIP', 'COMBO', 'EXTENDED'];
+      const WINDOW_PRIORITY = [
+        'IMG',
+        'AUDIO',
+        'EXTRA',
+        'TIP',
+        'COMBO',
+        'EXTENDED',
+      ];
 
       // ── TOOLTIP HEIGHT LIMITS ──
       // maxH = min(vh * PERCENT, PX_CAP) so the tooltip never exceeds either bound.
@@ -3522,6 +3673,10 @@
         const tipBox = document.getElementById('tip-box');
         const tipContent = document.getElementById('tip-content');
         const tipSvg = document.getElementById('tip-arrow-svg');
+        const audioBox = document.getElementById('audio-box');
+        const audioContent = document.getElementById('audio-content');
+        const audioHeader = document.getElementById('audio-header');
+        const audioArwSvg = document.getElementById('audio-arrow-svg');
         const extendedBox = document.getElementById('extended-box');
         const extendedHeader = document.getElementById('extended-header');
         const extendedContent = document.getElementById('extended-content');
@@ -3543,6 +3698,13 @@
         extraSvg.style.display = 'none';
         tipBox.style.display = 'none';
         tipSvg.style.display = 'none';
+        audioBox.style.display = 'none';
+        audioArwSvg.style.display = 'none';
+        // pause & cleanup any playing audio tracks from previous open
+        audioBox.querySelectorAll('audio').forEach((a) => {
+          a.pause();
+          a.src = '';
+        });
         extendedBox.style.display = 'none';
         extendedSvg.style.display = 'none';
         imgBox.style.display = 'none';
@@ -3665,6 +3827,10 @@
         const hasTip = !!perkData?.tip;
         // extended lives in skillLevelDescriptions[perkId].extended (like combo)
         const hasExtended = !!lvlData?.extended;
+        const audiosList = Array.isArray(perkData?.audios)
+          ? perkData.audios.filter(Boolean)
+          : [];
+        const hasAudio = audiosList.length > 0;
         // imgs[] takes priority over the single img key when both happen to be present
         const imgsList = Array.isArray(perkData?.imgs)
           ? perkData.imgs.filter(Boolean)
@@ -3703,6 +3869,7 @@
         // ordered list of which secondary window "slots" are present, per WINDOW_PRIORITY
         const hasFlags = {
           IMG: hasImg,
+          AUDIO: hasAudio,
           EXTRA: hasExtra,
           TIP: hasTip,
           EXTENDED: hasExtended,
@@ -4020,6 +4187,155 @@
           if (hasTip) {
             tipContent.innerHTML = renderMD(perkData.tip);
           }
+          if (hasAudio) {
+            // parse SRT entry: '00:30 - TEXT' → {sec, text}
+            function parseSrt(entries) {
+              return (entries || [])
+                .map((s) => {
+                  const m = String(s).match(/^(\d{1,2}):(\d{2})\s*-\s*(.*)/);
+                  if (!m) return null;
+                  return {
+                    sec: parseInt(m[1]) * 60 + parseInt(m[2]),
+                    text: m[3].trim(),
+                  };
+                })
+                .filter(Boolean);
+            }
+
+            function fmtTime(s) {
+              const m = Math.floor(s / 60),
+                ss = Math.floor(s % 60);
+              return (
+                String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0')
+              );
+            }
+
+            // build track SVG play icon
+            function playIcon() {
+              return `<svg width="8" height="9" viewBox="0 0 10 12">
+                <polygon points="0,0 10,6 0,12" fill="#e09040"/>
+              </svg>`;
+            }
+            function pauseIcon() {
+              return `<svg width="8" height="9" viewBox="0 0 10 12">
+                <rect x="0" y="0" width="3.5" height="12" fill="#e09040"/>
+                <rect x="6.5" y="0" width="3.5" height="12" fill="#e09040"/>
+              </svg>`;
+            }
+
+            audioContent.innerHTML = '';
+            const trackEls = [];
+            // header shows title of first (or only) track
+            audioHeader.innerHTML =
+              audiosList.length === 1
+                ? `<span class="audio-title-text">${audiosList[0].title || '▶ Аудио'}</span>
+                 <span class="audio-header-srt" id="audio-srt-0"></span>`
+                : `<span>▶ Аудио</span>`;
+
+            audiosList.forEach((trackCfg, idx) => {
+              const src = trackCfg.src || '';
+              const title = trackCfg.title || '';
+              const canSeek = trackCfg.rewind !== false;
+              const loop = !!trackCfg.loop;
+              const showTime = trackCfg.show_time !== false;
+              const srtData = parseSrt(trackCfg.srt);
+              const alignCls =
+                trackCfg.align_srt === 'center'
+                  ? 'align-center'
+                  : trackCfg.align_srt === 'right'
+                    ? 'align-right'
+                    : '';
+
+              const trackEl = document.createElement('div');
+              trackEl.className = 'audio-track';
+              // for multi-track: show title inside each track row
+              const showTitleInRow = audiosList.length > 1 && title;
+              trackEl.innerHTML = `
+                ${showTitleInRow ? `<div class="audio-track-title">${title}</div>` : ''}
+                <div class="audio-controls">
+                  <button class="audio-play-btn" data-idx="${idx}">${playIcon()}</button>
+                  ${
+                    canSeek
+                      ? `<div class="audio-progress-wrap" data-idx="${idx}">
+                        <div class="audio-progress-fill"></div>
+                        <div class="audio-progress-thumb"></div>
+                      </div>`
+                      : `<div class="audio-progress-wrap no-seek" data-idx="${idx}">
+                        <div class="audio-progress-fill"></div>
+                      </div>`
+                  }
+                  ${showTime ? `<span class="audio-time">00:00</span>` : ''}
+                </div>
+              `;
+
+              // create Audio element
+              const audio = new Audio();
+              audio.src = src;
+              audio.loop = loop;
+              audio.preload = 'metadata';
+
+              const playBtn = trackEl.querySelector('.audio-play-btn');
+              const progWrap = trackEl.querySelector('.audio-progress-wrap');
+              const progFill = trackEl.querySelector('.audio-progress-fill');
+              const progThumb = trackEl.querySelector('.audio-progress-thumb');
+              const timeEl = trackEl.querySelector('.audio-time');
+              // srt shown in header span (single track) or ignored (multi)
+              const srtEl = document.getElementById('audio-srt-' + idx);
+
+              function updateProgress() {
+                if (!audio.duration) return;
+                const pct = (audio.currentTime / audio.duration) * 100;
+                if (progFill) progFill.style.width = pct + '%';
+                if (progThumb) progThumb.style.left = pct + '%';
+                if (timeEl) timeEl.textContent = fmtTime(audio.currentTime);
+                // subtitle
+                if (srtEl && srtData.length) {
+                  const t = audio.currentTime;
+                  let active = '';
+                  for (let i = srtData.length - 1; i >= 0; i--) {
+                    if (t >= srtData[i].sec) {
+                      active = srtData[i].text;
+                      break;
+                    }
+                  }
+                  srtEl.textContent = active;
+                }
+              }
+
+              audio.addEventListener('timeupdate', updateProgress);
+              audio.addEventListener('ended', () => {
+                playBtn.innerHTML = playIcon();
+                if (progFill) progFill.style.width = '0%';
+                if (progThumb) progThumb.style.left = '0%';
+                if (timeEl) timeEl.textContent = '00:00';
+                if (srtEl) srtEl.textContent = '';
+              });
+
+              playBtn.addEventListener('click', () => {
+                if (audio.paused) {
+                  audio.play();
+                  playBtn.innerHTML = pauseIcon();
+                } else {
+                  audio.pause();
+                  playBtn.innerHTML = playIcon();
+                }
+              });
+
+              if (canSeek && progWrap) {
+                progWrap.addEventListener('click', (e) => {
+                  const rect = progWrap.getBoundingClientRect();
+                  const ratio = (e.clientX - rect.left) / rect.width;
+                  audio.currentTime = ratio * audio.duration;
+                });
+              }
+
+              // store audio el on track for cleanup
+              trackEl._audio = audio;
+              audioContent.appendChild(trackEl);
+              trackEls.push(trackEl);
+            });
+          }
+
           if (hasExtended) {
             const extData = lvlData.extended;
             const partnerId = Object.keys(extData).find(
@@ -4266,6 +4582,7 @@
                   // box/svg/content-selector per kind
                   const BOX = {
                     IMG: imgBox,
+                    AUDIO: audioBox,
                     EXTRA: extraBox,
                     TIP: tipBox,
                     EXTENDED: extendedBox,
@@ -4273,6 +4590,7 @@
                   };
                   const SVG = {
                     IMG: imgArwSvg,
+                    AUDIO: audioArwSvg,
                     EXTRA: extraSvg,
                     TIP: tipSvg,
                     EXTENDED: extendedSvg,
@@ -4280,6 +4598,7 @@
                   };
                   const CONTENT_SEL = {
                     IMG: '#img-content',
+                    AUDIO: '#audio-content',
                     EXTRA: '#extra-content',
                     TIP: '#tip-content',
                     EXTENDED: '#extended-content',
@@ -4614,6 +4933,15 @@
         document.getElementById('extra-arrow-svg').style.display = 'none';
         document.getElementById('tip-box').style.display = 'none';
         document.getElementById('tip-arrow-svg').style.display = 'none';
+        document.getElementById('audio-box').style.display = 'none';
+        document.getElementById('audio-arrow-svg').style.display = 'none';
+        document
+          .getElementById('audio-box')
+          .querySelectorAll('audio')
+          .forEach((a) => {
+            a.pause();
+            a.src = '';
+          });
         document.getElementById('extended-box').style.display = 'none';
         document.getElementById('extended-arrow-svg').style.display = 'none';
         document.getElementById('img-box').style.display = 'none';

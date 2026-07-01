@@ -159,10 +159,10 @@ const STAND_DATA = {
             {
               title: 'TWT',
               src: 'assets/rwr.mp3',
-              rewind: false,
-              show_time: false,
+              rewind: true,
+              show_time: true,
               loop: true,
-              srt: ['00:00 - PING', '00:30 - LOCK', '00:40 - LAUNCH'],
+              srt: ['00:00 - PING', '00:04 - LOCK', '00:26 - LAUNCH'],
               align_srt: 'right',
             },
           ],
