@@ -13,6 +13,11 @@
     <link
       rel="icon"
       type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='12' fill='none' stroke='%23e09040' stroke-width='2.5'/><circle cx='16' cy='16' r='3' fill='%23e09040'/><line x1='16' y1='4' x2='16' y2='28' stroke='%23e09040' stroke-width='1.5'/><line x1='4' y1='16' x2='28' y2='16' stroke='%23e09040' stroke-width='1.5'/></svg>"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%0A%20%20%3C%21--%20nucleus%20--%3E%0A%20%20%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%224%22%20fill%3D%22%23e09040%22/%3E%0A%20%20%3C%21--%20orbit%20ellipse%20rotated%20-35deg%20--%3E%0A%20%20%3Cellipse%20cx%3D%2216%22%20cy%3D%2216%22%20rx%3D%2213%22%20ry%3D%225.5%22%0A%20%20%20%20fill%3D%22none%22%20stroke%3D%22%23c87830%22%20stroke-width%3D%221%22%0A%20%20%20%20transform%3D%22rotate%28-35%2016%2016%29%22/%3E%0A%20%20%3C%21--%20electron%3A%20position%20on%20orbit%20at%20~-35deg%20angle%20%3D%20top-right%20--%3E%0A%20%20%3C%21--%20at%20angle%200%20on%20ellipse%3A%20%2816%2B13%2C%2016%29%20%3D%20%2829%2C16%29%2C%20rotate%20point%20by%20-35deg%20around%20%2816%2C16%29%20--%3E%0A%20%20%3C%21--%20cos%28-35%29%3D0.819%2C%20sin%28-35%29%3D-0.574%20--%3E%0A%20%20%3C%21--%20x%20%3D%2016%20%2B%2013%2A0.819%20%3D%2026.65%2C%20y%20%3D%2016%20%2B%205.5%2A%28-0.574%29%20%3D%2012.84%20--%3E%0A%20%20%3C%21--%20but%20we%20want%20electron%20at%20~-60deg%20on%20ellipse%20for%20top-right%20feel%20--%3E%0A%20%20%3C%21--%20angle%3D-60%3A%20x%3D16%2B13%2Acos%28-60%29%3D16%2B6.5%3D22.5%2C%20y%3D16%2B5.5%2Asin%28-60%29%3D16-4.76%3D11.24%2C%20then%20rotate%20-35%20--%3E%0A%20%20%3C%21--%20easier%3A%20just%20place%20it%20visually%20--%3E%0A%20%20%3Ccircle%20cx%3D%2224.5%22%20cy%3D%229.5%22%20r%3D%222.5%22%20fill%3D%22%23e09040%22/%3E%0A%3C/svg%3E"
     />
     <script src="libs/marked.min.js"></script>
@@ -1615,15 +1620,86 @@
         font-family: 'JetBrains Mono', monospace;
         font-weight: 700;
         font-size: 11px;
-        min-width: 20px;
+      }
+      .tt-row-sub {
+        border-top: none !important;
+        padding-top: 2px !important;
+        opacity: 0.92;
+      }
+      .tt-lvl-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         flex-shrink: 0;
+        min-width: 20px;
         padding-top: 1px;
       }
       .tt-text {
         color: #7a8090;
         line-height: 1.5;
-        white-space: pre-wrap;
         word-break: break-word;
+      }
+      /* MD elements inside level description rows */
+      .tt-text p {
+        margin: 0 0 4px;
+      }
+      .tt-text p:last-child {
+        margin-bottom: 0;
+      }
+      .tt-text strong {
+        color: #c0bdb4;
+      }
+      .tt-text em {
+        color: #8898b0;
+      }
+      .tt-text code {
+        font-family: 'JetBrains Mono', monospace;
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 9px;
+        color: #7ab0d0;
+      }
+      .tt-text ul,
+      .tt-text ol {
+        padding-left: 16px;
+        margin: 2px 0;
+      }
+      .tt-text li {
+        margin: 1px 0;
+      }
+      .tt-text table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 4px 0;
+        font-size: 9px;
+      }
+      .tt-text th {
+        background: #0f1020;
+        border: 1px solid #1e2235;
+        padding: 2px 6px;
+        color: #8090a0;
+        font-weight: 600;
+        text-align: left;
+      }
+      .tt-text td {
+        border: 1px solid #1a1d2e;
+        padding: 2px 6px;
+      }
+      .tt-text tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .tt-text hr {
+        border: none;
+        border-top: 1px solid #1e2235;
+        margin: 4px 0;
+      }
+      .tt-text blockquote {
+        border-left: 2px solid #3a4570;
+        padding: 2px 8px;
+        margin: 2px 0;
+        color: #7a8090;
       }
       /* ── LICENSE TOOLBAR + MODAL ── */
 
@@ -2019,6 +2095,18 @@
     <!-- tooltip arrow -->
     <svg id="tt-arrow-svg" style="display: none"></svg>
     <svg
+      id="lvl-sq-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 600;
+        overflow: visible;
+      "
+    ></svg>
+    <svg
       id="extra-arrow-svg"
       style="
         display: none;
@@ -2368,17 +2456,212 @@
       // EXPLICIT manual blank-line gap, the config can use <empty-line></empty-line>
       // or <br> directly in the text. Both survive marked's HTML passthrough,
       // so we just need to make sure <empty-line> renders as a visible spacer.
+      // ── LEVEL SQUARE TOOLTIP ──
+      // Singleton tip + L-line, identical to requiredPerks chain tooltip.
+      const _lvlSqTip = (() => {
+        const el = document.createElement('div');
+        el.className = 'perk-chain-tip';
+        document.body.appendChild(el);
+        return el;
+      })();
+      let _lvlSqHideTimer = null;
+      _lvlSqTip.addEventListener('mouseenter', () =>
+        clearTimeout(_lvlSqHideTimer),
+      );
+      _lvlSqTip.addEventListener('mouseleave', () => {
+        _lvlSqTip.style.display = 'none';
+        const _a = document.getElementById('lvl-sq-arrow-svg');
+        if (_a) {
+          _a.style.display = 'none';
+          _a.innerHTML = '';
+        }
+      });
+
+      window.lvlSqShowTip = function lvlSqShowTip(sq) {
+        clearTimeout(_lvlSqHideTimer);
+        const pid = sq.dataset.rid;
+        const { name, hex } = resolvePerkInline(pid);
+        sq.style.boxShadow = `0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44`;
+
+        _lvlSqTip.innerHTML =
+          `<strong>Эта способность требует развития:</strong>` +
+          `<div class="perk-chain-dep" data-rid="${pid}" style="cursor:pointer"
+            onmouseenter="this.querySelector('span').style.boxShadow='0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44';this.querySelectorAll('span')[1].style.color='#e0ddd6'"
+            onmouseleave="this.querySelector('span').style.boxShadow='';this.querySelectorAll('span')[1].style.color=''">
+            <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
+            <span style="transition:color .15s">${name}</span>
+          </div>`;
+
+        _lvlSqTip.style.display = 'block';
+
+        // position synchronously (tip is already display:block so offsets are real)
+        const r = sq.getBoundingClientRect();
+        const tw = _lvlSqTip.offsetWidth;
+        const th = _lvlSqTip.offsetHeight;
+        const vw = window.innerWidth,
+          vh = window.innerHeight;
+        let tx = r.left - tw - 8;
+        if (tx < 4) tx = r.right + 8;
+        let ty = r.top - th / 2 + 4;
+        if (ty < 4) ty = 4;
+        if (ty + th > vh - 4) ty = vh - th - 4;
+        _lvlSqTip.style.left = tx + 'px';
+        _lvlSqTip.style.top = ty + 'px';
+
+        // draw Г-line after browser has painted the tip at its final position
+        requestAnimationFrame(() => {
+          const icX = r.left + r.width / 2;
+          const icY = r.top + r.height / 2;
+          const tipR = _lvlSqTip.getBoundingClientRect();
+          const toX = tx > icX ? tipR.left : tipR.right;
+          const toY = tipR.top + 18;
+          const total = Math.abs(icY - toY) + Math.abs(toX - icX);
+          const _arrowSvg = document.getElementById('lvl-sq-arrow-svg');
+          _arrowSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+          _arrowSvg.style.width = vw + 'px';
+          _arrowSvg.style.height = vh + 'px';
+          _arrowSvg.style.display = 'block';
+          _arrowSvg.innerHTML = `
+            <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
+            <polyline points="${icX},${icY} ${icX},${toY} ${toX},${toY}"
+              fill="none" stroke="#50556a" stroke-width="1.5"
+              stroke-dasharray="${total}" stroke-dashoffset="${total}"
+              style="animation:dashIn .3s ease forwards"/>`;
+        });
+
+        // click on dep row → focus partner perk
+        _lvlSqTip.querySelector('.perk-chain-dep')?.addEventListener(
+          'click',
+          () => {
+            const target = [...document.querySelectorAll('.perk')].find(
+              (pe) => pe.dataset.perkId === pid,
+            );
+            if (!target) return;
+            _lvlSqTip.style.display = 'none';
+            const _aSvg = document.getElementById('lvl-sq-arrow-svg');
+            if (_aSvg) {
+              _aSvg.style.display = 'none';
+              _aSvg.innerHTML = '';
+            }
+            hideTooltip();
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+              let fo = document.getElementById('focus-overlay');
+              if (!fo) {
+                fo = document.createElement('div');
+                fo.id = 'focus-overlay';
+                fo.style.cssText =
+                  'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
+                document.body.appendChild(fo);
+              }
+              requestAnimationFrame(() => {
+                fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+              });
+              target.style.position = 'relative';
+              target.style.zIndex = '51';
+              target.style.transition = 'box-shadow .35s ease';
+              target.style.boxShadow = `0 0 0 2px ${hex},0 0 30px ${hex}80`;
+              function clearF() {
+                fo.style.background = 'rgba(0,0,0,0)';
+                target.style.boxShadow = '';
+                setTimeout(() => {
+                  fo.remove();
+                  target.style.position =
+                    target.style.zIndex =
+                    target.style.transition =
+                      '';
+                }, 350);
+              }
+              fo.addEventListener('click', clearF, { once: true });
+              setTimeout(() => {
+                window.addEventListener('scroll', clearF, {
+                  once: true,
+                  passive: true,
+                });
+                window.addEventListener('keydown', clearF, { once: true });
+              }, 400);
+            }, 500);
+          },
+          { once: true },
+        );
+      };
+
+      window.lvlSqHideTipDelayed = function lvlSqHideTipDelayed() {
+        _lvlSqHideTimer = setTimeout(() => {
+          _lvlSqTip.style.display = 'none';
+          const _a = document.getElementById('lvl-sq-arrow-svg');
+          if (_a) {
+            _a.style.display = 'none';
+            _a.innerHTML = '';
+          }
+        }, 150);
+      };
+
+      window.lvlSqHideTip = function lvlSqHideTip(sq) {
+        sq.style.boxShadow = '';
+        lvlSqHideTipDelayed();
+      };
+
+      // Resolve a perk id → {name, hex} for inline <perk> tags.
+      function resolvePerkInline(pid) {
+        const COLOR_HEX = {
+          o: '#e09040',
+          r: '#cc3838',
+          b: '#3e80d0',
+          g: '#28a860',
+          p: '#7840c8',
+          y: '#b89030',
+          k: '#303030',
+          orange: '#e09040',
+          red: '#cc3838',
+          blue: '#3e80d0',
+          green: '#28a860',
+          purple: '#7840c8',
+          yellow: '#b89030',
+          black: '#303030',
+        };
+        for (const skill of typeof D !== 'undefined' ? D.skills : []) {
+          const found = skill.perks.find((pp) => pp.id === pid);
+          if (found) {
+            const hex = COLOR_HEX[(skill.color || '').toLowerCase()] || '#888';
+            return { name: found.name, hex };
+          }
+        }
+        return { name: pid, hex: '#888' };
+      }
+
+      // Replace <perk>id</perk> with a clickable coloured square + hover popup.
+      function processPerkTags(html) {
+        return html.replace(/<perk>([^<]+)<\/perk>/gi, (_, pid) => {
+          pid = pid.trim();
+          const { name, hex } = resolvePerkInline(pid);
+          return `<span class="inline-perk-ref" data-rid="${pid}"
+            style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;position:relative;vertical-align:middle;"
+            onmouseenter="this.querySelector('.ipr-sq').style.boxShadow='0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44';this.querySelector('.ipr-tip').style.display='block'"
+            onmouseleave="this.querySelector('.ipr-sq').style.boxShadow='';this.querySelector('.ipr-tip').style.display='none'">
+            <span class="ipr-sq" style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
+            <span class="ipr-tip" style="display:none;position:absolute;bottom:calc(100% + 4px);left:0;background:#0d0e18;border:1px solid #2a3050;padding:3px 8px;font-size:9px;color:#c0bdb4;white-space:nowrap;z-index:600;pointer-events:none;">${name}</span>
+          </span>`;
+        });
+      }
+
       function renderMD(text) {
         if (!text) return '';
-        // <empty-line> (any spelling/self-closing form) → a styled spacer span
-        const preprocessed = text.replace(
-          /<empty-line\s*\/?>(<\/empty-line>)?/gi,
-          '<span class="md-blank-line"></span>',
-        );
+        // normalise explicit line-break tags and \n before markdown parsing
+        let preprocessed = text
+          .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '  \n') // → MD hard break
+          .replace(
+            /<empty-line\s*\/?>(<\/empty-line>)?/gi,
+            '<span class="md-blank-line"></span>',
+          )
+          .replace(/\\n/g, '  \n'); // literal \n in config strings → MD hard break
+        let html;
         if (typeof marked !== 'undefined') {
-          return marked.parse(preprocessed);
+          html = marked.parse(preprocessed);
+        } else {
+          html = preprocessed.replace(/\n/g, '<br>');
         }
-        return preprocessed.replace(/\n/g, '<br>');
+        return processPerkTags(html);
       }
 
       // ── SLOT → PHYSICAL POSITION ──
@@ -3025,13 +3308,135 @@
         ttHeader.innerHTML = '';
         ttHeader.appendChild(_sqSpan);
         ttHeader.appendChild(document.createTextNode(name));
-        ttLevels.innerHTML = Object.entries(lvlDesc)
-          .filter(([lvl]) => lvl !== 'combo' && /^\d+$/.test(lvl))
-          .map(([lvl, txt]) => {
-            const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
-            return `<div class="tt-row"><span class="tt-lvl" style="color:${col}">${lvl}</span><span class="tt-text">${txt}</span></div>`;
-          })
-          .join('');
+        // Build rows — supports two key formats:
+        //   '5'            → normal level row (number + text)
+        //   '5:standVisor' → sub-row: coloured perk square under level 5, no text
+        // Sub-rows are grouped with their parent level row via CSS.
+        {
+          // collect and sort all valid entries
+          const rows = Object.entries(lvlDesc)
+            .filter(([k]) => k !== 'combo' && k !== 'extended')
+            .filter(([k]) => /^\d+$/.test(k) || /^\d+:[A-Za-z]/.test(k))
+            .sort(([a], [b]) => {
+              const nA = parseInt(a),
+                nB = parseInt(b);
+              if (nA !== nB) return nA - nB;
+              // numeric-only keys before sub-keys of same number
+              return /^\d+$/.test(a) ? -1 : 1;
+            });
+
+          // group: each level row can have sub-rows (N:perkId keys) that render
+          // as a perk square in the LEFT column + their own text in the RIGHT column.
+          // Each sub-row becomes its OWN tt-row (not merged), so text lines up neatly.
+          const finalRows = []; // {lvl, txt, pid|null, isMain}
+
+          for (const [key, txt] of rows) {
+            const subMatch = key.match(/^(\d+):([A-Za-z]\w*)$/);
+            if (subMatch) {
+              finalRows.push({
+                lvl: subMatch[1],
+                pid: subMatch[2],
+                txt: String(txt),
+                isMain: false,
+              });
+            } else {
+              finalRows.push({
+                lvl: key,
+                txt: String(txt),
+                pid: null,
+                isMain: true,
+              });
+            }
+          }
+
+          ttLevels.innerHTML = finalRows
+            .map(({ lvl, txt, pid, isMain }) => {
+              const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
+
+              let leftHtml;
+              if (isMain) {
+                // normal row: show level number
+                leftHtml = `<span class="tt-lvl" style="color:${col}">${lvl}</span>`;
+              } else {
+                // sub-row: show perk square instead of number
+                const { name, hex } = resolvePerkInline(pid);
+                leftHtml = `<span class="lvl-perk-sq" data-rid="${pid}"
+                style="display:inline-block;width:8px;height:8px;background:${hex};
+                border-radius:1px;cursor:pointer;transition:box-shadow .2s;">
+              </span>`;
+              }
+
+              return `<div class="tt-row${isMain ? '' : ' tt-row-sub'}">
+              <span class="tt-lvl-col">${leftHtml}</span>
+              <div class="tt-text">${txt ? renderMD(txt) : ''}</div>
+            </div>`;
+            })
+            .join('');
+        }
+
+        // hover for left-column perk squares — use mouseenter/mouseleave on each
+        // square directly (added after innerHTML is set) to avoid bubbling issues.
+        ttLevels.querySelectorAll('.lvl-perk-sq').forEach((sq) => {
+          sq.addEventListener('mouseenter', () => window.lvlSqShowTip(sq));
+          sq.addEventListener('mouseleave', () => window.lvlSqHideTip(sq));
+        });
+
+        // click delegation for inline <perk> tags AND left-column perk squares
+        ttLevels.addEventListener(
+          'click',
+          (e) => {
+            const ref = e.target.closest('.inline-perk-ref, .lvl-perk-sq');
+            if (!ref) return;
+            const rid = ref.dataset.rid;
+            if (!rid) return;
+            const target = [...document.querySelectorAll('.perk')].find(
+              (pe) => pe.dataset.perkId === rid,
+            );
+            if (!target) return;
+            hideTooltip();
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+              let fo = document.getElementById('focus-overlay');
+              if (!fo) {
+                fo = document.createElement('div');
+                fo.id = 'focus-overlay';
+                fo.style.cssText =
+                  'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
+                document.body.appendChild(fo);
+              }
+              const { hex } = resolvePerkInline(rid);
+              requestAnimationFrame(() => {
+                fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+              });
+              target.style.position = 'relative';
+              target.style.zIndex = '51';
+              target.style.transition = 'box-shadow .35s ease';
+              target.style.boxShadow = `0 0 0 2px ${hex},0 0 30px ${hex}80`;
+              function clearFocusRef() {
+                fo.style.background = 'rgba(0,0,0,0)';
+                target.style.boxShadow = '';
+                setTimeout(() => {
+                  fo.remove();
+                  target.style.position =
+                    target.style.zIndex =
+                    target.style.transition =
+                      '';
+                }, 350);
+              }
+              fo.addEventListener('click', clearFocusRef, { once: true });
+              setTimeout(() => {
+                window.addEventListener('scroll', clearFocusRef, {
+                  once: true,
+                  passive: true,
+                });
+                window.addEventListener('keydown', clearFocusRef, {
+                  once: true,
+                });
+              }, 400);
+            }, 500);
+          },
+          { capture: false },
+        );
 
         // position & show synchronously — no timers, no rAF
         const ir = iconEl.getBoundingClientRect();
