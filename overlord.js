@@ -111,7 +111,11 @@ const STAND_DATA = {
           id: 'standRadar',
           name: 'Одрадек',
           imgs: [
-            { title: 'Одрадек', src: 'assets/odradek_800_450.gif' },
+            {
+              title: 'Одрадек',
+              src: 'assets/odradek_800_450.gif',
+              height: 'maximum',
+            },
             {
               title: 'Сканирование местности',
               src: 'assets/scanning_1920_1080.mp4',
@@ -126,7 +130,11 @@ const STAND_DATA = {
           id: 'standVisor',
           name: 'Визор',
           imgs: [
-            { title: 'Визор Тени', src: 'assets/visor_1920_1080.mp4' },
+            {
+              title: 'Визор Тени',
+              src: 'assets/visor_1920_1080.mp4',
+              height: 'maximum',
+            },
             {
               title: 'Спектральный анализ',
               src: 'assets/perception_1920_1080.mp4',

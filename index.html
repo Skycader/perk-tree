@@ -4720,9 +4720,12 @@
                       {
                         const R2 = Math.round;
                         const lineY = R2(finalRect.top + 18);
-                        // Both RT and LT: horizontal line starts from icX (the vertical
-                        // connector runs through icX, so the horizontal meets it cleanly there).
-                        const fromX = R2(icX);
+                        // RT: from mainR.right (right edge of tooltip)
+                        // LT: from icX (the vertical connector passes through icX,
+                        //     so the horizontal line stops exactly there — no overshoot)
+                        const fromX = R2(
+                          pos.side === 'right' ? mainR.right : icX,
+                        );
                         const toX = R2(
                           pos.side === 'right'
                             ? finalRect.left
