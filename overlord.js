@@ -155,6 +155,17 @@ const STAND_DATA = {
           id: 'TWT', //Tachyon warning testament (analog for Radar warning receiver / RWR)
           name: 'СПО',
           img: 'assets/rwr_220_220.gif',
+          audios: [
+            {
+              title: 'TWT',
+              src: 'assets/rwr.mp3',
+              rewind: false,
+              show_time: false,
+              loop: true,
+              srt: ['00:00 - PING', '00:30 - LOCK', '00:40 - LAUNCH'],
+              align_srt: 'right',
+            },
+          ],
           positions: { extra: 'LT' },
           description:
             'Определяет способность Тени пассивно улавливать тахионные возмущения для предупреждения о направленных угрозах. Включает расчет временного горизонта фиксации векторов атак до 12 часов, точность азимутального пеленга излучателей и поэтапное расширение чувствительности от личной защиты до контроля безопасности группы лиц.',
