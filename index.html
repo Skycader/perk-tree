@@ -786,7 +786,7 @@
         position: fixed;
         z-index: 500;
         width: 340px;
-        max-height: 70vh;
+        max-height: 80vh; /* overridden by JS via MAX_TOOLTIP_HEIGHT_PERCENT/PX */
         background: #0f1018;
         border: 1px solid #2a3050;
         box-shadow:
@@ -1572,7 +1572,7 @@
         position: fixed;
         z-index: 520;
         width: 340px;
-        max-height: 70vh;
+        max-height: 80vh; /* overridden by JS via MAX_TOOLTIP_HEIGHT_PERCENT/PX */
         background: #0f1018;
         border: 1px solid #2a3050;
         box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
@@ -2340,6 +2340,12 @@
       // окно уровней — слот 1 это первое доп. окно, слот 2 под ним,
       // слот 3 это новый столбик (рядом со слотом 1), и т.д.
       const WINDOW_PRIORITY = ['IMG', 'EXTRA', 'TIP', 'COMBO', 'EXTENDED'];
+
+      // ── TOOLTIP HEIGHT LIMITS ──
+      // maxH = min(vh * PERCENT, PX_CAP) so the tooltip never exceeds either bound.
+      // Raise PX_CAP to remove the hard pixel ceiling (e.g. set to Infinity).
+      const MAX_TOOLTIP_HEIGHT_PERCENT = 0.8; // fraction of viewport height
+      const MAX_TOOLTIP_HEIGHT_PX = 600; // hard pixel cap (set to Infinity to disable)
 
       // Какой столбик сетки 3×2 занимает окно уровней, в зависимости от
       // колонки дерева (0=левая, 1=средняя, 2=правая).
@@ -3486,7 +3492,10 @@
         if (x < 4) x = 4;
         tooltipEl.style.display = 'flex';
         tooltipEl.style.opacity = '0'; // measure without flash
-        const maxH = Math.floor(vh * 0.7);
+        const maxH = Math.min(
+          Math.floor(vh * MAX_TOOLTIP_HEIGHT_PERCENT),
+          MAX_TOOLTIP_HEIGHT_PX,
+        );
         tooltipEl.style.maxHeight = maxH + 'px';
         const actualH = Math.min(tooltipEl.scrollHeight, maxH);
 

@@ -126,10 +126,10 @@ const STAND_DATA = {
           id: 'standVisor',
           name: 'Визор',
           imgs: [
-            { title: 'Визор Тени', src: 'assets/visor.mp4' },
+            { title: 'Визор Тени', src: 'assets/visor_1920_1080.mp4' },
             {
               title: 'Спектральный анализ',
-              src: 'assets/perception.mp4',
+              src: 'assets/perception_1920_1080.mp4',
               audio: true,
             },
           ],
