@@ -169,6 +169,7 @@ const STAND_DATA = {
               rewind: true,
               show_time: true,
               loop: true,
+              volume: true,
               srt: ['00:00 - PING', '00:04 - LOCK', '00:26 - LAUNCH'],
               align_srt: 'right',
             },
