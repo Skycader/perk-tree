@@ -113,7 +113,7 @@ const STAND_DATA = {
           imgs: [
             {
               title: 'Одрадек',
-              src: 'assets/odradek_600_450.gif',
+              src: 'assets/odradek_800_450.gif',
             },
             {
               title: 'Сканирование местности',

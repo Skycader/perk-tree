@@ -835,7 +835,7 @@
         display: none;
         position: fixed;
         z-index: 500;
-        width: 280px;
+        width: 320px;
         background: #0d0e18;
         border: 1px solid #2a3050;
         box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
@@ -4643,9 +4643,19 @@
                     if (kind === 'IMG' && imgSources.length) {
                       const firstSrc = imgSources[0]?.src || '';
                       const hint = parseSizeHint(firstSrc);
-                      const containerW = pos.w - 20;
+                      const containerW = pos.w - 20; // pos.w=320, padding 10px each side
                       const hinted = hintedHeight(hint, containerW, cap);
-                      if (hinted) effectiveH = Math.min(hinted + 36, cap);
+
+                      if (hinted) {
+                        // measure real header height dynamically
+                        box.style.display = 'flex';
+                        const hdr = box.querySelector('.tt-header');
+                        const hdrH = hdr
+                          ? hdr.getBoundingClientRect().height
+                          : 36;
+                        box.style.display = '';
+                        effectiveH = Math.min(hinted + hdrH + 20, cap); // +20 for padding
+                      }
                     }
                     box.style.maxHeight = effectiveH + 'px';
                     box.style.height = isMediaKind ? effectiveH + 'px' : '';
@@ -4695,9 +4705,12 @@
                       if (STYLISH_OFFSET) {
                         // reposition the box itself to match the offset
                         box.style.top = pos.y + STYLISH_OFFSET + 'px';
-                        // use effectiveH (already accounts for isSolo), not pos.h
-                        box.style.maxHeight =
-                          Math.max(80, effectiveH - STYLISH_OFFSET) + 'px';
+                        // For IMG: keep maxHeight = effectiveH (content-sized, don't shrink).
+                        // For others: reduce by offset since box moved down.
+                        if (kind !== 'IMG') {
+                          box.style.maxHeight =
+                            Math.max(80, effectiveH - STYLISH_OFFSET) + 'px';
+                        }
 
                         if (contentSel && kind !== 'IMG')
                           pinContentHeight(box, contentSel);
