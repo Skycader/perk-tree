@@ -3220,14 +3220,15 @@
         // meaning they fall back to the perk-level perkData.audio flag.
         function normalizeImgEntry(entry) {
           if (typeof entry === 'string')
-            return { src: entry, title: null, audio: null };
+            return { src: entry, title: null, audio: null, height: null };
           if (entry && typeof entry === 'object')
             return {
               src: entry.src || '',
               title: entry.title || null,
               audio: typeof entry.audio === 'boolean' ? entry.audio : null,
+              height: entry.height || null, // 'maximum' = fill all available height
             };
-          return { src: '', title: null, audio: null };
+          return { src: '', title: null, audio: null, height: null };
         }
         const imgSources = imgSourcesRaw.map(normalizeImgEntry);
 
@@ -3249,6 +3250,9 @@
 
           // anchor strictly to the ACTUAL rendered tooltip rect (already clamped to viewport)
           const mainR = tooltipEl.getBoundingClientRect();
+          // pre-compute SOLO_MAX_H here so it's visible to both runLayout and
+          // the img load listener (which runs outside runLayout's rAF closure).
+          let SOLO_MAX_H = Math.max(80, mainR.bottom - mainR.top - 40);
           const colW = 320;
           const COL_GAP = 36;
           let colX, placedLeft;
@@ -3372,12 +3376,28 @@
               imgEl.addEventListener(
                 'load',
                 () => {
-                  const box = imgEl.closest('#img-box, #img2-box, #extra-box');
-                  if (box) {
-                    const sel =
-                      box.id === 'img2-box' ? '#img2-content' : '#img-content';
-                    pinContentHeight(box, sel);
+                  const box = imgEl.closest('#img-box, #img2-box');
+                  if (!box) return;
+                  const sel =
+                    box.id === 'img2-box' ? '#img2-content' : '#img-content';
+                  // release the explicit height we set during loading (when spinner was inside)
+                  box.style.height = '';
+                  // re-compute maxHeight from real natural dimensions
+                  const w = imgEl.naturalWidth,
+                    h = imgEl.naturalHeight;
+                  if (w && h) {
+                    const containerW = box.clientWidth - 20;
+                    const wantsMax = imgSources.some(
+                      (e) => e.height === 'maximum',
+                    );
+                    const cap = wantsMax ? SOLO_MAX_H : IMG_MAX_H;
+                    const newH = Math.min(
+                      Math.round((containerW * h) / w) + 36,
+                      cap,
+                    );
+                    box.style.maxHeight = newH + 'px';
                   }
+                  pinContentHeight(box, sel);
                 },
                 { once: true },
               );
@@ -3433,9 +3453,13 @@
           // DOM the whole time — nothing overwrites innerHTML after this point,
           // so the spinner isn't wiped out before the browser gets to paint it.
           function withLoadingSpinner(mediaEl, container) {
+            // sizeHint: {w, h} natural pixel dimensions of the media (from filename or known).
+            // We insert an invisible placeholder div sized to the media's proportions so
+            // the container immediately occupies the correct height — no layout jump after load.
             const spinnerWrap = document.createElement('div');
             spinnerWrap.className = 'media-loading-wrap';
             spinnerWrap.innerHTML = MEDIA_LOADING_SVG;
+
             container.appendChild(spinnerWrap);
             container.appendChild(mediaEl);
 
@@ -3698,10 +3722,6 @@
                     const side = slot.charAt(0); // 'L' or 'R'
                     return occupiedSlots.has(side + 'B');
                   }
-                  const SOLO_MAX_H = Math.max(
-                    80,
-                    mainR.bottom - mainR.top - 40,
-                  );
 
                   for (const { kind, slot } of slotMap) {
                     const box = BOX[kind];
@@ -3718,30 +3738,48 @@
                     box.style.width = pos.w + 'px';
 
                     const isMediaKind = kind === 'IMG';
-                    let effectiveH = isSolo
-                      ? isMediaKind
+
+                    // check if any source requests 'maximum' height
+                    const wantsMaximum =
+                      kind === 'IMG' &&
+                      imgSources.some((e) => e.height === 'maximum');
+
+                    // cap: 'maximum' = SOLO_MAX_H (ignores IMG_MAX_H),
+                    //       solo        = min(SOLO_MAX_H, IMG_MAX_H),
+                    //       normal      = min(pos.h, IMG_MAX_H)
+                    const cap = wantsMaximum
+                      ? SOLO_MAX_H
+                      : isSolo
                         ? Math.min(SOLO_MAX_H, IMG_MAX_H)
-                        : SOLO_MAX_H
-                      : isMediaKind
-                        ? Math.min(pos.h, IMG_MAX_H)
-                        : pos.h;
+                        : isMediaKind
+                          ? Math.min(pos.h, IMG_MAX_H)
+                          : pos.h;
+
+                    let effectiveH = cap;
+
+                    // filename size hint: always try to use proportional height,
+                    // regardless of 'maximum' — the cap already sets the ceiling.
                     if (kind === 'IMG' && imgSources.length) {
                       const firstSrc = imgSources[0]?.src || '';
                       const hint = parseSizeHint(firstSrc);
-                      const hinted = hintedHeight(hint, pos.w - 20, IMG_MAX_H);
-                      if (hinted)
-                        effectiveH = Math.min(hinted + 36, effectiveH);
+                      const containerW = pos.w - 20; // minus padding
+                      const hinted = hintedHeight(hint, containerW, cap);
+                      if (hinted) effectiveH = Math.min(hinted + 36, cap); // +36 for header
                     }
                     box.style.maxHeight = effectiveH + 'px';
-                    // Solo text windows: set explicit height = SOLO_MAX_H so the flex
-                    // container actually EXPANDS to fill the space (maxHeight alone won't
-                    // stretch a flex box — it only caps it). Content inside uses height:''
-                    // so it determines the real visual size via its own scrollHeight.
-                    box.style.height = '';
+                    // IMG boxes need explicit height so the box doesn't collapse to
+                    // spinner height while waiting for media — maxHeight alone won't
+                    // stretch a flex box, only cap it.
+                    box.style.height = isMediaKind ? effectiveH + 'px' : '';
                     box.style.minHeight = '';
                     box.style.display = 'flex';
 
-                    if (contentSel) pinContentHeight(box, contentSel);
+                    // For IMG: don't call pinContentHeight on first pass — the DOM
+                    // contains only a spinner (26px), which would make pinContentHeight
+                    // set content.height=26px, overriding the correct effectiveH.
+                    // The load listener in makeMediaEl calls it once real dimensions known.
+                    if (contentSel && kind !== 'IMG')
+                      pinContentHeight(box, contentSel);
 
                     const rect = box.getBoundingClientRect();
                     placedRects[kind] = rect;
