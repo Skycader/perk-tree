@@ -3721,6 +3721,7 @@
         tipBox.style.maxHeight = '';
         extendedBox.style.maxHeight = '';
         imgBox.style.maxHeight = '';
+        delete imgBox.dataset.sizedByLoad;
         img2Box.style.maxHeight = '';
         comboBox.style.maxHeight = '';
 
@@ -3866,6 +3867,7 @@
           return { src: '', title: null, audio: null, height: null };
         }
         const imgSources = imgSourcesRaw.map(normalizeImgEntry);
+        const wantsMaximum = imgSources.some((e) => e.height === 'maximum');
 
         // ordered list of which secondary window "slots" are present, per WINDOW_PRIORITY
         const hasFlags = {
@@ -3975,9 +3977,19 @@
                 'loadeddata',
                 () => {
                   const box = vidEl.closest('#img-box, #img2-box, #extra-box');
-                  if (box) {
-                    const sel =
-                      box.id === 'img2-box' ? '#img2-content' : '#img-content';
+                  if (!box) return;
+                  const sel =
+                    box.id === 'img2-box' ? '#img2-content' : '#img-content';
+                  // for img-box: just clear scroll state, don't call pinContentHeight
+                  // (it would add needs-scroll based on stale contentH)
+                  if (box.id === 'img-box') {
+                    const cont = box.querySelector(sel);
+                    if (cont) {
+                      cont.classList.remove('needs-scroll');
+                      cont.style.height = '';
+                      cont.style.maxHeight = '';
+                    }
+                  } else {
                     pinContentHeight(box, sel);
                   }
                 },
@@ -4020,34 +4032,7 @@
                   imgEl.addEventListener('error', resolve, { once: true });
                 }),
               );
-              imgEl.addEventListener(
-                'load',
-                () => {
-                  const box = imgEl.closest('#img-box, #img2-box');
-                  if (!box) return;
-                  const sel =
-                    box.id === 'img2-box' ? '#img2-content' : '#img-content';
-                  // release the explicit height we set during loading (when spinner was inside)
-                  box.style.height = '';
-                  // re-compute maxHeight from real natural dimensions
-                  const w = imgEl.naturalWidth,
-                    h = imgEl.naturalHeight;
-                  if (w && h) {
-                    const containerW = box.clientWidth - 20;
-                    const wantsMax = imgSources.some(
-                      (e) => e.height === 'maximum',
-                    );
-                    const cap = wantsMax ? SOLO_MAX_H : IMG_MAX_H;
-                    const newH = Math.min(
-                      Math.round((containerW * h) / w) + 36,
-                      cap,
-                    );
-                    box.style.maxHeight = newH + 'px';
-                  }
-                  pinContentHeight(box, sel);
-                },
-                { once: true },
-              );
+              // size from hint only — no post-load resize
               imgEl.src = src;
               return imgEl;
             }
@@ -4165,6 +4150,12 @@
                 entry0.audio,
               );
               imgContent.innerHTML = '';
+              // height:'maximum' → cover so image fills the tall box without letterbox
+              if (wantsMaximum) {
+                const mediaEl2 =
+                  el.tagName === 'IMG' ? el : el.querySelector('img,video');
+                if (mediaEl2) mediaEl2.classList.add('fit-cover');
+              }
               withLoadingSpinner(el, imgContent);
             }
           }
@@ -4635,46 +4626,46 @@
                     const isMediaKind = kind === 'IMG';
 
                     // check if any source requests 'maximum' height
-                    const wantsMaximum =
-                      kind === 'IMG' &&
-                      imgSources.some((e) => e.height === 'maximum');
+                    // wantsMaximum declared at showTooltip scope above
 
-                    // cap: 'maximum' = SOLO_MAX_H (ignores IMG_MAX_H),
-                    //       solo        = min(SOLO_MAX_H, IMG_MAX_H),
-                    //       normal      = min(pos.h, IMG_MAX_H)
-                    const cap = wantsMaximum
-                      ? SOLO_MAX_H
-                      : isSolo
-                        ? Math.min(SOLO_MAX_H, IMG_MAX_H)
-                        : isMediaKind
-                          ? Math.min(pos.h, IMG_MAX_H)
-                          : pos.h;
+                    // When hasImg2: imgBox should size itself to fit its media
+                    // proportionally (not be capped at slotH), since img2Box floats
+                    // right below it. Use SOLO_MAX_H as ceiling in that case too.
+                    // For IMG: cap is always SOLO_MAX_H (hint will shrink to fit).
+                    // For text windows: use pos.h (slot height) or SOLO_MAX_H if solo.
+                    const cap =
+                      kind === 'IMG' ? SOLO_MAX_H : isSolo ? SOLO_MAX_H : pos.h;
 
                     let effectiveH = cap;
 
-                    // filename size hint: always try to use proportional height,
-                    // regardless of 'maximum' — the cap already sets the ceiling.
+                    // IMG: size from filename hint (_W_H) — dimensions known before load.
+                    // This is the FINAL size, no resizing after load.
                     if (kind === 'IMG' && imgSources.length) {
                       const firstSrc = imgSources[0]?.src || '';
                       const hint = parseSizeHint(firstSrc);
-                      const containerW = pos.w - 20; // minus padding
+                      const containerW = pos.w - 20;
                       const hinted = hintedHeight(hint, containerW, cap);
-                      if (hinted) effectiveH = Math.min(hinted + 36, cap); // +36 for header
+                      if (hinted) effectiveH = Math.min(hinted + 36, cap);
                     }
                     box.style.maxHeight = effectiveH + 'px';
-                    // IMG boxes need explicit height so the box doesn't collapse to
-                    // spinner height while waiting for media — maxHeight alone won't
-                    // stretch a flex box, only cap it.
                     box.style.height = isMediaKind ? effectiveH + 'px' : '';
                     box.style.minHeight = '';
                     box.style.display = 'flex';
 
                     // For IMG: don't call pinContentHeight on first pass — the DOM
                     // contains only a spinner (26px), which would make pinContentHeight
-                    // set content.height=26px, overriding the correct effectiveH.
-                    // The load listener in makeMediaEl calls it once real dimensions known.
+                    // For IMG: only call pinContentHeight if media already loaded
+                    // (naturalWidth > 0). On first runLayout pass the spinner is inside
+                    // so we skip it. On the re-run after Promise.all(imgLoadPromises)
+                    // the real media is there and we can pin correctly.
                     if (contentSel && kind !== 'IMG')
                       pinContentHeight(box, contentSel);
+                    // IMG: don't call pinContentHeight — content uses flex:1 and
+                    // fills the box naturally. Only disable scroll class explicitly.
+                    if (kind === 'IMG' && contentSel) {
+                      const cont = box.querySelector(contentSel);
+                      if (cont) cont.classList.remove('needs-scroll');
+                    }
 
                     const rect = box.getBoundingClientRect();
                     placedRects[kind] = rect;
@@ -4708,7 +4699,16 @@
                         box.style.maxHeight =
                           Math.max(80, effectiveH - STYLISH_OFFSET) + 'px';
 
-                        if (contentSel) pinContentHeight(box, contentSel);
+                        if (contentSel && kind !== 'IMG')
+                          pinContentHeight(box, contentSel);
+                        if (kind === 'IMG' && contentSel) {
+                          const cont = box.querySelector(contentSel);
+                          if (cont) {
+                            cont.classList.remove('needs-scroll');
+                            cont.style.height = '';
+                            cont.style.maxHeight = '';
+                          }
+                        }
                         // re-measure
                         const r2 = box.getBoundingClientRect();
                         placedRects[kind] = r2;
@@ -4758,7 +4758,16 @@
                       const maxH = Math.max(80, vhC - actualY - 8);
                       box.style.top = actualY + 'px';
                       box.style.maxHeight = maxH + 'px';
-                      if (contentSel) pinContentHeight(box, contentSel);
+                      if (contentSel && kind !== 'IMG')
+                        pinContentHeight(box, contentSel);
+                      if (kind === 'IMG' && contentSel) {
+                        const cont = box.querySelector(contentSel);
+                        if (cont) {
+                          cont.classList.remove('needs-scroll');
+                          cont.style.height = '';
+                          cont.style.maxHeight = '';
+                        }
+                      }
 
                       // re-measure after repositioning
                       const finalRect = box.getBoundingClientRect();
@@ -4781,10 +4790,14 @@
                     }
                   }
 
-                  // ── IMG special: media, slider, pinContentHeight already done above ──
-                  // Re-run pinContentHeight for IMG after media might have loaded
+                  // ── IMG special: clear any leftover scroll state ──
                   if (placedRects['IMG']) {
-                    pinContentHeight(imgBox, '#img-content');
+                    const imgCont = imgBox.querySelector('#img-content');
+                    if (imgCont) {
+                      imgCont.classList.remove('needs-scroll');
+                      imgCont.style.height = '';
+                      imgCont.style.maxHeight = '';
+                    }
                   }
 
                   // ── IMG2: second image window (imgs[] with slider:false) ──
