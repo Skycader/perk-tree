@@ -4228,9 +4228,9 @@
             // header shows title of first (or only) track
             audioHeader.innerHTML =
               audiosList.length === 1
-                ? `<span class="audio-title-text">${audiosList[0].title || '▶ Аудио'}</span>
+                ? `<span class="audio-title-text"><svg width="7" height="8" viewBox="0 0 10 12" style="display:inline-block;vertical-align:middle;margin-right:6px;opacity:0.6"><polygon points="0,0 10,6 0,12" fill="#8090a0"/></svg>${audiosList[0].title || 'Аудио'}</span>
                  <span class="audio-header-srt" id="audio-srt-0"></span>`
-                : `<span>▶ Аудио</span>`;
+                : `<span><svg width="7" height="8" viewBox="0 0 10 12" style="display:inline-block;vertical-align:middle;margin-right:6px;opacity:0.6"><polygon points="0,0 10,6 0,12" fill="#8090a0"/></svg>Аудио</span>`;
 
             audiosList.forEach((trackCfg, idx) => {
               const src = trackCfg.src || '';
