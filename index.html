@@ -1303,14 +1303,23 @@
         letter-spacing: 0.05em;
         font-family: 'JetBrains Mono', monospace;
       }
+      /* ── EXTENDED CONTENT SPACING — tweak these to taste ── */
+      :root {
+        --ext-row-pad-v: 4px; /* vertical padding per level row  */
+        --ext-row-pad-h: 8px; /* horizontal padding per level row */
+        --ext-font-size: 10px; /* text size inside extended window */
+      }
       #extended-content {
         overflow-y: auto;
         flex: 1;
         min-height: 0;
         padding: 0;
-        font-size: 10px;
+        font-size: var(--ext-font-size);
         color: #7a8090;
         line-height: 1.55;
+      }
+      #extended-content .tt-row {
+        padding: var(--ext-row-pad-v) var(--ext-row-pad-h);
       }
       /* extended content shares the same MD styles as extra/tip */
       #extended-content p {
@@ -2241,7 +2250,7 @@
       // следующий свободный по этому порядку. Слот НЕ считает основное
       // окно уровней — слот 1 это первое доп. окно, слот 2 под ним,
       // слот 3 это новый столбик (рядом со слотом 1), и т.д.
-      const WINDOW_PRIORITY = ['IMG', 'EXTRA', 'TIP', 'EXTENDED', 'COMBO'];
+      const WINDOW_PRIORITY = ['IMG', 'EXTRA', 'TIP', 'COMBO', 'EXTENDED'];
 
       // Какой столбик сетки 3×2 занимает окно уровней, в зависимости от
       // колонки дерева (0=левая, 1=средняя, 2=правая).
@@ -2396,34 +2405,48 @@
       const IMG_MAX_H = 420; // maximum height of img/img2 content box (px)
 
       function slotToPosition(slot, mainR, vwC, vhC) {
-        const usableH = vhC - mainR.top - 8; // from mainR.top to bottom of viewport
+        const usableH = vhC - mainR.top - 8;
         const slotH = Math.max(80, Math.floor((usableH - SLOT_ROW_GAP) / 2));
         const isTop = slot.endsWith('T');
         const colLetter = slot.charAt(0); // 'L', 'M', 'R'
 
-        // y: top row aligns with mainR.top; bottom row is below
         const y = isTop ? mainR.top : mainR.top + slotH + SLOT_ROW_GAP;
         const h = slotH;
 
-        // x: depends on which column relative to mainR
-        // M column = same x-band as mainR itself (for MB/MT — but those are reserved
-        //            for levels; if ever unlocked they'd overlap mainR, so we offset)
-        // L column = left of mainR
-        // R column = right of mainR
+        // Grid layout relative to mainR (the levels tooltip):
+        //   R = first column to the right  (mainR.right + GAP)
+        //   L = first column to the left   (mainR.left  - GAP - W)
+        //   M = SECOND column — direction depends on which tree column the perk is in.
+        //       For left/mid perk columns  → M is the second column to the RIGHT of R
+        //       For right perk column      → M is the second column to the LEFT of L
+        //   This is determined at call-time by the caller passing colIdx via closure,
+        //   but slotToPosition is pure — so we infer direction from existing geometry:
+        //   if R slot fits to the right, M goes further right; else M goes left.
         let x, side;
+        const rightX = mainR.right + SLOT_COL_GAP;
+        const leftX = mainR.left - SLOT_COL_GAP - SLOT_COL_W;
+        const right2X = mainR.right + SLOT_COL_GAP * 2 + SLOT_COL_W; // 2nd col right
+        const left2X = mainR.left - SLOT_COL_GAP * 2 - SLOT_COL_W * 2; // 2nd col left
+
         if (colLetter === 'R') {
-          x = mainR.right + SLOT_COL_GAP;
+          x = rightX;
           side = 'right';
         } else if (colLetter === 'L') {
-          x = mainR.left - SLOT_COL_GAP - SLOT_COL_W;
+          x = leftX;
           side = 'left';
         } else {
-          // M: not normally reachable for secondary windows, but handle gracefully
-          x = mainR.right + SLOT_COL_GAP;
-          side = 'right';
+          // M = second column in the primary direction
+          // Primary direction: if right side has more room use right, else left
+          const rightRoom = vwC - right2X - SLOT_COL_W - 4;
+          if (rightRoom >= 0) {
+            x = right2X;
+            side = 'right';
+          } else {
+            x = left2X;
+            side = 'left';
+          }
         }
 
-        // clamp to viewport
         if (x < 4) x = 4;
         if (x + SLOT_COL_W > vwC - 4) x = vwC - SLOT_COL_W - 4;
 
@@ -3035,9 +3058,12 @@
         const maxH = Math.floor(vh * 0.82);
         tooltipEl.style.maxHeight = maxH + 'px';
         const actualH = Math.min(tooltipEl.scrollHeight, maxH);
-        let y = icY - actualH / 2;
+        // prefer top-anchored: start near the top of the viewport with a small
+        // margin, rather than centering on the icon which pushes it down.
+        const TOP_ANCHOR = 16;
+        let y = Math.min(icY - actualH / 2, TOP_ANCHOR);
         if (y + actualH > vh - 8) y = vh - actualH - 8;
-        if (y < 8) y = 8;
+        if (y < TOP_ANCHOR) y = TOP_ANCHOR;
 
         tooltipEl.style.left = x + 'px';
         tooltipEl.style.top = y + 'px';
@@ -3196,7 +3222,8 @@
 
         const hasExtra = !!perkData?.extra;
         const hasTip = !!perkData?.tip;
-        const hasExtended = !!perkData?.extended;
+        // extended lives in skillLevelDescriptions[perkId].extended (like combo)
+        const hasExtended = !!lvlData?.extended;
         // imgs[] takes priority over the single img key when both happen to be present
         const imgsList = Array.isArray(perkData?.imgs)
           ? perkData.imgs.filter(Boolean)
@@ -3240,7 +3267,18 @@
           EXTENDED: hasExtended,
           COMBO: hasCombo,
         };
-        const activeKinds = WINDOW_PRIORITY.filter((k) => hasFlags[k]);
+        // perkData.priority: optional local override of window order for this perk only.
+        // e.g. priority: ['COMBO', 'IMG', 'EXTRA'] — only listed kinds are reordered,
+        // unlisted kinds keep their WINDOW_PRIORITY position at the end.
+        const localPriority = (() => {
+          const p = perkData?.priority;
+          if (!Array.isArray(p) || !p.length) return WINDOW_PRIORITY;
+          const upper = p.map((k) => k.toUpperCase());
+          // merge: listed kinds first (in given order), then remaining from WINDOW_PRIORITY
+          const rest = WINDOW_PRIORITY.filter((k) => !upper.includes(k));
+          return [...upper, ...rest];
+        })();
+        const activeKinds = localPriority.filter((k) => hasFlags[k]);
 
         if (hasExtra || hasImg || hasCombo) {
           const TOP_MARGIN = 8,
@@ -3542,22 +3580,62 @@
             tipContent.innerHTML = renderMD(perkData.tip);
           }
           if (hasExtended) {
-            // extended: { partnerId: { title?, 1:'', 2:'', ... } }
-            // Renders exactly like the main levels tooltip — rows of lvl → text.
-            const extData = perkData.extended;
-            const partnerId = Object.keys(extData)[0]; // first (and usually only) key
-            const partnerData = extData[partnerId];
-            // resolve partner perk name for default header
-            let partnerName = partnerId;
-            for (const skill of D.skills) {
-              const found = skill.perks.find((pp) => pp.id === partnerId);
-              if (found) {
-                partnerName = found.name;
-                break;
+            const extData = lvlData.extended;
+            const partnerId = Object.keys(extData).find(
+              (k) => k !== 'title' && typeof extData[k] === 'object',
+            );
+            const partnerData = partnerId ? extData[partnerId] : extData;
+
+            // resolve partner perk name + chapter colour (for the clickable square)
+            let partnerName = partnerId || '';
+            let partnerHex = '#585e72';
+            let partnerSkill = null;
+            if (partnerId) {
+              for (const skill of D.skills) {
+                const found = skill.perks.find((pp) => pp.id === partnerId);
+                if (found) {
+                  partnerName = found.name;
+                  partnerSkill = skill;
+                  break;
+                }
+              }
+              if (partnerSkill) {
+                const CM2 = {
+                  orange: '#e09040',
+                  red: '#cc3838',
+                  blue: '#3e80d0',
+                  green: '#28a860',
+                  purple: '#7840c8',
+                  yellow: '#b89030',
+                  black: '#303030',
+                  o: '#e09040',
+                  r: '#cc3838',
+                  b: '#3e80d0',
+                  g: '#28a860',
+                  p: '#7840c8',
+                  y: '#b89030',
+                  k: '#303030',
+                };
+                partnerHex =
+                  CM2[(partnerSkill.color || '').toLowerCase()] || '#585e72';
               }
             }
-            extendedHeader.textContent =
-              partnerData.title || partnerName || '⚡ Расширенные способности';
+
+            // header: icon + title
+            const extTitle =
+              extData.title ||
+              partnerData.title ||
+              partnerName ||
+              '⚡ Расширенные способности';
+            extendedHeader.innerHTML = partnerId
+              ? `<span class="combo-sq ext-partner-sq" data-rid="${partnerId}"
+                  style="display:inline-block;width:8px;height:8px;background:${partnerHex};
+                  border-radius:1px;flex-shrink:0;cursor:pointer;margin-right:6px;
+                  transition:box-shadow .2s;vertical-align:middle;"
+                  onmouseenter="this.style.boxShadow='0 0 6px 3px ${partnerHex}88'"
+                  onmouseleave="this.style.boxShadow=''"></span>${extTitle}`
+              : extTitle;
+
             extendedContent.innerHTML = Object.entries(partnerData)
               .filter(([k]) => /^\d+$/.test(k))
               .map(([lvl, txt]) => {
@@ -3568,6 +3646,65 @@
                 </div>`;
               })
               .join('');
+
+            // click on square → focus partner perk (same as combo squares)
+            if (partnerId) {
+              extendedHeader
+                .querySelector('.ext-partner-sq')
+                ?.addEventListener('click', () => {
+                  const allPerks = document.querySelectorAll('.perk');
+                  let target = null;
+                  for (const pe of allPerks) {
+                    if (pe.dataset.perkId === partnerId) {
+                      target = pe;
+                      break;
+                    }
+                  }
+                  if (!target) return;
+                  hideTooltip();
+                  target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                  });
+                  setTimeout(() => {
+                    let fo = document.getElementById('focus-overlay');
+                    if (!fo) {
+                      fo = document.createElement('div');
+                      fo.id = 'focus-overlay';
+                      fo.style.cssText =
+                        'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
+                      document.body.appendChild(fo);
+                    }
+                    requestAnimationFrame(() => {
+                      fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+                    });
+                    target.style.position = 'relative';
+                    target.style.zIndex = '51';
+                    target.style.transition = 'box-shadow .35s ease';
+                    target.style.boxShadow = `0 0 0 2px ${partnerHex},0 0 30px ${partnerHex}80`;
+                    function clearFocusExt() {
+                      fo.style.background = 'rgba(0,0,0,0)';
+                      target.style.boxShadow = '';
+                      setTimeout(() => {
+                        fo.remove();
+                        target.style.position = '';
+                        target.style.zIndex = '';
+                        target.style.transition = '';
+                      }, 350);
+                    }
+                    fo.addEventListener('click', clearFocusExt, { once: true });
+                    setTimeout(() => {
+                      window.addEventListener('scroll', clearFocusExt, {
+                        once: true,
+                        passive: true,
+                      });
+                      window.addEventListener('keydown', clearFocusExt, {
+                        once: true,
+                      });
+                    }, 400);
+                  }, 500);
+                });
+            }
           }
           if (hasCombo) {
             // resolve {name, colourHex} for any perk id, searching all chapters
@@ -3667,13 +3804,10 @@
 
                   // determine column index (0=left, 1=mid, 2=right)
                   const allColsLayout = document.querySelectorAll('.col');
-                  let colIdx = 1; // default: middle
-                  for (let ci = 0; ci < allColsLayout.length; ci++) {
-                    if (allColsLayout[ci].contains(iconEl)) {
-                      colIdx = ci % 3;
-                      break;
-                    }
-                  }
+                  const colsArr = Array.from(allColsLayout);
+                  let colIdx = perkCol ? colsArr.indexOf(perkCol) : 1;
+                  if (colIdx < 0) colIdx = 1;
+                  colIdx = colIdx % 3;
 
                   // resolve slots using the pure function from step 3
                   const slotMap = resolveSlots(
