@@ -843,11 +843,15 @@
         align-items: center;
         justify-content: center;
         padding: 10px;
-        overflow-y: auto;
+        overflow-y: hidden;
         overflow-x: hidden;
         flex: 1;
         min-height: 0;
         position: relative;
+      }
+      /* only enable scroll when pinContentHeight explicitly decides media overflows */
+      #img-content.needs-scroll {
+        overflow-y: auto;
       }
       /* loading spinner shown in img-content/img2-content while media is fetching */
       .media-loading-wrap {
@@ -957,11 +961,14 @@
         align-items: center;
         justify-content: center;
         padding: 10px;
-        overflow-y: auto;
+        overflow-y: hidden;
         overflow-x: hidden;
         flex: 1;
         min-height: 0;
         position: relative;
+      }
+      #img2-content.needs-scroll {
+        overflow-y: auto;
       }
       #img2-content img,
       #img2-content video {
@@ -1063,7 +1070,6 @@
         position: fixed;
         z-index: 500;
         width: 320px;
-        max-height: 70vh;
         background: #0d0e18;
         border: 1px solid #2a3050;
         box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
@@ -1090,6 +1096,14 @@
         font-size: 10px;
         color: #7a8090;
         line-height: 1.55;
+      }
+      /* solo mode: content shrinks to fit its own text, not the box height */
+      #extra-content.solo-content,
+      #tip-content.solo-content,
+      #extended-content.solo-content,
+      #combo-levels.solo-content {
+        flex: 0 0 auto;
+        overflow-y: auto;
       }
       /* md styles matching combo */
       #extra-content p {
@@ -1181,7 +1195,6 @@
         position: fixed;
         z-index: 500;
         width: 320px;
-        max-height: 50vh;
         background: #0d0e18;
         border: 1px solid #2a3050;
         box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
@@ -1260,9 +1273,114 @@
       /* explicit blank-line spacer support: <empty-line></empty-line> or <br> */
       #extra-content .md-blank-line,
       #tip-content .md-blank-line,
+      #extended-content .md-blank-line,
       #combo-levels .md-blank-line {
         display: block;
         height: 10px;
+      }
+
+      /* ── EXTENDED WINDOW ── */
+      #extended-box {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        width: 320px;
+        background: #0d0e18;
+        border: 1px solid #2a3050;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+        pointer-events: auto;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #extended-box .tt-header {
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid #1c1f2e;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #8090a0;
+        letter-spacing: 0.05em;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      #extended-content {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+        padding: 0;
+        font-size: 10px;
+        color: #7a8090;
+        line-height: 1.55;
+      }
+      /* extended content shares the same MD styles as extra/tip */
+      #extended-content p {
+        padding: 6px 12px 0;
+        margin: 0;
+      }
+      #extended-content h1,
+      #extended-content h2,
+      #extended-content h3 {
+        font-family: 'JetBrains Mono', monospace;
+        color: #c0bdb4;
+        padding: 8px 12px 2px;
+        margin: 0;
+        font-size: 11px;
+        border-bottom: 1px solid #1e2235;
+      }
+      #extended-content strong {
+        color: #c0bdb4;
+      }
+      #extended-content em {
+        color: #8898b0;
+      }
+      #extended-content code {
+        font-family: 'JetBrains Mono', monospace;
+        background: #0a0b14;
+        border: 1px solid #1e2235;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 9px;
+        color: #7ab0d0;
+      }
+      #extended-content ul,
+      #extended-content ol {
+        padding: 4px 12px 4px 28px;
+        margin: 0;
+      }
+      #extended-content li {
+        margin: 2px 0;
+      }
+      #extended-content blockquote {
+        border-left: 2px solid #3a4570;
+        padding: 4px 10px;
+        margin: 4px 12px;
+        color: #7a8090;
+      }
+      #extended-content hr {
+        border: none;
+        border-top: 1px solid #1e2235;
+        margin: 6px 12px;
+      }
+      #extended-content table {
+        border-collapse: collapse;
+        width: calc(100% - 24px);
+        margin: 6px 12px;
+        font-size: 10px;
+      }
+      #extended-content th {
+        background: #0f1020;
+        border: 1px solid #1e2235;
+        padding: 3px 7px;
+        color: #8090a0;
+        font-weight: 600;
+        text-align: left;
+      }
+      #extended-content td {
+        border: 1px solid #1a1d2e;
+        padding: 3px 7px;
+      }
+      #extended-content tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.02);
       }
 
       /* ── COMBO WINDOW ── */
@@ -1271,7 +1389,6 @@
         position: fixed;
         z-index: 500;
         width: 320px;
-        max-height: 70vh;
         background: #0d0e18;
         border: 1px solid #2a3050;
         box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
@@ -1838,6 +1955,12 @@
       <div class="tt-header">💡 Подсказка</div>
       <div id="tip-content"></div>
     </div>
+    <div id="extended-box">
+      <div class="tt-header" id="extended-header">
+        ⚡ Расширенные способности
+      </div>
+      <div id="extended-content"></div>
+    </div>
     <div id="combo-box">
       <div class="tt-header">⬡ Комбо-способности</div>
       <div id="combo-levels"></div>
@@ -1900,6 +2023,18 @@
     ></svg>
     <svg
       id="tip-arrow-svg"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: 499;
+        overflow: visible;
+      "
+    ></svg>
+    <svg
+      id="extended-arrow-svg"
       style="
         display: none;
         position: fixed;
@@ -2101,10 +2236,118 @@
       const SPINE = '#2e3448';
       const FOCUS_DIM = 0.75; // затемнение фона при фокусе (0–1)
 
-      // Порядок появления вторичных окон тултипа (img / extra / combo).
-      // Меняя порядок строк здесь, можно поменять очерёдность окон —
-      // используется при построении queue в showTooltip().
-      const WINDOW_ORDER = ['IMG', 'EXTRA', 'TIP', 'COMBO'];
+      // Дефолтный порядок вторичных окон тултипа. Каждое окно получает
+      // СЛОТ (1, 2, 3...) — либо явный из perkData.positions, либо
+      // следующий свободный по этому порядку. Слот НЕ считает основное
+      // окно уровней — слот 1 это первое доп. окно, слот 2 под ним,
+      // слот 3 это новый столбик (рядом со слотом 1), и т.д.
+      const WINDOW_PRIORITY = ['IMG', 'EXTRA', 'TIP', 'EXTENDED', 'COMBO'];
+
+      // Какой столбик сетки 3×2 занимает окно уровней, в зависимости от
+      // колонки дерева (0=левая, 1=средняя, 2=правая).
+      // Остальные 4 слота свободны для вторичных окон.
+      // Сетка: LT MT RT / LB MB RB
+      const LEVELS_COL = { 0: 'L', 1: 'M', 2: 'R' };
+
+      // Дефолтный порядок заполнения свободных слотов (зигзаг) по колонке.
+      const DEFAULT_SLOT_ORDER = {
+        0: ['RT', 'RB', 'MT', 'MB'], // левая: уровни=L, зигзаг вправо потом середина
+        1: ['RT', 'RB', 'LT', 'LB'], // средняя: уровни=M, сначала вправо потом влево
+        2: ['LT', 'LB', 'MT', 'MB'], // правая: уровни=R, зигзаг влево потом середина
+      };
+
+      // Зарезервированные слоты (занятые окном уровней) — вторичные окна
+      // не могут их занять, попытка даёт console.warn.
+      const RESERVED_SLOTS = {
+        0: ['LT', 'LB'],
+        1: ['MT', 'MB'],
+        2: ['RT', 'RB'],
+      };
+
+      // ── SLOT RESOLVER ──
+      // Pure function — no DOM access. Takes:
+      //   activeKinds : string[]           — список активных типов окон (из WINDOW_PRIORITY)
+      //   positions   : object|null        — perkData.positions, e.g. {combo:'RT', extra:'LT'}
+      //   colIndex    : 0|1|2             — колонка дерева где находится перк
+      // Returns: [{kind, slot}] sorted by slot fill order, plus warnings[].
+      function resolveSlots(activeKinds, positions, colIndex) {
+        const reserved = RESERVED_SLOTS[colIndex] || [];
+        const defaultOrder = DEFAULT_SLOT_ORDER[colIndex] || [
+          'RT',
+          'RB',
+          'LT',
+          'LB',
+        ];
+        const warnings = [];
+
+        // 1. collect explicit slot assignments from positions{}
+        const explicit = {}; // slot → kind
+        const explicitKind = {}; // kind → slot
+        if (positions) {
+          for (const [kind, slot] of Object.entries(positions)) {
+            if (
+              !activeKinds.includes(kind.toUpperCase()) &&
+              !activeKinds.includes(kind)
+            )
+              continue;
+            const normalKind = kind.toUpperCase();
+            const normalSlot = slot?.toUpperCase?.() || slot;
+            if (reserved.includes(normalSlot)) {
+              warnings.push(
+                `[Древо] positions.${kind}='${slot}' конфликтует с окном уровней ` +
+                  `(слот ${normalSlot} занят в колонке ${colIndex}). Позиция проигнорирована.`,
+              );
+              continue;
+            }
+            if (explicit[normalSlot]) {
+              warnings.push(
+                `[Древо] positions.${kind}='${slot}' — слот ${normalSlot} уже занят ` +
+                  `окном ${explicit[normalSlot]}. Позиция проигнорирована.`,
+              );
+              continue;
+            }
+            explicit[normalSlot] = normalKind;
+            explicitKind[normalKind] = normalSlot;
+          }
+        }
+
+        // 2. assign remaining kinds to next free slots in defaultOrder
+        let freeIdx = 0;
+        const result = [];
+        for (const kind of activeKinds) {
+          if (explicitKind[kind]) {
+            result.push({ kind, slot: explicitKind[kind] });
+          } else {
+            // advance to next free slot
+            while (
+              freeIdx < defaultOrder.length &&
+              (explicit[defaultOrder[freeIdx]] ||
+                reserved.includes(defaultOrder[freeIdx]))
+            )
+              freeIdx++;
+            if (freeIdx < defaultOrder.length) {
+              result.push({ kind, slot: defaultOrder[freeIdx] });
+              explicit[defaultOrder[freeIdx]] = kind;
+              freeIdx++;
+            } else {
+              warnings.push(
+                `[Древо] Нет свободных слотов для окна ${kind} — оно не будет показано.`,
+              );
+            }
+          }
+        }
+
+        // 3. emit all warnings
+        warnings.forEach((w) => console.warn(w));
+
+        // 4. sort by slot order (explicit first respects defaultOrder sequence)
+        const slotRank = Object.fromEntries(defaultOrder.map((s, i) => [s, i]));
+        result.sort(
+          (a, b) => (slotRank[a.slot] ?? 99) - (slotRank[b.slot] ?? 99),
+        );
+
+        return result;
+      }
 
       // Spinner shown inside img/img2 content boxes while their media is loading.
       const MEDIA_LOADING_SVG = `<svg class="media-loading-svg" viewBox="0 0 24 24">
@@ -2127,6 +2370,64 @@
           return marked.parse(preprocessed);
         }
         return preprocessed.replace(/\n/g, '<br>');
+      }
+
+      // ── SLOT → PHYSICAL POSITION ──
+      // Pure function — no DOM access. Converts a slot name (LT/LB/MT/MB/RT/RB)
+      // into pixel coordinates {x, y, w, h, side} for a secondary window box,
+      // given the main tooltip rect (mainR) and viewport dimensions.
+      //
+      // Layout model:
+      //   - The 3×2 grid is virtual — actual pixel positions are calculated
+      //     relative to mainR (the levels tooltip rect).
+      //   - Each column of the grid is COL_W wide; columns are separated by COL_GAP.
+      //   - Top row (LT/MT/RT) starts at mainR.top.
+      //   - Bottom row (LB/MB/RB) starts at mainR.top + slotH + ROW_GAP.
+      //   - slotH = half of usable vertical space, so two rows fit cleanly.
+      //   - 'side' tells the caller whether the window is left or right of mainR
+      //     (used to decide which edge to connect the arrow line to).
+      //
+      // Returns: { x, y, w, h, side:'left'|'right' }
+      // x/y are the top-left corner of the box in viewport px.
+
+      const SLOT_COL_W = 320; // width of each secondary window
+      const SLOT_COL_GAP = 36; // horizontal gap between columns (and from mainR)
+      const SLOT_ROW_GAP = 16; // vertical gap between top and bottom rows
+      const IMG_MAX_H = 420; // maximum height of img/img2 content box (px)
+
+      function slotToPosition(slot, mainR, vwC, vhC) {
+        const usableH = vhC - mainR.top - 8; // from mainR.top to bottom of viewport
+        const slotH = Math.max(80, Math.floor((usableH - SLOT_ROW_GAP) / 2));
+        const isTop = slot.endsWith('T');
+        const colLetter = slot.charAt(0); // 'L', 'M', 'R'
+
+        // y: top row aligns with mainR.top; bottom row is below
+        const y = isTop ? mainR.top : mainR.top + slotH + SLOT_ROW_GAP;
+        const h = slotH;
+
+        // x: depends on which column relative to mainR
+        // M column = same x-band as mainR itself (for MB/MT — but those are reserved
+        //            for levels; if ever unlocked they'd overlap mainR, so we offset)
+        // L column = left of mainR
+        // R column = right of mainR
+        let x, side;
+        if (colLetter === 'R') {
+          x = mainR.right + SLOT_COL_GAP;
+          side = 'right';
+        } else if (colLetter === 'L') {
+          x = mainR.left - SLOT_COL_GAP - SLOT_COL_W;
+          side = 'left';
+        } else {
+          // M: not normally reachable for secondary windows, but handle gracefully
+          x = mainR.right + SLOT_COL_GAP;
+          side = 'right';
+        }
+
+        // clamp to viewport
+        if (x < 4) x = 4;
+        if (x + SLOT_COL_W > vwC - 4) x = vwC - SLOT_COL_W - 4;
+
+        return { x, y, w: SLOT_COL_W, h, side };
       }
 
       // ── PROCESS CONFIG ──
@@ -2754,6 +3055,10 @@
         const tipBox = document.getElementById('tip-box');
         const tipContent = document.getElementById('tip-content');
         const tipSvg = document.getElementById('tip-arrow-svg');
+        const extendedBox = document.getElementById('extended-box');
+        const extendedHeader = document.getElementById('extended-header');
+        const extendedContent = document.getElementById('extended-content');
+        const extendedSvg = document.getElementById('extended-arrow-svg');
         const imgBox = document.getElementById('img-box');
         const imgContent = document.getElementById('img-content');
         const imgHeader = document.getElementById('img-header');
@@ -2771,6 +3076,8 @@
         extraSvg.style.display = 'none';
         tipBox.style.display = 'none';
         tipSvg.style.display = 'none';
+        extendedBox.style.display = 'none';
+        extendedSvg.style.display = 'none';
         imgBox.style.display = 'none';
         imgArwSvg.style.display = 'none';
         img2Box.style.display = 'none';
@@ -2782,6 +3089,7 @@
         // reset any maxHeight left over from previous opens
         extraBox.style.maxHeight = '';
         tipBox.style.maxHeight = '';
+        extendedBox.style.maxHeight = '';
         imgBox.style.maxHeight = '';
         img2Box.style.maxHeight = '';
         comboBox.style.maxHeight = '';
@@ -2810,8 +3118,24 @@
             parseFloat(box.style.maxHeight) ||
             box.getBoundingClientRect().height;
           const contentH = Math.max(40, boxMaxH - headerH);
-          content.style.height = contentH + 'px';
-          content.style.maxHeight = contentH + 'px';
+
+          const hasMedia = !!content.querySelector('img,video');
+          if (hasMedia) {
+            // media containers need an explicit height so that max-height:100%
+            // on the <img>/<video> resolves correctly against a flex:1 ancestor.
+            content.style.height = contentH + 'px';
+            content.style.maxHeight = contentH + 'px';
+          } else {
+            // text containers: height = actual content size capped at contentH.
+            // This makes the box shrink when text is short, grow when text is long,
+            // without ever exceeding the allocated slot.
+            content.style.maxHeight = contentH + 'px';
+            const naturalH = Math.min(
+              content.scrollHeight || contentH,
+              contentH,
+            );
+            content.style.height = naturalH + 'px';
+          }
 
           // If the media's natural (width-constrained) height would exceed the
           // available contentH, drop its max-height cap so it renders at full
@@ -2826,7 +3150,14 @@
               media.tagName === 'IMG' ? media.naturalHeight : media.videoHeight;
             if (naturalW && naturalH) {
               const renderedH = cw * (naturalH / naturalW); // height if scaled to fit width
-              media.classList.toggle('media-overflow', renderedH > contentH);
+              const overflows = renderedH > contentH;
+              media.classList.toggle('media-overflow', overflows);
+              // enable scroll on the container only when media genuinely overflows —
+              // otherwise keep it hidden so no spurious scrollbar appears
+              content.classList.toggle('needs-scroll', overflows);
+            } else {
+              // dimensions not yet known (still loading) — no scroll
+              content.classList.remove('needs-scroll');
             }
           }
         }
@@ -2865,6 +3196,7 @@
 
         const hasExtra = !!perkData?.extra;
         const hasTip = !!perkData?.tip;
+        const hasExtended = !!perkData?.extended;
         // imgs[] takes priority over the single img key when both happen to be present
         const imgsList = Array.isArray(perkData?.imgs)
           ? perkData.imgs.filter(Boolean)
@@ -2899,14 +3231,15 @@
         }
         const imgSources = imgSourcesRaw.map(normalizeImgEntry);
 
-        // ordered list of which secondary window "slots" are present, per WINDOW_ORDER
+        // ordered list of which secondary window "slots" are present, per WINDOW_PRIORITY
         const hasFlags = {
           IMG: hasImg,
           EXTRA: hasExtra,
           TIP: hasTip,
+          EXTENDED: hasExtended,
           COMBO: hasCombo,
         };
-        const activeKinds = WINDOW_ORDER.filter((k) => hasFlags[k]);
+        const activeKinds = WINDOW_PRIORITY.filter((k) => hasFlags[k]);
 
         if (hasExtra || hasImg || hasCombo) {
           const TOP_MARGIN = 8,
@@ -2943,6 +3276,26 @@
 
           // populate content — supports static images AND mp4 (auto-looped, muted, no controls)
           // helper: create the right kind of media element (img or video) for a given src
+          // Parse WxH from filename: name_1920_1080.mp4 → {w:1920, h:1080}
+          // Returns null if no size hint found.
+          function parseSizeHint(src) {
+            const m = src.match(/_(\d{2,5})_(\d{2,5})(?:\.[^.]+)?(?:\?.*)?$/);
+            if (!m) return null;
+            const w = parseInt(m[1], 10),
+              h = parseInt(m[2], 10);
+            if (!w || !h) return null;
+            return { w, h };
+          }
+
+          // Given a size hint and available container width/height, return the
+          // pixel height the media will render at once loaded — used to pre-size
+          // the container so the layout is stable before the file arrives.
+          function hintedHeight(hint, containerW, maxH) {
+            if (!hint) return null;
+            const ratio = hint.h / hint.w;
+            return Math.min(Math.round(containerW * ratio), maxH);
+          }
+
           function makeMediaEl(src, promises, altText, audioOverride) {
             const isVideo = /\.mp4($|\?)/i.test(src);
             if (isVideo) {
@@ -3164,6 +3517,34 @@
           if (hasTip) {
             tipContent.innerHTML = renderMD(perkData.tip);
           }
+          if (hasExtended) {
+            // extended: { partnerId: { title?, 1:'', 2:'', ... } }
+            // Renders exactly like the main levels tooltip — rows of lvl → text.
+            const extData = perkData.extended;
+            const partnerId = Object.keys(extData)[0]; // first (and usually only) key
+            const partnerData = extData[partnerId];
+            // resolve partner perk name for default header
+            let partnerName = partnerId;
+            for (const skill of D.skills) {
+              const found = skill.perks.find((pp) => pp.id === partnerId);
+              if (found) {
+                partnerName = found.name;
+                break;
+              }
+            }
+            extendedHeader.textContent =
+              partnerData.title || partnerName || '⚡ Расширенные способности';
+            extendedContent.innerHTML = Object.entries(partnerData)
+              .filter(([k]) => /^\d+$/.test(k))
+              .map(([lvl, txt]) => {
+                const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
+                return `<div class="tt-row">
+                  <span class="tt-lvl" style="color:${col}">${lvl}</span>
+                  <span class="tt-text">${renderMD(txt)}</span>
+                </div>`;
+              })
+              .join('');
+          }
           if (hasCombo) {
             // resolve {name, colourHex} for any perk id, searching all chapters
             function resolvePerk(pid) {
@@ -3256,502 +3637,244 @@
             requestAnimationFrame(() =>
               requestAnimationFrame(() =>
                 requestAnimationFrame(() => {
-                  // ── TILED LAYOUT: column slots are HARD-capped, never overlap, never off-screen ──
-                  // Order of IMG vs EXTRA within the column is driven by WINDOW_ORDER.
-                  const colKinds = activeKinds.filter(
-                    (k) => k === 'IMG' || k === 'EXTRA',
-                  );
-                  const slots = colKinds.length;
+                  // ── SLOT-BASED LAYOUT ──
+                  // Uses resolveSlots() + slotToPosition() to place every secondary
+                  // window in a cell of the 3×2 grid around the levels tooltip.
 
-                  // actual usable height FROM colTop down to the bottom margin
-                  const usableFromTop = vhC - colTop - BOTTOM_MARGIN;
-
-                  let extraRect = null,
-                    imgRect = null;
-                  const boxOf = { IMG: imgBox, EXTRA: extraBox };
-                  const svgOf = { IMG: imgArwSvg, EXTRA: extraSvg };
-
-                  // windows.extra forces EXTRA out of the shared img/extra column into its own
-                  // beside-the-tooltip slot, even when img is also present (slots===2).
-                  // Only takes effect if that side is actually free; otherwise falls back
-                  // to the normal stacked-column behaviour below.
-                  const extraForcedSide2 = perkData?.windows?.extra;
-                  let extraSplitOut = false;
-                  if (slots === 2 && extraForcedSide2) {
-                    const rightX3 = mainR.right + COL_GAP;
-                    const leftX3 = mainR.left - colW - COL_GAP;
-                    const rightFits3 = rightX3 + colW <= vwC - 4;
-                    const leftFits3 = leftX3 >= 4;
-                    let exX = null;
-                    if (extraForcedSide2 === 'left' && leftFits3) exX = leftX3;
-                    else if (extraForcedSide2 === 'right' && rightFits3)
-                      exX = rightX3;
-
-                    if (exX !== null) {
-                      extraSplitOut = true;
-                      // EXTRA: standalone, beside the tooltip — offset below its header,
-                      // same visual treatment as combo's "beside" placement.
-                      const exTop = mainR.top + 40; // matches combo's BESIDE_HEADER_OFFSET
-                      extraBox.style.left = exX + 'px';
-                      extraBox.style.top = exTop + 'px';
-                      extraBox.style.width = colW + 'px';
-                      extraBox.style.maxHeight =
-                        vhC - exTop - BOTTOM_MARGIN + 'px';
-                      extraBox.style.display = 'flex';
-                      extraRect = extraBox.getBoundingClientRect();
-
-                      // straight horizontal line at extra's own header height, anchored to icX
-                      // (same approach as combo's beside-line, avoids doubling the vertical connector)
-                      const lineY3 = Math.round(extraRect.top + 18);
-                      const fromX3 = Math.round(icX);
-                      const toX3 = Math.round(
-                        extraForcedSide2 === 'left'
-                          ? extraRect.right
-                          : extraRect.left,
-                      );
-                      const len3 = Math.abs(toX3 - fromX3);
-                      extraSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
-                      extraSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-                      extraSvg.innerHTML = `<line x1="${fromX3}" y1="${lineY3}" x2="${toX3}" y2="${lineY3}"
-                  stroke="#50556a" stroke-width="1.5"
-                  stroke-dasharray="${len3}" stroke-dashoffset="${len3}"
-                  style="animation:dashIn .4s ease forwards"/>`;
-
-                      // IMG: takes the full column on its own, at colX/colTop
-                      imgBox.style.left = colX + 'px';
-                      imgBox.style.top = colTop + 'px';
-                      imgBox.style.width = colW + 'px';
-                      imgBox.style.maxHeight =
-                        vhC - colTop - BOTTOM_MARGIN + 'px';
-                      imgBox.style.display = 'flex';
-                      pinContentHeight(imgBox, '#img-content');
-                      imgRect = imgBox.getBoundingClientRect();
-                      drawLine(imgArwSvg, mainR, imgRect);
+                  // determine column index (0=left, 1=mid, 2=right)
+                  const allColsLayout = document.querySelectorAll('.col');
+                  let colIdx = 1; // default: middle
+                  for (let ci = 0; ci < allColsLayout.length; ci++) {
+                    if (allColsLayout[ci].contains(iconEl)) {
+                      colIdx = ci % 3;
+                      break;
                     }
                   }
 
-                  if (extraSplitOut) {
-                    // already placed above — nothing more to do for this branch
-                  } else if (slots === 2) {
-                    // split usable height in half — slotH is the MAX each window may use,
-                    // but the second window is placed right after the FIRST's actual
-                    // rendered height (not the full slot), so small content doesn't
-                    // leave a huge empty gap before the next window.
-                    const slotH = Math.floor((usableFromTop - ROW_GAP) / 2);
-                    const [firstKind, secondKind] = colKinds;
-                    const firstBox = boxOf[firstKind],
-                      secondBox = boxOf[secondKind];
+                  // resolve slots using the pure function from step 3
+                  const slotMap = resolveSlots(
+                    activeKinds,
+                    perkData?.positions || null,
+                    colIdx,
+                  );
 
-                    firstBox.style.left = colX + 'px';
-                    firstBox.style.top = colTop + 'px';
-                    firstBox.style.width = colW + 'px';
-                    firstBox.style.maxHeight = slotH + 'px';
-                    firstBox.style.display = 'flex';
-                    pinContentHeight(
-                      firstBox,
-                      firstKind === 'IMG' ? '#img-content' : '#extra-content',
-                    );
+                  // map kind → slot for easy lookup
+                  const kindSlot = {};
+                  slotMap.forEach(({ kind, slot }) => {
+                    kindSlot[kind] = slot;
+                  });
 
-                    const firstRect = firstBox.getBoundingClientRect();
-                    const actualFirstH = firstRect.height; // real height, may be < slotH
+                  // box/svg/content-selector per kind
+                  const BOX = {
+                    IMG: imgBox,
+                    EXTRA: extraBox,
+                    TIP: tipBox,
+                    EXTENDED: extendedBox,
+                    COMBO: comboBox,
+                  };
+                  const SVG = {
+                    IMG: imgArwSvg,
+                    EXTRA: extraSvg,
+                    TIP: tipSvg,
+                    EXTENDED: extendedSvg,
+                    COMBO: comboSvg,
+                  };
+                  const CONTENT_SEL = {
+                    IMG: '#img-content',
+                    EXTRA: '#extra-content',
+                    TIP: '#tip-content',
+                    EXTENDED: '#extended-content',
+                    COMBO: null, // combo manages its own internal scroll
+                  };
 
-                    const secondTop = colTop + actualFirstH + ROW_GAP;
-                    // second window still capped so it can't overflow the bottom margin
-                    const secondMaxH = Math.max(
-                      80,
-                      vhC - secondTop - BOTTOM_MARGIN,
-                    );
-                    secondBox.style.left = colX + 'px';
-                    secondBox.style.top = secondTop + 'px';
-                    secondBox.style.width = colW + 'px';
-                    secondBox.style.maxHeight = secondMaxH + 'px';
-                    secondBox.style.display = 'flex';
-                    pinContentHeight(
-                      secondBox,
-                      secondKind === 'IMG' ? '#img-content' : '#extra-content',
-                    );
+                  // track placed rects for arrow-line anchoring
+                  const placedRects = {}; // kind → DOMRect
 
-                    const secondRect = secondBox.getBoundingClientRect();
-                    if (firstKind === 'EXTRA') extraRect = firstRect;
-                    else imgRect = firstRect;
-                    if (secondKind === 'EXTRA') extraRect = secondRect;
-                    else imgRect = secondRect;
+                  // ── place each window ──
+                  // pre-compute which top-row slots have NO bottom-row partner —
+                  // those windows get to expand to near-mainR height instead of slotH.
+                  const occupiedSlots = new Set(slotMap.map((e) => e.slot));
+                  function hasBottomPartner(slot) {
+                    const side = slot.charAt(0); // 'L' or 'R'
+                    return occupiedSlots.has(side + 'B');
+                  }
+                  const SOLO_MAX_H = Math.max(
+                    80,
+                    mainR.bottom - mainR.top - 40,
+                  );
 
-                    drawLine(svgOf[firstKind], mainR, firstRect);
-                    drawLine(svgOf[secondKind], firstRect, secondRect, true);
-                  } else if (slots === 1) {
-                    const kind = colKinds[0];
-                    const box = boxOf[kind];
-                    const reserveForCombo = hasCombo
-                      ? Math.floor((usableFromTop - ROW_GAP) / 2)
-                      : vhC - colTop - BOTTOM_MARGIN;
+                  for (const { kind, slot } of slotMap) {
+                    const box = BOX[kind];
+                    const svg = SVG[kind];
+                    const contentSel = CONTENT_SEL[kind];
+                    if (!box) continue;
 
-                    // windows.extra forces a side for the SINGLE extra window, same pattern as combo:
-                    // only applies if extra is alone in the column, and only if that side is free.
-                    let boxX = colX;
-                    if (kind === 'EXTRA' && perkData?.windows?.extra) {
-                      const extraForcedSide = perkData.windows.extra; // 'left' | 'right'
-                      const rightX2 = mainR.right + COL_GAP;
-                      const leftX2 = mainR.left - colW - COL_GAP;
-                      const rightFits2 = rightX2 + colW <= vwC - 4;
-                      const leftFits2 = leftX2 >= 4;
-                      if (extraForcedSide === 'left' && leftFits2)
-                        boxX = leftX2;
-                      else if (extraForcedSide === 'right' && rightFits2)
-                        boxX = rightX2;
-                      // else: keep default colX (no room on the requested side)
+                    const pos = slotToPosition(slot, mainR, vwC, vhC);
+                    const isTopRow = slot.endsWith('T');
+                    const isSolo = isTopRow && !hasBottomPartner(slot);
+
+                    box.style.left = pos.x + 'px';
+                    box.style.top = pos.y + 'px';
+                    box.style.width = pos.w + 'px';
+
+                    const isMediaKind = kind === 'IMG';
+                    let effectiveH = isSolo
+                      ? isMediaKind
+                        ? Math.min(SOLO_MAX_H, IMG_MAX_H)
+                        : SOLO_MAX_H
+                      : isMediaKind
+                        ? Math.min(pos.h, IMG_MAX_H)
+                        : pos.h;
+                    if (kind === 'IMG' && imgSources.length) {
+                      const firstSrc = imgSources[0]?.src || '';
+                      const hint = parseSizeHint(firstSrc);
+                      const hinted = hintedHeight(hint, pos.w - 20, IMG_MAX_H);
+                      if (hinted)
+                        effectiveH = Math.min(hinted + 36, effectiveH);
                     }
-
-                    box.style.left = boxX + 'px';
-                    box.style.top = colTop + 'px';
-                    box.style.width = colW + 'px';
-
-                    // Don't pre-reserve half the space for combo "just in case" — give this
-                    // window the height it actually needs (up to the full available space),
-                    // then combo gets whatever's left below it. The content itself can still
-                    // scroll if it genuinely doesn't fit (handled by overflow-y on #*-content).
-                    const fullAvail = vhC - colTop - BOTTOM_MARGIN;
-                    box.style.maxHeight = fullAvail + 'px';
+                    box.style.maxHeight = effectiveH + 'px';
+                    // Solo text windows: set explicit height = SOLO_MAX_H so the flex
+                    // container actually EXPANDS to fill the space (maxHeight alone won't
+                    // stretch a flex box — it only caps it). Content inside uses height:''
+                    // so it determines the real visual size via its own scrollHeight.
+                    box.style.height = '';
+                    box.style.minHeight = '';
                     box.style.display = 'flex';
-                    pinContentHeight(
-                      box,
-                      kind === 'IMG' ? '#img-content' : '#extra-content',
-                    );
 
-                    // measure what this window ACTUALLY needs, then re-cap it so combo
-                    // gets the remaining room instead of an arbitrary 50/50 split.
-                    if (hasCombo) {
-                      const naturalNeed = box.scrollHeight; // includes header + content's natural size
-                      const desiredH = Math.min(
-                        naturalNeed,
-                        fullAvail - ROW_GAP - 80,
-                      ); // leave room for combo (min 80px)
-                      box.style.maxHeight = Math.max(80, desiredH) + 'px';
-                      pinContentHeight(
-                        box,
-                        kind === 'IMG' ? '#img-content' : '#extra-content',
-                      );
-                    }
+                    if (contentSel) pinContentHeight(box, contentSel);
 
                     const rect = box.getBoundingClientRect();
-                    if (kind === 'EXTRA') extraRect = rect;
-                    else imgRect = rect;
-                    drawLine(svgOf[kind], mainR, rect);
-                  }
+                    placedRects[kind] = rect;
 
-                  // base column rect (extra and/or img), or mainR if neither is present
-                  const baseColRect =
-                    imgRect && extraRect
-                      ? {
-                          left: Math.min(extraRect.left, imgRect.left),
-                          right: Math.max(extraRect.right, imgRect.right),
-                          top: Math.min(extraRect.top, imgRect.top),
-                          bottom: Math.max(extraRect.bottom, imgRect.bottom),
-                        }
-                      : extraRect || imgRect || mainR;
+                    // ── connector line ──
+                    // Top-row windows (LT/MT/RT): connect horizontally from mainR
+                    //   using the "Stylish" style (icX anchor, no vertical doubling).
+                    // Bottom-row windows (LB/MB/RB): connect from the window above
+                    //   them in the same column (vertical L-shape via drawLine).
+                    const isTop = slot.endsWith('T');
+                    const sameSide = slot.charAt(0); // 'L' or 'R'
 
-                  // IMG2 (separate window for imgs[1] when slider:false) — same rule as combo's
-                  // "3rd window below" pattern, but always anchored to baseColRect (not combo).
-                  let img2Rect = null;
-                  if (hasImg2) {
-                    const noColumnYet = !extraRect && !imgRect;
-                    img2Box.style.display = 'flex';
-                    img2Box.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-                    const i2w = colW; // match the width used for img-box/extra-box, not the smaller default
-                    img2Box.style.width = i2w + 'px';
-                    let i2x, i2y, i2Below;
-                    if (noColumnYet) {
-                      i2y = mainR.top;
-                      i2x = placedLeft
-                        ? mainR.left - i2w - 36
-                        : mainR.right + 36;
-                      i2Below = false;
+                    if (isTop) {
+                      // "Stylish" connector: right-side windows (RT) align at mainR.top,
+                      // left-side windows (LT) drop 40px below mainR.top so the two
+                      // horizontal lines visibly start at different heights on the same
+                      // vertical connector — the original "Stylish left" look.
+                      const STYLISH_OFFSET =
+                        pos.side === 'left' && colIdx === 1 ? 40 : 0;
+                      if (STYLISH_OFFSET) {
+                        // reposition the box itself to match the offset
+                        box.style.top = pos.y + STYLISH_OFFSET + 'px';
+                        // use effectiveH (already accounts for isSolo), not pos.h
+                        box.style.maxHeight =
+                          Math.max(80, effectiveH - STYLISH_OFFSET) + 'px';
+
+                        if (contentSel) pinContentHeight(box, contentSel);
+                        // re-measure
+                        const r2 = box.getBoundingClientRect();
+                        placedRects[kind] = r2;
+                      }
+                      const finalRect = placedRects[kind];
+                      if (pos.side === 'right') {
+                        // RT: use drawLine (single polyline) so the join with the
+                        // vertical icon→tooltip connector renders as one clean path,
+                        // no sub-pixel stitch artifact at the meeting point.
+                        drawLine(svg, mainR, finalRect, false);
+                      } else {
+                        // LT (Stylish left): horizontal line from icX
+                        const R2 = Math.round;
+                        const lineY = R2(finalRect.top + 18);
+                        const fromX = R2(icX);
+                        const toX = R2(finalRect.right);
+                        const len = Math.abs(toX - fromX);
+                        svg.style.cssText =
+                          `display:block;position:fixed;left:0;top:0;` +
+                          `width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+                        svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                        svg.innerHTML = `<line x1="${fromX}" y1="${lineY}" x2="${toX}" y2="${lineY}"
+                        stroke="#50556a" stroke-width="1.5"
+                        stroke-dasharray="${len}" stroke-dashoffset="${len}"
+                        style="animation:dashIn .4s ease forwards"/>`;
+                      }
                     } else {
-                      i2x = baseColRect.left;
-                      i2y = baseColRect.bottom + 16;
-                      i2Below = true;
-                    }
-                    const i2h = Math.min(
-                      img2Box.scrollHeight || 200,
-                      vhC * 0.7,
-                    );
-                    const i2AvailBelow = vhC - i2y - 8;
-                    if (i2Below && i2h > i2AvailBelow) {
-                      img2Box.style.maxHeight =
-                        Math.max(i2AvailBelow, 80) + 'px';
-                    } else if (i2y + i2h > vhC - 8) {
-                      i2y = vhC - i2h - 8;
-                    }
-                    if (i2y < 8) i2y = 8;
-                    if (i2x < 4) i2x = 4;
-                    if (i2x + i2w > vwC - 4) i2x = vwC - i2w - 4;
-                    img2Box.style.left = i2x + 'px';
-                    img2Box.style.top = i2y + 'px';
-                    pinContentHeight(img2Box, '#img2-content');
-                    img2Rect = img2Box.getBoundingClientRect();
-                    drawLine(
-                      img2ArwSvg,
-                      noColumnYet ? mainR : baseColRect,
-                      img2Rect,
-                      i2Below,
-                    );
-                  }
+                      // bottom-row: position this box right below the ACTUAL bottom of
+                      // the top-row window (not at a fixed grid offset), keeping the
+                      // gap tight regardless of how tall the top content is.
+                      const topSlot = sameSide + 'T';
+                      const topKind = slotMap.find(
+                        (e) => e.slot === topSlot,
+                      )?.kind;
+                      const anchorRect = topKind ? placedRects[topKind] : mainR;
 
-                  // TIP placement rule: same as combo's own rule (beside the tooltip
-                  // if it's the only secondary window or windows.tip forces a side and
-                  // there's room; otherwise strictly below the existing column).
-                  // TIP is placed BEFORE combo in WINDOW_ORDER, so combo's own column
-                  // rect below will absorb tipRect the same way it absorbs img2Rect.
-                  let tipRect = null;
-                  if (hasTip) {
-                    const preColRect = img2Rect
-                      ? {
-                          left: Math.min(baseColRect.left, img2Rect.left),
-                          right: Math.max(baseColRect.right, img2Rect.right),
-                          top: Math.min(baseColRect.top, img2Rect.top),
-                          bottom: Math.max(baseColRect.bottom, img2Rect.bottom),
-                        }
-                      : baseColRect;
-                    const isOnlySecondaryTip =
-                      !extraRect && !imgRect && !img2Rect;
-
-                    const tw2 = 320;
-                    tipBox.style.display = 'flex';
-                    tipBox.style.maxHeight = Math.floor(vhC * 0.5) + 'px';
-
-                    const forcedSideTip = perkData?.windows?.tip;
-                    const rightXt = mainR.right + 36;
-                    const leftXt = mainR.left - tw2 - 36;
-                    const rightFitsT = rightXt + tw2 <= vwC - 4;
-                    const leftFitsT = leftXt >= 4;
-                    function overlapsColumnTip(testX) {
-                      if (!preColRect || preColRect === mainR) return false;
-                      return (
-                        testX < preColRect.right &&
-                        testX + tw2 > preColRect.left
+                      // reposition this box immediately below anchorRect
+                      const actualY = Math.round(
+                        anchorRect.bottom + SLOT_ROW_GAP,
                       );
-                    }
+                      const maxH = Math.max(80, vhC - actualY - 8);
+                      box.style.top = actualY + 'px';
+                      box.style.maxHeight = maxH + 'px';
+                      if (contentSel) pinContentHeight(box, contentSel);
 
-                    let tx,
-                      ty,
-                      tBelow,
-                      tBeside = false;
-                    if (
-                      forcedSideTip === 'left' &&
-                      leftFitsT &&
-                      !overlapsColumnTip(leftXt)
-                    ) {
-                      tx = leftXt;
-                      ty = mainR.top + 40;
-                      tBelow = false;
-                      tBeside = true;
-                    } else if (
-                      forcedSideTip === 'right' &&
-                      rightFitsT &&
-                      !overlapsColumnTip(rightXt)
-                    ) {
-                      tx = rightXt;
-                      ty = mainR.top + 40;
-                      tBelow = false;
-                      tBeside = true;
-                    }
-                    if (!tBeside) {
-                      if (isOnlySecondaryTip) {
-                        ty = mainR.top;
-                        tx = placedLeft ? leftXt : rightXt;
-                        tBelow = false;
-                      } else {
-                        tx = preColRect.left;
-                        ty = preColRect.bottom + 16;
-                        tBelow = true;
-                      }
-                    }
+                      // re-measure after repositioning
+                      const finalRect = box.getBoundingClientRect();
+                      placedRects[kind] = finalRect;
 
-                    const th2 = Math.min(tipBox.scrollHeight || 120, vhC * 0.5);
-                    const availBelowT = vhC - ty - 8;
-                    if (tBelow && th2 > availBelowT) {
-                      tipBox.style.maxHeight = Math.max(availBelowT, 60) + 'px';
-                    } else if (ty + th2 > vhC - 8) {
-                      ty = vhC - th2 - 8;
-                    }
-                    if (ty < 8) ty = 8;
-                    if (tx < 4) tx = 4;
-                    if (tx + tw2 > vwC - 4) tx = vwC - tw2 - 4;
-                    tipBox.style.left = tx + 'px';
-                    tipBox.style.top = ty + 'px';
-                    tipRect = tipBox.getBoundingClientRect();
-                    drawLine(
-                      tipSvg,
-                      tBeside || isOnlySecondaryTip ? mainR : preColRect,
-                      tipRect,
-                      tBelow,
-                    );
-                  }
-
-                  // COMBO placement rule:
-                  //  - if there IS a column (extra and/or img and/or img2 and/or tip already shown) → combo goes BELOW it
-                  //  - if combo is the ONLY secondary window → it IS the "2nd window",
-                  //    beside the levels tooltip, same side as the rest of the chain (placedLeft)
-                  if (hasCombo) {
-                    const isOnlySecondary =
-                      !extraRect && !imgRect && !img2Rect && !tipRect;
-                    let colRect = img2Rect
-                      ? {
-                          left: Math.min(baseColRect.left, img2Rect.left),
-                          right: Math.max(baseColRect.right, img2Rect.right),
-                          top: Math.min(baseColRect.top, img2Rect.top),
-                          bottom: Math.max(baseColRect.bottom, img2Rect.bottom),
-                        }
-                      : baseColRect;
-                    if (tipRect) {
-                      colRect = {
-                        left: Math.min(colRect.left, tipRect.left),
-                        right: Math.max(colRect.right, tipRect.right),
-                        top: Math.min(colRect.top, tipRect.top),
-                        bottom: Math.max(colRect.bottom, tipRect.bottom),
-                      };
-                    }
-
-                    const cw = 320;
-                    comboBox.style.display = 'flex';
-                    comboBox.style.maxHeight = Math.floor(vhC * 0.7) + 'px';
-
-                    let cx, cy, isBelow;
-
-                    // perkData.windows.combo === 'left' / 'right' forces combo to sit
-                    // BESIDE the levels tooltip (not below the img/extra column),
-                    // as long as that side is actually free — i.e. nothing (img/extra/img2 column)
-                    // already occupies that space. This applies REGARDLESS of whether combo
-                    // is the only secondary window or comes after img/extra.
-                    const forcedSide = perkData?.windows?.combo; // 'left' | 'right' | undefined
-                    const rightX = mainR.right + 36;
-                    const leftX = mainR.left - cw - 36;
-                    const rightFits = rightX + cw <= vwC - 4;
-                    const leftFits = leftX >= 4;
-                    // does the forced side overlap the column that's already placed (img/extra)?
-                    function overlapsColumn(testX) {
-                      if (!colRect || colRect === mainR) return false;
-                      return testX < colRect.right && testX + cw > colRect.left;
-                    }
-
-                    // when forced beside, drop slightly below the main tooltip's header
-                    // instead of aligning flush with its top edge.
-                    const BESIDE_HEADER_OFFSET = 40;
-
-                    let placedBeside = false;
-
-                    // 'side-image-right' / 'side-image-left': sit directly beside the
-                    // IMG window specifically (not the tooltip, not the whole column) —
-                    // useful when combo is conceptually paired with the illustration
-                    // rather than with the perk description. Falls through to the
-                    // normal rules below if there's no img window or no room.
-                    if (
-                      (forcedSide === 'side-image-right' ||
-                        forcedSide === 'side-image-left') &&
-                      imgRect
-                    ) {
-                      const wantRight = forcedSide === 'side-image-right';
-                      const sx = wantRight
-                        ? imgRect.right + 36
-                        : imgRect.left - cw - 36;
-                      const sFits = wantRight ? sx + cw <= vwC - 4 : sx >= 4;
-                      if (sFits) {
-                        cx = sx;
-                        cy = imgRect.top;
-                        isBelow = false;
-                        placedBeside = true;
-                      }
-                    }
-
-                    if (
-                      !placedBeside &&
-                      forcedSide === 'left' &&
-                      leftFits &&
-                      !overlapsColumn(leftX)
-                    ) {
-                      cx = leftX;
-                      cy = mainR.top + BESIDE_HEADER_OFFSET;
-                      isBelow = false;
-                      placedBeside = true;
-                    } else if (
-                      !placedBeside &&
-                      forcedSide === 'right' &&
-                      rightFits &&
-                      !overlapsColumn(rightX)
-                    ) {
-                      cx = rightX;
-                      cy = mainR.top + BESIDE_HEADER_OFFSET;
-                      isBelow = false;
-                      placedBeside = true;
-                    }
-
-                    if (!placedBeside) {
-                      if (isOnlySecondary) {
-                        // act as the 2nd window: beside the levels tooltip, default side = placedLeft
-                        cy = mainR.top;
-                        cx = placedLeft ? leftX : rightX;
-                        isBelow = false;
-                      } else {
-                        // act as 3rd window: strictly below the existing column
-                        cx = colRect.left;
-                        cy = colRect.bottom + 16;
-                        isBelow = true;
-                      }
-                    }
-
-                    const ch = Math.min(
-                      comboBox.scrollHeight || 200,
-                      vhC * 0.7,
-                    );
-                    // If it would overflow the bottom, shrink its max-height to fit
-                    // INSTEAD of moving it upward (which would re-overlap the window above it).
-                    const availableBelow = vhC - cy - 8;
-                    if (isBelow && ch > availableBelow) {
-                      comboBox.style.maxHeight =
-                        Math.max(availableBelow, 80) + 'px';
-                    } else if (cy + ch > vhC - 8) {
-                      cy = vhC - ch - 8;
-                    }
-                    if (cy < 8) cy = 8;
-                    if (cx < 4) cx = 4;
-                    if (cx + cw > vwC - 4) cx = vwC - cw - 4;
-                    comboBox.style.left = cx + 'px';
-                    comboBox.style.top = cy + 'px';
-                    const comboRect = comboBox.getBoundingClientRect();
-                    const isSideImageMode =
-                      forcedSide === 'side-image-right' ||
-                      forcedSide === 'side-image-left';
-
-                    if (placedBeside && isSideImageMode) {
-                      // simple direct connector from the IMG window's edge to combo's edge —
-                      // these two windows are conceptually paired, so the line goes
-                      // straight between them rather than back to the perk icon.
-                      drawLine(comboSvg, imgRect, comboRect, false);
-                    } else if (placedBeside) {
-                      // straight horizontal line at the combo box's OWN header height —
-                      // drawn directly (not via drawLine's generic L-shape helper) to avoid
-                      // a vertical segment that visually doubles up with the main connector.
+                      // short vertical stub
                       const R2 = Math.round;
-                      const lineY = R2(comboRect.top + 18);
-                      // anchor to the SAME vertical line (icX) that connects the perk icon
-                      // to the main tooltip, rather than to the tooltip's own edge.
-                      const fromX = R2(icX);
-                      const toX = R2(
-                        forcedSide === 'left'
-                          ? comboRect.right
-                          : comboRect.left,
-                      );
-                      const len2 = Math.abs(toX - fromX);
-                      comboSvg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
-                      comboSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-                      comboSvg.innerHTML = `<line x1="${fromX}" y1="${lineY}" x2="${toX}" y2="${lineY}"
-                  stroke="#50556a" stroke-width="1.5"
-                  stroke-dasharray="${len2}" stroke-dashoffset="${len2}"
-                  style="animation:dashIn .4s ease forwards"/>`;
-                    } else {
-                      drawLine(comboSvg, colRect, comboRect, isBelow);
+                      const lx = R2(anchorRect.left + 20);
+                      const ly1 = R2(anchorRect.bottom);
+                      const ly2 = R2(finalRect.top);
+                      const llen = Math.max(1, Math.abs(ly2 - ly1));
+                      svg.style.cssText =
+                        `display:block;position:fixed;left:0;top:0;` +
+                        `width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+                      svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                      svg.innerHTML = `<line x1="${lx}" y1="${ly1}" x2="${lx}" y2="${ly2}"
+                      stroke="#50556a" stroke-width="1.5"
+                      stroke-dasharray="${llen}" stroke-dashoffset="${llen}"
+                      style="animation:dashIn .4s ease forwards"/>`;
                     }
+                  }
 
+                  // ── IMG special: media, slider, pinContentHeight already done above ──
+                  // Re-run pinContentHeight for IMG after media might have loaded
+                  if (placedRects['IMG']) {
+                    pinContentHeight(imgBox, '#img-content');
+                  }
+
+                  // ── IMG2: second image window (imgs[] with slider:false) ──
+                  // img2 is not in WINDOW_PRIORITY — it always goes right below IMG.
+                  if (hasImg2 && placedRects['IMG']) {
+                    const imgRectForImg2 = placedRects['IMG'];
+                    const i2w = SLOT_COL_W;
+                    img2Box.style.display = 'flex';
+                    img2Box.style.width = i2w + 'px';
+                    img2Box.style.left = imgRectForImg2.left + 'px';
+                    const i2y = Math.round(
+                      imgRectForImg2.bottom + SLOT_ROW_GAP,
+                    );
+                    const i2maxH = Math.max(80, vhC - i2y - 8);
+                    img2Box.style.top = i2y + 'px';
+                    img2Box.style.maxHeight = i2maxH + 'px';
+                    pinContentHeight(img2Box, '#img2-content');
+                    const img2Rect = img2Box.getBoundingClientRect();
+                    // short vertical connector from img bottom to img2 top
+                    const R2 = Math.round;
+                    const lx = R2(imgRectForImg2.left + 20);
+                    const ly1 = R2(imgRectForImg2.bottom);
+                    const ly2 = R2(img2Rect.top);
+                    const llen = Math.max(1, Math.abs(ly2 - ly1));
+                    img2ArwSvg.style.cssText =
+                      `display:block;position:fixed;left:0;top:0;` +
+                      `width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
+                    img2ArwSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                    img2ArwSvg.innerHTML = `<line x1="${lx}" y1="${ly1}" x2="${lx}" y2="${ly2}"
+                    stroke="#50556a" stroke-width="1.5"
+                    stroke-dasharray="${llen}" stroke-dashoffset="${llen}"
+                    style="animation:dashIn .4s ease forwards"/>`;
+                  }
+
+                  // ── COMBO: attach click handlers for focus-jump ──
+                  if (placedRects['COMBO']) {
                     comboLvls
                       .querySelectorAll('.combo-sq, .combo-item-name')
                       .forEach((sq) => {
@@ -3878,6 +4001,8 @@
         document.getElementById('extra-arrow-svg').style.display = 'none';
         document.getElementById('tip-box').style.display = 'none';
         document.getElementById('tip-arrow-svg').style.display = 'none';
+        document.getElementById('extended-box').style.display = 'none';
+        document.getElementById('extended-arrow-svg').style.display = 'none';
         document.getElementById('img-box').style.display = 'none';
         document.getElementById('img-arrow-svg').style.display = 'none';
         document.getElementById('img-dots').classList.remove('visible');
