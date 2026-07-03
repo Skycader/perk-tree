@@ -4935,13 +4935,16 @@
                       // left-side windows (LT) drop 40px below mainR.top so the two
                       // horizontal lines visibly start at different heights on the same
                       // vertical connector — the original "Stylish left" look.
-                      // Stylish left: LT window in middle col drops 40px (lines diverge visually)
-                      // Stylish right: RT window in middle or right col drops 40px (same idea, mirrored)
+                      // Stylish rules — offset secondary window 40px down so horizontal
+                      // line doesn't overlap the vertical tree connector:
+                      //
+                      // Row 1 (colIdx=0, leftmost):  vertical line is LEFT of all windows → no offset
+                      // Row 2 (colIdx=1, middle):    vertical line crosses between L and M → Stylish LEFT
+                      // Row 3 (colIdx=2, rightmost): vertical line crosses between M and R → Stylish RIGHT
                       const STYLISH_OFFSET =
                         pos.side === 'left' && colIdx === 1
                           ? 40
-                          : pos.side === 'right' &&
-                              (colIdx === 1 || colIdx === 2)
+                          : pos.side === 'right' && colIdx === 2
                             ? 40
                             : 0;
                       if (STYLISH_OFFSET) {
@@ -4975,11 +4978,17 @@
                       {
                         const R2 = Math.round;
                         const lineY = R2(finalRect.top + 18);
-                        // RT: from mainR.right (right edge of tooltip)
-                        // LT: from icX (the vertical connector passes through icX,
-                        //     so the horizontal line stops exactly there — no overshoot)
+                        // RT with Stylish offset (colIdx=2): vertical line passes through
+                        //   icX between M and R slots → line starts from icX
+                        // RT without offset (colIdx=0,1): vertical is left of all windows
+                        //   → line starts from mainR.right (no overlap)
+                        // LT with Stylish offset (colIdx=1): starts from icX
                         const fromX = R2(
-                          pos.side === 'right' ? mainR.right : icX,
+                          pos.side === 'right' && STYLISH_OFFSET
+                            ? icX
+                            : pos.side === 'right'
+                              ? mainR.right
+                              : icX,
                         );
                         const toX = R2(
                           pos.side === 'right'
