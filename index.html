@@ -484,6 +484,7 @@
       .perk-body {
         flex: 1;
         min-width: 0;
+        padding: 2px;
         overflow: hidden;
       }
       .perk-name {
@@ -2578,6 +2579,8 @@
       // следующий свободный по этому порядку. Слот НЕ считает основное
       // окно уровней — слот 1 это первое доп. окно, слот 2 под ним,
       // слот 3 это новый столбик (рядом со слотом 1), и т.д.
+      const IPR_GLOW_BLUR = 4; // px — glow blur on <perk> square hover
+      const IPR_GLOW_SPREAD = 2; // px — glow spread
       const WINDOW_PRIORITY = [
         'IMG',
         'AUDIO',
@@ -2950,7 +2953,7 @@
             return `<span class="inline-perk-ref" data-rid="${pid}" data-hex="${hex}"
             style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;vertical-align:middle;">
             <span class="ipr-sq" style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
-            ${displayText ? `<span class="ipr-label" style="color:${hex};opacity:.6;transition:opacity .15s;font-size:inherit;">${displayText}</span>` : ''}
+            ${displayText ? `<span class="ipr-label" style="color:inherit;transition:color .2s;font-size:inherit;">${displayText}</span>` : ''}
           </span>`;
           },
         );
@@ -3735,11 +3738,20 @@
               });
               target.style.position = 'relative';
               target.style.zIndex = '51';
+              const tCol = target.closest('.col');
+              if (tCol) {
+                tCol.style.position = 'relative';
+                tCol.style.zIndex = '52';
+              }
               target.style.transition = 'box-shadow .35s ease';
               target.style.boxShadow = `0 0 0 2px ${hex},0 0 30px ${hex}80`;
               function clearFocusRef() {
                 fo.style.background = 'rgba(0,0,0,0)';
                 target.style.boxShadow = '';
+                if (tCol) {
+                  tCol.style.position = '';
+                  tCol.style.zIndex = '';
+                }
                 setTimeout(() => {
                   fo.remove();
                   target.style.position =
@@ -5706,16 +5718,21 @@
         if (!ref) return;
         const hex = ref.dataset.hex || '#888';
         ref.querySelector('.ipr-sq').style.boxShadow =
-          `0 0 6px 3px ${hex}88, 0 0 14px 5px ${hex}44`;
+          `0 0 ${IPR_GLOW_BLUR}px ${IPR_GLOW_SPREAD}px ${hex}99`;
         const lbl = ref.querySelector('.ipr-label');
-        if (lbl) lbl.style.opacity = '1';
+        if (lbl) {
+          lbl.style.color = hex;
+        }
       });
       document.addEventListener('mouseout', (e) => {
         const ref = e.target.closest('.inline-perk-ref');
         if (!ref) return;
         ref.querySelector('.ipr-sq').style.boxShadow = '';
         const lbl = ref.querySelector('.ipr-label');
-        if (lbl) lbl.style.opacity = '.6';
+        if (lbl) {
+          lbl.style.color = '';
+          lbl.style.opacity = '';
+        }
       });
       document.addEventListener('click', (e) => {
         const ref = e.target.closest('.inline-perk-ref');
@@ -5741,12 +5758,22 @@
           requestAnimationFrame(() => {
             fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
           });
-          target.style.cssText +=
-            ';position:relative;z-index:51;transition:box-shadow .35s ease;';
+          target.style.position = 'relative';
+          target.style.zIndex = '51';
+          target.style.transition = 'box-shadow .35s ease';
+          const _col = target.closest('.col');
+          if (_col) {
+            _col.style.position = 'relative';
+            _col.style.zIndex = '52';
+          }
           target.style.boxShadow = `0 0 0 2px ${hex},0 0 30px ${hex}80`;
           function clearF() {
             fo.style.background = 'rgba(0,0,0,0)';
             target.style.boxShadow = '';
+            if (_col) {
+              _col.style.position = '';
+              _col.style.zIndex = '';
+            }
             setTimeout(() => {
               fo.remove();
               target.style.position =
