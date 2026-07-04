@@ -2938,17 +2938,22 @@
       }
 
       function processPerkTags(html) {
-        return html.replace(/<perk>([^<]+)<\/perk>/gi, (_, pid) => {
-          pid = pid.trim();
-          const { name, hex } = resolvePerkInline(pid);
-          return `<span class="inline-perk-ref" data-rid="${pid}"
-            style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;position:relative;vertical-align:middle;"
-            onmouseenter="this.querySelector('.ipr-sq').style.boxShadow='0 0 6px 3px ${hex}88,0 0 14px 5px ${hex}44';this.querySelector('.ipr-tip').style.display='block'"
-            onmouseleave="this.querySelector('.ipr-sq').style.boxShadow='';this.querySelector('.ipr-tip').style.display='none'">
+        // New syntax: <perk name="standVisor">optional label</perk>
+        // Old syntax: <perk>standVisor</perk> (still supported for compat)
+        return html.replace(
+          /<perk(?:\s+name="([^"]+)")?\s*>([^<]*)<\/perk>/gi,
+          (_, attrId, inner) => {
+            const pid = (attrId || inner).trim();
+            const label = attrId ? inner.trim() : ''; // text only for new syntax
+            const { name: perkName, hex } = resolvePerkInline(pid);
+            const displayText = label || perkName;
+            return `<span class="inline-perk-ref" data-rid="${pid}" data-hex="${hex}"
+            style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;vertical-align:middle;">
             <span class="ipr-sq" style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
-            <span class="ipr-tip" style="display:none;position:absolute;bottom:calc(100% + 4px);left:0;background:#0d0e18;border:1px solid #2a3050;padding:3px 8px;font-size:9px;color:#c0bdb4;white-space:nowrap;z-index:600;pointer-events:none;">${name}</span>
+            ${displayText ? `<span class="ipr-label" style="color:${hex};opacity:.6;transition:opacity .15s;font-size:inherit;">${displayText}</span>` : ''}
           </span>`;
-        });
+          },
+        );
       }
 
       // Lightweight MD renderer for level description rows — avoids wrapping
@@ -5693,6 +5698,73 @@
         licenseOverlay.classList.remove('active');
         document.body.style.overflow = '';
       }
+
+      // ── GLOBAL inline-perk-ref handlers ──
+      // Single delegated listener covers ALL containers (ttLevels, extra, tip, perk-desc, etc.)
+      document.addEventListener('mouseover', (e) => {
+        const ref = e.target.closest('.inline-perk-ref');
+        if (!ref) return;
+        const hex = ref.dataset.hex || '#888';
+        ref.querySelector('.ipr-sq').style.boxShadow =
+          `0 0 6px 3px ${hex}88, 0 0 14px 5px ${hex}44`;
+        const lbl = ref.querySelector('.ipr-label');
+        if (lbl) lbl.style.opacity = '1';
+      });
+      document.addEventListener('mouseout', (e) => {
+        const ref = e.target.closest('.inline-perk-ref');
+        if (!ref) return;
+        ref.querySelector('.ipr-sq').style.boxShadow = '';
+        const lbl = ref.querySelector('.ipr-label');
+        if (lbl) lbl.style.opacity = '.6';
+      });
+      document.addEventListener('click', (e) => {
+        const ref = e.target.closest('.inline-perk-ref');
+        if (!ref) return;
+        const rid = ref.dataset.rid;
+        if (!rid) return;
+        const target = [...document.querySelectorAll('.perk')].find(
+          (pe) => pe.dataset.perkId === rid,
+        );
+        if (!target) return;
+        hideTooltip();
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+          let fo = document.getElementById('focus-overlay');
+          if (!fo) {
+            fo = document.createElement('div');
+            fo.id = 'focus-overlay';
+            fo.style.cssText =
+              'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
+            document.body.appendChild(fo);
+          }
+          const { hex } = resolvePerkInline(rid);
+          requestAnimationFrame(() => {
+            fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
+          });
+          target.style.cssText +=
+            ';position:relative;z-index:51;transition:box-shadow .35s ease;';
+          target.style.boxShadow = `0 0 0 2px ${hex},0 0 30px ${hex}80`;
+          function clearF() {
+            fo.style.background = 'rgba(0,0,0,0)';
+            target.style.boxShadow = '';
+            setTimeout(() => {
+              fo.remove();
+              target.style.position =
+                target.style.zIndex =
+                target.style.transition =
+                  '';
+            }, 350);
+          }
+          fo.addEventListener('click', clearF, { once: true });
+          setTimeout(() => {
+            window.addEventListener('scroll', clearF, {
+              once: true,
+              passive: true,
+            });
+            window.addEventListener('keydown', clearF, { once: true });
+          }, 400);
+        }, 500);
+      });
 
       licenseToolbar.addEventListener('click', showLicense);
       licenseOverlay.addEventListener('click', hideLicense);
