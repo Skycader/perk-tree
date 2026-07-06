@@ -70,7 +70,6 @@ const STAND_DATA = {
             {
               title: 'Экзоскелет',
               src: 'assets/avatar_2257_3063.jpg',
-              height: 'maximum',
             },
           ],
           requiredPerks: ['standTelekinesis'],
