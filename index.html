@@ -863,7 +863,7 @@
         position: relative;
       }
       /* ── EXTRA WINDOW ── */
-      #img-box {
+      .win-img {
         display: none;
         position: fixed;
         z-index: 500;
@@ -875,7 +875,7 @@
         flex-direction: column;
         overflow: hidden;
       }
-      #img-content {
+      .win-img-content {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -887,7 +887,7 @@
         position: relative;
       }
       /* only enable scroll when pinContentHeight explicitly decides media overflows */
-      #img-content.needs-scroll {
+      .win-img-content.needs-scroll {
         overflow-y: auto;
       }
       /* loading spinner shown in img-content/img2-content while media is fetching */
@@ -944,8 +944,8 @@
         stroke-linecap: round;
         stroke-dasharray: 80 200;
       }
-      #img-content img,
-      #img-content video {
+      .win-img-content img,
+      .win-img-content video {
         max-width: 100%;
         max-height: 100%;
         width: auto;
@@ -957,73 +957,26 @@
          drop the max-height cap so the image renders at its real (width-limited)
          size, letting the container's overflow-y:auto actually scroll the excess
          instead of squeezing the whole image into a sliver that still gets clipped. */
-      #img-content img.media-overflow,
-      #img-content video.media-overflow,
-      #img2-content img.media-overflow,
-      #img2-content video.media-overflow {
+      .win-img-content img.media-overflow,
+      .win-img-content video.media-overflow,
+      .win-img-content img.media-overflow,
+      .win-img-content video.media-overflow {
         max-height: none;
         align-self: flex-start;
       }
       /* hide any native video chrome (progress bar / controls) on hover or otherwise */
-      #img-content video::-webkit-media-controls,
-      #img-content video::-webkit-media-controls-panel,
-      #img-content video::-webkit-media-controls-play-button,
-      #img-content video::-webkit-media-controls-timeline,
-      #img-content video::-webkit-media-controls-volume-slider,
-      #img2-content video::-webkit-media-controls,
-      #img2-content video::-webkit-media-controls-panel,
-      #img2-content video::-webkit-media-controls-play-button,
-      #img2-content video::-webkit-media-controls-timeline,
-      #img2-content video::-webkit-media-controls-volume-slider {
+      .win-img-content video::-webkit-media-controls,
+      .win-img-content video::-webkit-media-controls-panel,
+      .win-img-content video::-webkit-media-controls-play-button,
+      .win-img-content video::-webkit-media-controls-timeline,
+      .win-img-content video::-webkit-media-controls-volume-slider {
         display: none !important;
         opacity: 0 !important;
         pointer-events: none !important;
       }
 
-      /* ── second image/video window (used when imgs[] has >=2 items and slider:false) ── */
-      #img2-box {
-        display: none;
-        position: fixed;
-        z-index: 500;
-        width: 280px;
-        background: #0d0e18;
-        border: 1px solid #2a3050;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
-        pointer-events: auto;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      #img2-content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-        overflow-y: hidden;
-        overflow-x: hidden;
-        flex: 1;
-        min-height: 0;
-        position: relative;
-      }
-      #img2-content.needs-scroll {
-        overflow-y: auto;
-      }
-      #img2-content img,
-      #img2-content video {
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-        border-radius: 2px;
-      }
-      #img-content video,
-      #img2-content video {
-        pointer-events: none;
-      }
-
       /* fit:true (default) on video — fill the box, crop overflow, no black bars */
-      #img-content video.fit-cover,
-      #img2-content video.fit-cover {
+      .win-img-content video.fit-cover,
         width: 100%;
         height: 100%;
         max-width: 100%;
@@ -1098,11 +1051,11 @@
         background: #e09040;
         transform: scale(1.2);
       }
-      #img-content video {
+      .win-img-content video {
         pointer-events: none;
       }
 
-      #extra-box {
+      .win-extra {
         display: none;
         position: fixed;
         z-index: 500;
@@ -1114,7 +1067,7 @@
         flex-direction: column;
         overflow: hidden;
       }
-      #extra-box .tt-header {
+      .win-extra .tt-header {
         flex-shrink: 0;
         background: rgba(255, 255, 255, 0.03);
         border-bottom: 1px solid #1c1f2e;
@@ -1125,7 +1078,7 @@
         letter-spacing: 0.05em;
         font-family: 'JetBrains Mono', monospace;
       }
-      #extra-content {
+      .win-extra-content {
         overflow-y: auto;
         flex: 1;
         min-height: 0;
@@ -1135,21 +1088,21 @@
         line-height: 1.55;
       }
       /* solo mode: content shrinks to fit its own text, not the box height */
-      #extra-content.solo-content,
-      #tip-content.solo-content,
-      #extended-content.solo-content,
-      #combo-levels.solo-content {
+      .win-extra-content.solo-content,
+      .win-tip-content.solo-content,
+      .win-extended-content.solo-content,
+      .win-combo-levels.solo-content {
         flex: 0 0 auto;
         overflow-y: auto;
       }
       /* md styles matching combo */
-      #extra-content p {
+      .win-extra-content p {
         padding: 6px 12px 0;
         margin: 0;
       }
-      #extra-content h1,
-      #extra-content h2,
-      #extra-content h3 {
+      .win-extra-content h1,
+      .win-extra-content h2,
+      .win-extra-content h3 {
         font-family: 'JetBrains Mono', monospace;
         color: #c0bdb4;
         padding: 8px 12px 2px;
@@ -1157,13 +1110,13 @@
         font-size: 11px;
         border-bottom: 1px solid #1e2235;
       }
-      #extra-content strong {
+      .win-extra-content strong {
         color: #c0bdb4;
       }
-      #extra-content em {
+      .win-extra-content em {
         color: #8898b0;
       }
-      #extra-content code {
+      .win-extra-content code {
         font-family: 'JetBrains Mono', monospace;
         background: #0a0b14;
         border: 1px solid #1e2235;
@@ -1172,7 +1125,7 @@
         font-size: 9px;
         color: #7ab0d0;
       }
-      #extra-content pre {
+      .win-extra-content pre {
         background: #0a0b14;
         border: 1px solid #1e2235;
         margin: 4px 12px;
@@ -1180,37 +1133,37 @@
         overflow-x: auto;
         border-radius: 2px;
       }
-      #extra-content pre code {
+      .win-extra-content pre code {
         border: none;
         background: none;
         padding: 0;
       }
-      #extra-content ul,
-      #extra-content ol {
+      .win-extra-content ul,
+      .win-extra-content ol {
         padding: 4px 12px 4px 28px;
         margin: 0;
       }
-      #extra-content li {
+      .win-extra-content li {
         margin: 2px 0;
       }
-      #extra-content blockquote {
+      .win-extra-content blockquote {
         border-left: 2px solid #3a4570;
         padding: 4px 10px;
         margin: 4px 12px;
         color: #7a8090;
       }
-      #extra-content hr {
+      .win-extra-content hr {
         border: none;
         border-top: 1px solid #1e2235;
         margin: 6px 12px;
       }
-      #extra-content table {
+      .win-extra-content table {
         border-collapse: collapse;
         width: calc(100% - 24px);
         margin: 6px 12px;
         font-size: 10px;
       }
-      #extra-content th {
+      .win-extra-content th {
         background: #0f1020;
         border: 1px solid #1e2235;
         padding: 3px 7px;
@@ -1218,16 +1171,16 @@
         font-weight: 600;
         text-align: left;
       }
-      #extra-content td {
+      .win-extra-content td {
         border: 1px solid #1a1d2e;
         padding: 3px 7px;
       }
-      #extra-content tr:nth-child(even) td {
+      .win-extra-content tr:nth-child(even) td {
         background: rgba(255, 255, 255, 0.02);
       }
 
       /* ── TIP WINDOW (small hint, same visual language as extra) ── */
-      #tip-box {
+      .win-tip {
         display: none;
         position: fixed;
         z-index: 500;
@@ -1239,7 +1192,7 @@
         flex-direction: column;
         overflow: hidden;
       }
-      #tip-box .tt-header {
+      .win-tip .tt-header {
         flex-shrink: 0;
         background: rgba(255, 255, 255, 0.03);
         border-bottom: 1px solid #1c1f2e;
@@ -1250,7 +1203,7 @@
         letter-spacing: 0.05em;
         font-family: 'JetBrains Mono', monospace;
       }
-      #tip-content {
+      .win-tip-content {
         overflow-y: auto;
         flex: 1;
         min-height: 0;
@@ -1259,13 +1212,13 @@
         color: #7a8090;
         line-height: 1.55;
       }
-      #tip-content p {
+      .win-tip-content p {
         padding: 6px 12px 0;
         margin: 0;
       }
-      #tip-content h1,
-      #tip-content h2,
-      #tip-content h3 {
+      .win-tip-content h1,
+      .win-tip-content h2,
+      .win-tip-content h3 {
         font-family: 'JetBrains Mono', monospace;
         color: #c0bdb4;
         padding: 8px 12px 2px;
@@ -1273,13 +1226,13 @@
         font-size: 11px;
         border-bottom: 1px solid #1e2235;
       }
-      #tip-content strong {
+      .win-tip-content strong {
         color: #c0bdb4;
       }
-      #tip-content em {
+      .win-tip-content em {
         color: #8898b0;
       }
-      #tip-content code {
+      .win-tip-content code {
         font-family: 'JetBrains Mono', monospace;
         background: #0a0b14;
         border: 1px solid #1e2235;
@@ -1288,36 +1241,36 @@
         font-size: 9px;
         color: #7ab0d0;
       }
-      #tip-content ul,
-      #tip-content ol {
+      .win-tip-content ul,
+      .win-tip-content ol {
         padding: 4px 12px 4px 28px;
         margin: 0;
       }
-      #tip-content li {
+      .win-tip-content li {
         margin: 2px 0;
       }
-      #tip-content blockquote {
+      .win-tip-content blockquote {
         border-left: 2px solid #3a4570;
         padding: 4px 10px;
         margin: 4px 12px;
         color: #7a8090;
       }
-      #tip-content hr {
+      .win-tip-content hr {
         border: none;
         border-top: 1px solid #1e2235;
         margin: 6px 12px;
       }
       /* explicit blank-line spacer support: <empty-line></empty-line> or <br> */
-      #extra-content .md-blank-line,
-      #tip-content .md-blank-line,
-      #extended-content .md-blank-line,
-      #combo-levels .md-blank-line {
+      .win-extra-content .md-blank-line,
+      .win-tip-content .md-blank-line,
+      .win-extended-content .md-blank-line,
+      .win-combo-levels .md-blank-line {
         display: block;
         height: 10px;
       }
 
       /* ── AUDIO WINDOW ── */
-      #audio-box {
+      .win-audio {
         display: none;
         position: fixed;
         z-index: 500;
@@ -1329,7 +1282,7 @@
         flex-direction: column;
         overflow: hidden;
       }
-      #audio-box .tt-header {
+      .win-audio .tt-header {
         flex-shrink: 0;
         background: rgba(255, 255, 255, 0.03);
         border-bottom: 1px solid #1c1f2e;
@@ -1352,7 +1305,7 @@
         font-family: 'JetBrains Mono', monospace;
         flex-shrink: 0;
       }
-      #audio-content {
+      .win-audio-content {
         display: flex;
         flex-direction: column;
         padding: 3px 0;
@@ -1511,7 +1464,7 @@
       }
 
       /* ── EXTENDED WINDOW ── */
-      #extended-box {
+      .win-extended {
         display: none;
         position: fixed;
         z-index: 500;
@@ -1523,7 +1476,7 @@
         flex-direction: column;
         overflow: hidden;
       }
-      #extended-box .tt-header {
+      .win-extended .tt-header {
         flex-shrink: 0;
         background: rgba(255, 255, 255, 0.03);
         border-bottom: 1px solid #1c1f2e;
@@ -1540,7 +1493,7 @@
         --ext-row-pad-h: 8px; /* horizontal padding per level row */
         --ext-font-size: 10px; /* text size inside extended window */
       }
-      #extended-content {
+      .win-extended-content {
         overflow-y: auto;
         flex: 1;
         min-height: 0;
@@ -1549,17 +1502,17 @@
         color: #7a8090;
         line-height: 1.55;
       }
-      #extended-content .tt-row {
+      .win-extended-content .tt-row {
         padding: var(--ext-row-pad-v) var(--ext-row-pad-h);
       }
       /* extended content shares the same MD styles as extra/tip */
-      #extended-content p {
+      .win-extended-content p {
         padding: 6px 12px 0;
         margin: 0;
       }
-      #extended-content h1,
-      #extended-content h2,
-      #extended-content h3 {
+      .win-extended-content h1,
+      .win-extended-content h2,
+      .win-extended-content h3 {
         font-family: 'JetBrains Mono', monospace;
         color: #c0bdb4;
         padding: 8px 12px 2px;
@@ -1567,13 +1520,13 @@
         font-size: 11px;
         border-bottom: 1px solid #1e2235;
       }
-      #extended-content strong {
+      .win-extended-content strong {
         color: #c0bdb4;
       }
-      #extended-content em {
+      .win-extended-content em {
         color: #8898b0;
       }
-      #extended-content code {
+      .win-extended-content code {
         font-family: 'JetBrains Mono', monospace;
         background: #0a0b14;
         border: 1px solid #1e2235;
@@ -1582,32 +1535,32 @@
         font-size: 9px;
         color: #7ab0d0;
       }
-      #extended-content ul,
-      #extended-content ol {
+      .win-extended-content ul,
+      .win-extended-content ol {
         padding: 4px 12px 4px 28px;
         margin: 0;
       }
-      #extended-content li {
+      .win-extended-content li {
         margin: 2px 0;
       }
-      #extended-content blockquote {
+      .win-extended-content blockquote {
         border-left: 2px solid #3a4570;
         padding: 4px 10px;
         margin: 4px 12px;
         color: #7a8090;
       }
-      #extended-content hr {
+      .win-extended-content hr {
         border: none;
         border-top: 1px solid #1e2235;
         margin: 6px 12px;
       }
-      #extended-content table {
+      .win-extended-content table {
         border-collapse: collapse;
         width: calc(100% - 24px);
         margin: 6px 12px;
         font-size: 10px;
       }
-      #extended-content th {
+      .win-extended-content th {
         background: #0f1020;
         border: 1px solid #1e2235;
         padding: 3px 7px;
@@ -1615,16 +1568,16 @@
         font-weight: 600;
         text-align: left;
       }
-      #extended-content td {
+      .win-extended-content td {
         border: 1px solid #1a1d2e;
         padding: 3px 7px;
       }
-      #extended-content tr:nth-child(even) td {
+      .win-extended-content tr:nth-child(even) td {
         background: rgba(255, 255, 255, 0.02);
       }
 
       /* ── COMBO WINDOW ── */
-      #combo-box {
+      .win-combo {
         display: none;
         position: fixed;
         z-index: 500;
@@ -1636,7 +1589,7 @@
         flex-direction: column;
         overflow: hidden;
       }
-      #combo-box .tt-header {
+      .win-combo .tt-header {
         flex-shrink: 0;
         background: rgba(255, 255, 255, 0.03);
         border-bottom: 1px solid #1c1f2e;
@@ -1779,7 +1732,7 @@
       .combo-item-desc tr:nth-child(even) td {
         background: rgba(255, 255, 255, 0.02);
       }
-      #combo-levels {
+      .win-combo-levels {
         overflow-y: auto;
         flex: 1;
         min-height: 0;
@@ -2017,7 +1970,7 @@
       .license-pane.active {
         display: block;
       }
-      /* reuse the same MD rendering rules as #extra-content */
+      /* reuse the same MD rendering rules as .win-extra-content */
       .license-pane p {
         padding: 6px 12px 0;
         margin: 0;
@@ -2259,73 +2212,6 @@
     ></canvas>
     <div id="tt-overlay"></div>
     <div id="sp-overlay"></div>
-    <div id="extra-box">
-      <div class="tt-header">📄 Расширенное описание</div>
-      <div id="extra-content"></div>
-    </div>
-    <div id="tip-box">
-      <div class="tt-header">💡 Подсказка</div>
-      <div id="tip-content"></div>
-    </div>
-    <div id="extended-box">
-      <div class="tt-header" id="extended-header">
-        ⚡ Расширенные способности
-      </div>
-      <div id="extended-content"></div>
-    </div>
-    <div id="combo-box">
-      <div class="tt-header">⬡ Комбо-способности</div>
-      <div id="combo-levels"></div>
-    </div>
-    <div id="img-box">
-      <div class="tt-header" id="img-header">Иллюстрация</div>
-      <div id="img-content"></div>
-      <div id="img-dots"></div>
-    </div>
-    <svg
-      id="img-arrow-svg"
-      style="
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 0;
-        pointer-events: none;
-        z-index: 499;
-        overflow: visible;
-      "
-    ></svg>
-    <div id="img2-box">
-      <div class="tt-header" id="img2-header">Иллюстрация</div>
-      <div id="img2-content"></div>
-    </div>
-    <svg
-      id="img2-arrow-svg"
-      style="
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 0;
-        pointer-events: none;
-        z-index: 499;
-        overflow: visible;
-      "
-    ></svg>
-    <div id="audio-box">
-      <div class="tt-header" id="audio-header">▶ Аудио</div>
-      <div id="audio-content"></div>
-    </div>
-    <svg
-      id="audio-arrow-svg"
-      style="
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 0;
-        pointer-events: none;
-        z-index: 499;
-        overflow: visible;
-      "
-    ></svg>
 
     <div class="tooltip" id="sp-tooltip">
       <div class="tt-header">
@@ -2350,54 +2236,7 @@
         overflow: visible;
       "
     ></svg>
-    <svg
-      id="extra-arrow-svg"
-      style="
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 0;
-        pointer-events: none;
-        z-index: 499;
-        overflow: visible;
-      "
-    ></svg>
-    <svg
-      id="tip-arrow-svg"
-      style="
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 0;
-        pointer-events: none;
-        z-index: 499;
-        overflow: visible;
-      "
-    ></svg>
-    <svg
-      id="extended-arrow-svg"
-      style="
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 0;
-        pointer-events: none;
-        z-index: 499;
-        overflow: visible;
-      "
-    ></svg>
-    <svg
-      id="combo-arrow-svg"
-      style="
-        display: none;
-        position: fixed;
-        left: 0;
-        top: 0;
-        pointer-events: none;
-        z-index: 499;
-        overflow: visible;
-      "
-    ></svg>
+
     <!-- tooltip -->
     <div class="tooltip" id="tooltip">
       <div class="tt-header">
@@ -2584,6 +2423,8 @@
       // слот 3 это новый столбик (рядом со слотом 1), и т.д.
       const IPR_GLOW_BLUR = 4; // px — glow blur on <perk> square hover
       const IPR_GLOW_SPREAD = 2; // px — glow spread
+      const debugLines = false; // set true to show red connector anchors
+
       const WINDOW_PRIORITY = [
         'IMG',
         'AUDIO',
@@ -2603,115 +2444,35 @@
       // колонки дерева (0=левая, 1=средняя, 2=правая).
       // Остальные 4 слота свободны для вторичных окон.
       // Сетка: LT MT RT / LB MB RB
-      const LEVELS_COL = { 0: 'L', 1: 'M', 2: 'M' };
+      // ── WINDOW PLACEMENT SYSTEM ──
+      // Columns are numbered 1, 2, 3 (left to right on screen).
+      // The levels tooltip occupies one column; secondary windows fill the rest top→bottom.
+      //
+      // perk row 0 (leftmost):  levels in col 1 → windows fill col 2, then col 3
+      // perk row 1 (middle):    levels in col 2 → windows fill col 1, then col 3
+      // perk row 2 (rightmost): levels in col 2 → windows fill col 1, then col 3
+      //
+      // positions: {combo: 2} — explicit column override (integer 1/2/3)
+      // Windows stack top→bottom within a column; overflow → next column.
 
-      // Slot naming: R1/R2/R3 = right column top→bottom, L1/L2/L3 = left column top→bottom
-      // M1/M2/M3 = middle column (reserved for tooltip in cols 1 and 2)
-      // Grid is 2×3 max (2 columns × 3 rows). R3/L3 only render if viewport allows.
+      const MIN_SECONDARY_H = 80; // minimum px a window needs to be placed
 
-      // Minimum height a window must have to be placed (otherwise skip to next column).
-      const MIN_SECONDARY_H = 80;
+      const SLOT_COL_W = 320; // width of each secondary window
+      const SLOT_COL_GAP = 36; // horizontal gap between columns
+      const SLOT_ROW_GAP = 16; // vertical gap between windows
+      const IMG_MAX_H = 420; // maximum height of img box (px)
+      const SOLO_MAX_H = 560; // max height when window is solo in column
 
-      // Дефолтный порядок заполнения свободных слотов.
-      const DEFAULT_SLOT_ORDER = {
-        0: ['R1', 'R2', 'R3', 'M1', 'M2', 'M3'], // левая:   уровни=L, сначала вправо потом середина
-        1: ['R1', 'R2', 'R3', 'L1', 'L2', 'L3'], // средняя: уровни=M, сначала вправо потом влево
-        2: ['L1', 'L2', 'L3', 'R1', 'R2', 'R3'], // правая:  уровни=M, сначала влево потом вправо
+      // column fill order per perk row (column indices, 1-based)
+      const COL_FILL_ORDER = {
+        0: [2, 3], // perk row 0: fill col2 first, then col3
+        1: [1, 3], // perk row 1: fill col1 first, then col3
+        2: [1, 3], // perk row 2: same as row 1
       };
 
-      // Зарезервированные слоты (занятые окном уровней).
-      const RESERVED_SLOTS = {
-        0: ['L1', 'L2', 'L3'],
-        1: ['M1', 'M2', 'M3'],
-        2: ['M1', 'M2', 'M3'],
-      };
+      // which screen column (1/2/3) the levels tooltip occupies
+      const LEVELS_SCREEN_COL = { 0: 1, 1: 2, 2: 2 };
 
-      // ── SLOT RESOLVER ──
-      // Pure function — no DOM access. Takes:
-      //   activeKinds : string[]           — список активных типов окон (из WINDOW_PRIORITY)
-      //   positions   : object|null        — perkData.positions, e.g. {combo:'RT', extra:'LT'}
-      //   colIndex    : 0|1|2             — колонка дерева где находится перк
-      // Returns: [{kind, slot}] sorted by slot fill order, plus warnings[].
-      function resolveSlots(activeKinds, positions, colIndex) {
-        const reserved = RESERVED_SLOTS[colIndex] || [];
-        const defaultOrder = DEFAULT_SLOT_ORDER[colIndex] || [
-          'RT',
-          'RB',
-          'LT',
-          'LB',
-        ];
-        const warnings = [];
-
-        // 1. collect explicit slot assignments from positions{}
-        const explicit = {}; // slot → kind
-        const explicitKind = {}; // kind → slot
-        if (positions) {
-          for (const [kind, slot] of Object.entries(positions)) {
-            if (
-              !activeKinds.includes(kind.toUpperCase()) &&
-              !activeKinds.includes(kind)
-            )
-              continue;
-            const normalKind = kind.toUpperCase();
-            const normalSlot = slot?.toUpperCase?.() || slot;
-            if (reserved.includes(normalSlot)) {
-              warnings.push(
-                `[Древо] positions.${kind}='${slot}' конфликтует с окном уровней ` +
-                  `(слот ${normalSlot} занят в колонке ${colIndex}). Позиция проигнорирована.`,
-              );
-              continue;
-            }
-            if (explicit[normalSlot]) {
-              warnings.push(
-                `[Древо] positions.${kind}='${slot}' — слот ${normalSlot} уже занят ` +
-                  `окном ${explicit[normalSlot]}. Позиция проигнорирована.`,
-              );
-              continue;
-            }
-            explicit[normalSlot] = normalKind;
-            explicitKind[normalKind] = normalSlot;
-          }
-        }
-
-        // 2. assign remaining kinds to next free slots in defaultOrder
-        let freeIdx = 0;
-        const result = [];
-        for (const kind of activeKinds) {
-          if (explicitKind[kind]) {
-            result.push({ kind, slot: explicitKind[kind] });
-          } else {
-            // advance to next free slot
-            while (
-              freeIdx < defaultOrder.length &&
-              (explicit[defaultOrder[freeIdx]] ||
-                reserved.includes(defaultOrder[freeIdx]))
-            )
-              freeIdx++;
-            if (freeIdx < defaultOrder.length) {
-              result.push({ kind, slot: defaultOrder[freeIdx] });
-              explicit[defaultOrder[freeIdx]] = kind;
-              freeIdx++;
-            } else {
-              warnings.push(
-                `[Древо] Нет свободных слотов для окна ${kind} — оно не будет показано.`,
-              );
-            }
-          }
-        }
-
-        // 3. emit all warnings
-        warnings.forEach((w) => console.warn(w));
-
-        // 4. sort by slot order (explicit first respects defaultOrder sequence)
-        const slotRank = Object.fromEntries(defaultOrder.map((s, i) => [s, i]));
-        result.sort(
-          (a, b) => (slotRank[a.slot] ?? 99) - (slotRank[b.slot] ?? 99),
-        );
-
-        return result;
-      }
-
-      // Spinner shown inside img/img2 content boxes while their media is loading.
       const MEDIA_LOADING_SVG = `<svg class="media-loading-svg" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9"></circle>
       </svg>`;
@@ -3006,65 +2767,109 @@
         return processSvgTags(processPerkTags(html));
       }
 
-      // ── SLOT → PHYSICAL POSITION ──
-      // Pure function — no DOM access. Converts a slot name (LT/LB/MT/MB/RT/RB)
-      // into pixel coordinates {x, y, w, h, side} for a secondary window box,
-      // given the main tooltip rect (mainR) and viewport dimensions.
-      //
-      // Layout model:
-      //   - The 3×2 grid is virtual — actual pixel positions are calculated
-      //     relative to mainR (the levels tooltip rect).
-      //   - Each column of the grid is COL_W wide; columns are separated by COL_GAP.
-      //   - Top row (LT/MT/RT) starts at mainR.top.
-      //   - Bottom row (LB/MB/RB) starts at mainR.top + slotH + ROW_GAP.
-      //   - slotH = half of usable vertical space, so two rows fit cleanly.
-      //   - 'side' tells the caller whether the window is left or right of mainR
-      //     (used to decide which edge to connect the arrow line to).
-      //
-      // Returns: { x, y, w, h, side:'left'|'right' }
-      // x/y are the top-left corner of the box in viewport px.
+      // ── DYNAMIC WINDOW FACTORY ──
+      // Creates a secondary window box + connector SVG and appends to body.
+      // type: 'img'|'extra'|'tip'|'combo'|'extended'|'audio'
+      // Returns { box, svg, content } — content is the inner scrollable div.
+      const WIN_SVG_STYLE =
+        'display:none;position:fixed;left:0;top:0;pointer-events:none;z-index:499;overflow:visible;';
+      const WIN_BOX_STYLE =
+        'display:none;position:fixed;z-index:500;pointer-events:auto;flex-direction:column;overflow:hidden;';
 
-      const SLOT_COL_W = 320; // width of each secondary window
-      const SLOT_COL_GAP = 36; // horizontal gap between columns (and from mainR)
-      const SLOT_ROW_GAP = 16; // vertical gap between top and bottom rows
-      const IMG_MAX_H = 420; // maximum height of img/img2 content box (px)
+      function createWin(type, extraClasses = '') {
+        const box = document.createElement('div');
+        box.className = `win-${type}${extraClasses ? ' ' + extraClasses : ''}`;
+        box.style.cssText =
+          WIN_BOX_STYLE +
+          'width:320px;background:#0d0e18;border:1px solid #2a3050;' +
+          'box-shadow:0 8px 40px rgba(0,0,0,0.9);';
 
-      // slotToPosition: new slot naming R1/R2/R3/L1/L2/L3/M1/M2/M3
-      // Row number (1/2/3) determines vertical position dynamically in runLayout.
-      // This function only resolves X position and side; Y/H are computed in runLayout
-      // based on actual placed rects (to avoid fixed slotH for 3 rows).
-      function slotToPosition(slot, mainR, vwC, vhC) {
-        const colLetter = slot.charAt(0); // 'R', 'L', 'M'
+        const hdr = document.createElement('div');
+        hdr.className = 'tt-header';
+        box.appendChild(hdr);
 
-        const rightX = mainR.right + SLOT_COL_GAP;
-        const leftX = mainR.left - SLOT_COL_GAP - SLOT_COL_W;
-        const right2X = mainR.right + SLOT_COL_GAP * 2 + SLOT_COL_W;
-        const left2X = mainR.left - SLOT_COL_GAP * 2 - SLOT_COL_W * 2;
+        // content area
+        const content = document.createElement('div');
+        content.className = `win-${type}-content`;
+        box.appendChild(content);
 
-        let x, side;
-        if (colLetter === 'R') {
-          x = rightX;
-          side = 'right';
-        } else if (colLetter === 'L') {
-          x = leftX;
-          side = 'left';
-        } else {
-          // M = second column
-          const rightRoom = vwC - right2X - SLOT_COL_W - 4;
-          if (rightRoom >= 0) {
-            x = right2X;
-            side = 'right';
-          } else {
-            x = left2X;
-            side = 'left';
+        const svg = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'svg',
+        );
+        svg.setAttribute('class', 'win-connector-svg');
+        svg.style.cssText = WIN_SVG_STYLE;
+
+        document.body.appendChild(box);
+        document.body.appendChild(svg);
+
+        return { box, svg, hdr, content };
+      }
+
+      // Destroy all dynamic windows (called by hideTooltip)
+      function destroyWins() {
+        document
+          .querySelectorAll(
+            '.win-img,.win-extra,.win-tip,.win-combo,.win-extended,.win-audio,.win-connector-svg',
+          )
+          .forEach((el) => el.remove());
+      }
+
+      // ── WINDOW PLACEMENT RESOLVER ──
+      // Returns [{kind, col}] — col is 1/2/3 (screen column).
+      // positions: {combo: 2} overrides column for that kind.
+      function resolveWindowCols(activeKinds, positions, perkRowIdx) {
+        const fillOrder = COL_FILL_ORDER[perkRowIdx] || [2, 3];
+        const levelsCol = LEVELS_SCREEN_COL[perkRowIdx] || 1;
+
+        // parse explicit positions (integer column)
+        const explicitCol = {}; // kind → col number
+        if (positions) {
+          for (const [k, v] of Object.entries(positions)) {
+            const kind = k.toUpperCase();
+            const col = parseInt(v);
+            if (!isNaN(col) && col >= 1 && col <= 3 && col !== levelsCol) {
+              explicitCol[kind] = col;
+            }
           }
         }
 
-        if (x < 4) x = 4;
-        if (x + SLOT_COL_W > vwC - 4) x = vwC - SLOT_COL_W - 4;
+        const result = [];
+        const colUsed = {}; // col → [kinds] (just for tracking)
 
-        // Y is placeholder — runLayout overrides with stacked positioning
-        return { x, y: mainR.top, w: SLOT_COL_W, h: MIN_SECONDARY_H, side };
+        for (const kind of activeKinds) {
+          if (explicitCol[kind]) {
+            result.push({ kind, col: explicitCol[kind] });
+          } else {
+            // assign to first fill column (overflow handled in runLayout)
+            result.push({ kind, col: fillOrder[0] });
+          }
+          const col = result[result.length - 1].col;
+          (colUsed[col] = colUsed[col] || []).push(kind);
+        }
+
+        return result;
+      }
+
+      // ── COLUMN X POSITION ──
+      // Returns {x, side} for a given screen column (1/2/3) relative to mainR.
+      function colToX(screenCol, mainR, vwC) {
+        // col1 = left of tooltip, col2 = right of tooltip, col3 = further right (or left if no room)
+        const levCol = mainR; // levels tooltip rect
+        const gap = SLOT_COL_GAP;
+        const w = SLOT_COL_W;
+
+        const rightX = levCol.right + gap; // col to the right of levels
+        const leftX = levCol.left - gap - w; // col to the left of levels
+        const right2X = levCol.right + gap * 2 + w; // second col to the right
+        const left2X = levCol.left - gap * 2 - w * 2; // second col to the left
+
+        let x, side;
+        // We don't know which physical column (left/right) maps to screen col 1/2/3
+        // without knowing perkRowIdx — caller passes pre-resolved x via colXMap.
+        // This function is called with already-resolved x; kept for reference.
+        // Actual resolution is in runLayout via colXMap.
+        return { x: rightX, side: 'right' }; // fallback
       }
 
       // ── PROCESS CONFIG ──
@@ -3821,68 +3626,69 @@
         ttOverlay.style.display = 'block';
         ttOverlay.style.background = 'rgba(0,0,0,.6)';
 
-        // ── SECONDARY WINDOWS: tiling layout ──
-        // Right column split: extra (top half) + img (bottom half), each capped at half viewport height.
-        // Combo goes to the right of that column (or below the pair if no horizontal room).
-        const extraBox = document.getElementById('extra-box');
-        const extraContent = document.getElementById('extra-content');
-        const extraSvg = document.getElementById('extra-arrow-svg');
-        const tipBox = document.getElementById('tip-box');
-        const tipContent = document.getElementById('tip-content');
-        const tipSvg = document.getElementById('tip-arrow-svg');
-        const audioBox = document.getElementById('audio-box');
-        const audioContent = document.getElementById('audio-content');
-        const audioHeader = document.getElementById('audio-header');
-        const audioArwSvg = document.getElementById('audio-arrow-svg');
-        const extendedBox = document.getElementById('extended-box');
-        const extendedHeader = document.getElementById('extended-header');
-        const extendedContent = document.getElementById('extended-content');
-        const extendedSvg = document.getElementById('extended-arrow-svg');
-        const imgBox = document.getElementById('img-box');
-        const imgContent = document.getElementById('img-content');
-        const imgHeader = document.getElementById('img-header');
-        const imgArwSvg = document.getElementById('img-arrow-svg');
-        const imgDots = document.getElementById('img-dots');
-        const img2Box = document.getElementById('img2-box');
-        const img2Content = document.getElementById('img2-content');
-        const img2Header = document.getElementById('img2-header');
-        const img2ArwSvg = document.getElementById('img2-arrow-svg');
-        const comboBox = document.getElementById('combo-box');
-        const comboLvls = document.getElementById('combo-levels');
-        const comboSvg = document.getElementById('combo-arrow-svg');
-
-        extraBox.style.display = 'none';
-        extraSvg.style.display = 'none';
-        tipBox.style.display = 'none';
-        tipSvg.style.display = 'none';
-        audioBox.style.display = 'none';
-        audioArwSvg.style.display = 'none';
-        // pause & cleanup any playing audio tracks from previous open
-        audioBox._audioRefs?.forEach((a) => {
-          try {
-            a.pause();
-          } catch (e) {}
-          a.src = '';
+        // ── SECONDARY WINDOWS: destroy previous, create fresh ──
+        // Stop any playing audio before destroying
+        document.querySelectorAll('.win-audio').forEach((ab) => {
+          ab._audioRefs?.forEach((a) => {
+            try {
+              a.pause();
+            } catch (e) {}
+            a.src = '';
+          });
         });
-        audioBox._audioRefs = [];
-        extendedBox.style.display = 'none';
-        extendedSvg.style.display = 'none';
-        imgBox.style.display = 'none';
-        imgArwSvg.style.display = 'none';
-        img2Box.style.display = 'none';
-        img2ArwSvg.style.display = 'none';
-        imgDots.classList.remove('visible');
-        imgDots.innerHTML = '';
-        comboBox.style.display = 'none';
-        comboSvg.style.display = 'none';
-        // reset any maxHeight left over from previous opens
-        extraBox.style.maxHeight = '';
-        tipBox.style.maxHeight = '';
-        extendedBox.style.maxHeight = '';
-        imgBox.style.maxHeight = '';
-        delete imgBox.dataset.sizedByLoad;
-        img2Box.style.maxHeight = '';
-        comboBox.style.maxHeight = '';
+        destroyWins();
+
+        // Create fresh windows for this perk
+        const _extra = createWin('extra');
+        const extraBox = _extra.box;
+        const extraContent = _extra.content;
+        const extraSvg = _extra.svg;
+        _extra.hdr.innerHTML =
+          '<span style="opacity:.6;margin-right:5px">📄</span>Расширенное описание';
+
+        const _tip = createWin('tip');
+        const tipBox = _tip.box;
+        const tipContent = _tip.content;
+        const tipSvg = _tip.svg;
+        _tip.hdr.innerHTML =
+          '<span style="opacity:.6;margin-right:5px">💡</span>Подсказка';
+
+        const _audio = createWin('audio');
+        const audioBox = _audio.box;
+        const audioContent = _audio.content;
+        const audioHeader = _audio.hdr;
+        const audioArwSvg = _audio.svg;
+        // audio header text set later (from track title)
+
+        const _extended = createWin('extended');
+        const extendedBox = _extended.box;
+        const extendedContent = _extended.content;
+        const extendedHeader = _extended.hdr;
+        const extendedSvg = _extended.svg;
+        _extended.hdr.innerHTML =
+          '<span style="opacity:.6;margin-right:5px">⚡</span>Расширенные способности';
+
+        const _combo = createWin('combo');
+        const comboBox = _combo.box;
+        const comboSvg = _combo.svg;
+        _combo.hdr.innerHTML =
+          '<span style="opacity:.6;margin-right:5px">⬡</span>Комбо-способности';
+        // combo uses its own content structure (levels list)
+        const comboLvls = document.createElement('div');
+        comboLvls.className = 'win-combo-levels';
+        _combo.content.replaceWith(comboLvls);
+        comboBox.appendChild(comboLvls);
+
+        // IMG windows are created per-image below (imgSources loop)
+        // imgBox/img2Box set after imgSources is known
+        // imgBoxes[i] = { box, content, hdr, svg } — one per imgSources entry
+        const imgBoxes = [];
+        // convenience aliases set after imgSources known (first entry = imgBox)
+        let imgBox = null,
+          imgContent = null,
+          imgHeader = null,
+          imgArwSvg = null;
+        let imgDots = null;
 
         const perkData = D.skills
           .flatMap((s) => s.perks)
@@ -3892,7 +3698,7 @@
         const vwC = window.innerWidth,
           vhC = window.innerHeight;
 
-        // Explicitly pin #img-content / #img2-content / #extra-content to a real
+        // Explicitly pin .win-img-content / .win-extra-content to a real
         // px height derived from their box's actual maxHeight, MINUS the header
         // and padding. max-height:% inside them is unreliable when the box's own
         // height comes from a JS-set maxHeight on a flex:1 ancestor — browsers
@@ -3956,8 +3762,16 @@
           // strict 90deg L-shape: one horizontal + one vertical segment
           // ALL coordinates rounded to whole pixels — sub-pixel positions get
           // anti-aliased across two rows/cols, which visually halves stroke opacity.
-          svg.style.cssText = `display:block;position:fixed;left:0;top:0;width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
           svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+          svg.setAttribute('width', vwC);
+          svg.setAttribute('height', vhC);
+          svg.style.display = 'block';
+          svg.style.position = 'fixed';
+          svg.style.left = '0';
+          svg.style.top = '0';
+          svg.style.pointerEvents = 'none';
+          svg.style.zIndex = '501';
+          svg.style.overflow = 'visible';
 
           const R = Math.round;
           let pts, len;
@@ -3997,14 +3811,14 @@
           ? perkData.imgs.filter(Boolean)
           : [];
         const useSlider = imgsList.length >= 2 && perkData?.slider === true;
-        const useDualImg = imgsList.length >= 2 && perkData?.slider !== true; // separate windows
+        const useMultiImg = imgsList.length >= 2 && !useSlider; // multiple separate img windows
         const hasImg = imgsList.length >= 1 || !!perkData?.img;
-        const hasImg2 = useDualImg && imgsList.length >= 2; // second SEPARATE window only
+        const hasImg2 = useMultiImg; // keep alias for compat during transition
         const hasCombo = !!(combo && Object.keys(combo).length);
 
-        // resolve the actual list of image sources to render for the (single) #img-box.
+        // resolve the actual list of image sources to render for the (single) .win-img.
         // - imgs[] + slider:true  → all images go into ONE box, navigated via dots
-        // - imgs[] + slider:false → first image goes to #img-box, second to #img2-box
+        // - imgs[] + slider:false → each image gets its own .win-img window
         // - plain img             → single image, as before
         const imgSourcesRaw = imgsList.length
           ? imgsList
@@ -4028,6 +3842,28 @@
         const imgSources = imgSourcesRaw.map(normalizeImgEntry);
         const wantsMaximum = imgSources.some((e) => e.height === 'maximum');
 
+        // Create one .win-img window per imgSources entry (no slider mode)
+        // or one window for slider mode. imgBoxes[i] mirrors imgSources[i].
+        if (hasImg) {
+          const count = useSlider ? 1 : imgSources.length;
+          for (let i = 0; i < count; i++) {
+            const w = createWin('img');
+            // first window gets dots container for slider
+            if (i === 0) {
+              imgDots = document.createElement('div');
+              imgDots.className = 'img-dots';
+              imgDots.id = 'img-dots';
+              w.box.appendChild(imgDots);
+            }
+            imgBoxes.push(w);
+          }
+          // convenience aliases
+          imgBox = imgBoxes[0]?.box;
+          imgContent = imgBoxes[0]?.content;
+          imgHeader = imgBoxes[0]?.hdr;
+          imgArwSvg = imgBoxes[0]?.svg;
+        }
+
         // ordered list of which secondary window "slots" are present, per WINDOW_PRIORITY
         const hasFlags = {
           IMG: hasImg,
@@ -4048,7 +3884,18 @@
           const rest = WINDOW_PRIORITY.filter((k) => !upper.includes(k));
           return [...upper, ...rest];
         })();
-        const activeKinds = localPriority.filter((k) => hasFlags[k]);
+        // Build activeKinds — one entry per window instance.
+        // Multiple imgBoxes = multiple 'IMG' entries stacked in same column.
+        const activeKinds = [];
+        for (const k of localPriority) {
+          if (!hasFlags[k]) continue;
+          if (k === 'IMG') {
+            // one entry per imgBoxes entry
+            imgBoxes.forEach(() => activeKinds.push('IMG'));
+          } else {
+            activeKinds.push(k);
+          }
+        }
 
         if (hasExtra || hasImg || hasCombo) {
           const TOP_MARGIN = 8,
@@ -4135,13 +3982,11 @@
               vidEl.addEventListener(
                 'loadeddata',
                 () => {
-                  const box = vidEl.closest('#img-box, #img2-box, #extra-box');
+                  const box = vidEl.closest('.win-img, .win-extra');
                   if (!box) return;
-                  const sel =
-                    box.id === 'img2-box' ? '#img2-content' : '#img-content';
-                  // for img-box: just clear scroll state, don't call pinContentHeight
-                  // (it would add needs-scroll based on stale contentH)
-                  if (box.id === 'img-box') {
+                  const sel = '.win-img-content';
+                  // all .win-img windows: just clear scroll state
+                  if (box.classList.contains('win-img')) {
                     const cont = box.querySelector(sel);
                     if (cont) {
                       cont.classList.remove('needs-scroll');
@@ -4319,19 +4164,34 @@
             }
           }
 
-          if (hasImg2) {
-            const entry1 = imgSources[1];
-            img2Header.textContent =
-              entry1.title || perkData.name || 'Иллюстрация';
-            const el2 = makeMediaEl(
-              entry1.src,
-              imgLoadPromises,
-              entry1.title,
-              entry1.audio,
-            );
-            img2Content.innerHTML = '';
-            withLoadingSpinner(el2, img2Content);
+          // populate all img windows from imgSources (index 0 handled above, rest here)
+          if (!useSlider) {
+            for (
+              let _i = 1;
+              _i < imgSources.length && _i < imgBoxes.length;
+              _i++
+            ) {
+              const _entry = imgSources[_i];
+              const _w = imgBoxes[_i];
+              _w.hdr.textContent =
+                _entry.title || perkData.name || 'Иллюстрация';
+              const _el = makeMediaEl(
+                _entry.src,
+                imgLoadPromises,
+                _entry.title,
+                _entry.audio,
+              );
+              _w.content.innerHTML = '';
+              withLoadingSpinner(_el, _w.content);
+            }
           }
+          // set header for first img box too
+          imgBoxes.forEach((_w, _i) => {
+            if (!_w.hdr.textContent && imgSources[_i]) {
+              _w.hdr.textContent =
+                imgSources[_i].title || perkData.name || 'Иллюстрация';
+            }
+          });
           if (hasExtra) {
             extraContent.innerHTML = renderMD(perkData.extra);
           }
@@ -4799,45 +4659,39 @@
           // spinner's tiny scrollHeight to size itself, runLayout() re-runs once
           // any media finishes loading AFTER the first pass, fixing the size
           // (and repositioning combo accordingly) without ever blocking first paint.
-          function runLayout() {
+          function runLayout(imgOnly = false) {
             requestAnimationFrame(() =>
               requestAnimationFrame(() =>
                 requestAnimationFrame(() => {
                   // ── SLOT-BASED LAYOUT ──
-                  // Uses resolveSlots() + slotToPosition() to place every secondary
-                  // window in a cell of the 3×2 grid around the levels tooltip.
+                  // ── NEW COLUMN-BASED PLACEMENT SYSTEM ──
+                  // Windows stack top→bottom within a column.
+                  // Columns are numbered 1/2/3 (screen left→right).
+                  // perk row determines which columns are available.
 
-                  // determine column index (0=left, 1=mid, 2=right)
                   const allColsLayout = document.querySelectorAll('.col');
                   const colsArr = Array.from(allColsLayout);
                   let colIdx = perkCol ? colsArr.indexOf(perkCol) : 1;
                   if (colIdx < 0) colIdx = 1;
                   colIdx = colIdx % 3;
 
-                  // resolve slots using the pure function from step 3
-                  const slotMap = resolveSlots(
+                  // resolve which column each window goes to
+                  const winColMap = resolveWindowCols(
                     activeKinds,
                     perkData?.positions || null,
                     colIdx,
                   );
 
-                  // map kind → slot for easy lookup
-                  const kindSlot = {};
-                  slotMap.forEach(({ kind, slot }) => {
-                    kindSlot[kind] = slot;
-                  });
-
                   // box/svg/content-selector per kind
-                  const BOX = {
-                    IMG: imgBox,
+                  // BOX/SVG resolved per-iteration for IMG (multiple instances)
+                  const BOX_STATIC = {
                     AUDIO: audioBox,
                     EXTRA: extraBox,
                     TIP: tipBox,
                     EXTENDED: extendedBox,
                     COMBO: comboBox,
                   };
-                  const SVG = {
-                    IMG: imgArwSvg,
+                  const SVG_STATIC = {
                     AUDIO: audioArwSvg,
                     EXTRA: extraSvg,
                     TIP: tipSvg,
@@ -4845,277 +4699,412 @@
                     COMBO: comboSvg,
                   };
                   const CONTENT_SEL = {
-                    IMG: '#img-content',
-                    AUDIO: '#audio-content',
-                    EXTRA: '#extra-content',
-                    TIP: '#tip-content',
-                    EXTENDED: '#extended-content',
-                    COMBO: null, // combo manages its own internal scroll
+                    IMG: '.win-img-content',
+                    AUDIO: '.win-audio-content',
+                    EXTRA: '.win-extra-content',
+                    TIP: '.win-tip-content',
+                    EXTENDED: '.win-extended-content',
+                    COMBO: null,
                   };
 
-                  // track placed rects for arrow-line anchoring
+                  // Build X positions for each screen column (1/2/3)
+                  // col1=left of tooltip, col2=right, col3=further in fill direction
+                  const levelsScreenCol = LEVELS_SCREEN_COL[colIdx] || 2;
+                  const fillOrder = COL_FILL_ORDER[colIdx] || [2, 3];
+
+                  // Physical X for each screen column
+                  function colScreenX(screenCol) {
+                    if (screenCol === levelsScreenCol) return null; // occupied by levels
+                    // relative to mainR
+                    const rightX = mainR.right + SLOT_COL_GAP;
+                    const leftX = mainR.left - SLOT_COL_GAP - SLOT_COL_W;
+                    const right2X = mainR.right + SLOT_COL_GAP * 2 + SLOT_COL_W;
+                    const left2X =
+                      mainR.left - SLOT_COL_GAP * 2 - SLOT_COL_W * 2;
+
+                    // map screen col to physical X based on which side levels is on
+                    if (levelsScreenCol === 1) {
+                      // levels on left → col2=right, col3=further right
+                      if (screenCol === 2) return { x: rightX, side: 'right' };
+                      if (screenCol === 3) return { x: right2X, side: 'right' };
+                    } else if (levelsScreenCol === 2) {
+                      // levels in middle → col1=left, col3=right
+                      if (screenCol === 1) return { x: leftX, side: 'left' };
+                      if (screenCol === 3) return { x: rightX, side: 'right' };
+                    } else {
+                      // levels on right → col1=left, col2=further left
+                      if (screenCol === 1) return { x: leftX, side: 'left' };
+                      if (screenCol === 2) return { x: left2X, side: 'left' };
+                    }
+                    return { x: rightX, side: 'right' }; // fallback
+                  }
+
+                  // track bottom of last placed window per screen column
+                  const colBottom = {}; // screenCol → bottomY
+                  for (const sc of [1, 2, 3]) colBottom[sc] = mainR.top;
+
                   const placedRects = {}; // kind → DOMRect
 
-                  // ── place each window ──
-                  // Dynamic stacking: windows in the same column stack vertically.
-                  // Track the bottom Y of the last placed window per column side.
-                  const colBottom = {
-                    R: mainR.top,
-                    L: mainR.top,
-                    M: mainR.top,
-                  };
+                  // first window in col2 (primary fill) gets Stylish offset
+                  // when vertical tree connector crosses that column's entry point
+                  const firstInCol = {}; // screenCol → bool (has a window been placed yet)
 
-                  // A slot is "solo" if it's the only window in its column
-                  const occupiedSlots = new Set(slotMap.map((e) => e.slot));
-                  function countInCol(colLetter) {
-                    return slotMap.filter((e) => e.slot.charAt(0) === colLetter)
-                      .length;
-                  }
-                  function isSoloInCol(slot) {
-                    return countInCol(slot.charAt(0)) === 1;
-                  }
+                  let _imgBoxIdx = 0; // tracks which imgBoxes[i] to use for IMG kind
 
-                  for (const { kind, slot } of slotMap) {
-                    const box = BOX[kind];
-                    const svg = SVG[kind];
+                  for (const { kind, col: assignedCol } of winColMap) {
+                    if (imgOnly && kind !== 'IMG') continue;
+                    const _imgInstIdx = kind === 'IMG' ? _imgBoxIdx : -1;
+                    const box =
+                      kind === 'IMG'
+                        ? imgBoxes[_imgBoxIdx]?.box
+                        : BOX_STATIC[kind];
+                    const svg =
+                      kind === 'IMG'
+                        ? imgBoxes[_imgBoxIdx]?.svg
+                        : SVG_STATIC[kind];
+                    const placedKey =
+                      kind === 'IMG' ? `IMG_${_imgBoxIdx}` : kind;
+                    if (kind === 'IMG' && box) _imgBoxIdx++;
                     const contentSel = CONTENT_SEL[kind];
                     if (!box) continue;
 
-                    const pos = slotToPosition(slot, mainR, vwC, vhC);
-                    const colLetter = slot.charAt(0); // R, L, M
-                    const isSolo = isSoloInCol(slot);
+                    // find actual column to place in (may overflow to next)
+                    let screenCol = assignedCol;
+                    let posInfo = colScreenX(screenCol);
 
-                    // Y: stack below previous window in same column
+                    // helper: compute availH for a given column
+                    function availInCol(sc) {
+                      const bot = colBottom[sc] || mainR.top;
+                      const sy = bot + (bot > mainR.top ? SLOT_ROW_GAP : 0);
+                      return vhC - sy - 8;
+                    }
+
+                    // measure real content height for non-media windows
+                    // (content is filled before runLayout, so scrollHeight is accurate)
+                    let minNeeded = MIN_SECONDARY_H;
+                    if (box && kind !== 'IMG' && kind !== 'AUDIO') {
+                      box.style.display = 'flex';
+                      box.style.maxHeight = 'none';
+                      box.style.width = SLOT_COL_W + 'px';
+                      box.style.position = 'fixed';
+                      box.style.top = '-9999px';
+                      const natural = Math.min(box.scrollHeight, SOLO_MAX_H);
+                      box.style.display = 'none';
+                      box.style.maxHeight = '';
+                      box.style.top = '';
+                      if (natural > MIN_SECONDARY_H) minNeeded = natural;
+                    } else if (kind === 'IMG') {
+                      minNeeded = 120;
+                    } else if (kind === 'AUDIO') {
+                      minNeeded = 60;
+                    }
+
+                    // if not enough room in assigned column → overflow to next
+                    if (!posInfo || availInCol(screenCol) < minNeeded) {
+                      for (const sc of fillOrder) {
+                        if (sc === screenCol) continue;
+                        const pi = colScreenX(sc);
+                        if (pi && availInCol(sc) >= minNeeded) {
+                          screenCol = sc;
+                          posInfo = pi;
+                          break;
+                        }
+                      }
+                    }
+                    if (!posInfo) continue;
+
+                    // clamp X to viewport
+                    let { x, side } = posInfo;
+                    if (x < 4) x = 4;
+                    if (x + SLOT_COL_W > vwC - 4) x = vwC - SLOT_COL_W - 4;
+
                     const startY =
-                      colBottom[colLetter] +
-                      (colBottom[colLetter] > mainR.top ? SLOT_ROW_GAP : 0);
+                      (colBottom[screenCol] || mainR.top) +
+                      ((colBottom[screenCol] || mainR.top) > mainR.top
+                        ? SLOT_ROW_GAP
+                        : 0);
 
-                    box.style.left = pos.x + 'px';
-                    box.style.top = startY + 'px';
-                    box.style.width = pos.w + 'px';
-
-                    const isMediaKind = kind === 'IMG';
-
-                    // Available height from startY to bottom of viewport
                     const availH = vhC - startY - 8;
-
-                    // Skip this window if not enough room
                     if (availH < MIN_SECONDARY_H) {
                       console.warn(
-                        `[Древо] Нет места для окна ${kind} (слот ${slot}) — пропускаем`,
+                        `[Древо] Нет места для окна ${kind} — пропускаем`,
                       );
                       continue;
                     }
 
-                    const cap =
-                      kind === 'IMG'
-                        ? Math.min(SOLO_MAX_H, availH)
-                        : isSolo
-                          ? Math.min(SOLO_MAX_H, availH)
-                          : Math.min(SOLO_MAX_H, availH);
+                    box.style.left = x + 'px';
+                    box.style.top = startY + 'px';
+                    box.style.width = SLOT_COL_W + 'px';
 
+                    const isMediaKind = kind === 'IMG';
+                    const isSolo =
+                      winColMap.filter((e) => e.col === screenCol).length === 1;
+                    const cap = Math.min(SOLO_MAX_H, availH);
                     let effectiveH = cap;
 
-                    // IMG: size from filename hint (_W_H) — dimensions known before load.
-                    // This is the FINAL size, no resizing after load.
+                    // IMG: size from filename hint
                     if (kind === 'IMG' && imgSources.length) {
                       const firstSrc = imgSources[0]?.src || '';
                       const hint = parseSizeHint(firstSrc);
-                      const containerW = pos.w - 20; // pos.w=320, padding 10px each side
+                      const containerW = SLOT_COL_W - 20;
                       const hinted = hintedHeight(hint, containerW, cap);
-
-                      if (hinted) {
-                        // measure real header height dynamically
+                      if (hinted && !wantsMaximum) {
                         box.style.display = 'flex';
                         const hdr = box.querySelector('.tt-header');
                         const hdrH = hdr
                           ? hdr.getBoundingClientRect().height
                           : 36;
                         box.style.display = '';
-                        effectiveH = Math.min(hinted + hdrH + 20, cap); // +20 for padding
+                        effectiveH = Math.min(hinted + hdrH + 20, cap);
                       }
                     }
+
                     box.style.maxHeight = effectiveH + 'px';
                     box.style.height = isMediaKind ? effectiveH + 'px' : '';
                     box.style.minHeight = '';
                     box.style.display = 'flex';
 
-                    // For IMG: don't call pinContentHeight on first pass — the DOM
-                    // contains only a spinner (26px), which would make pinContentHeight
-                    // For IMG: only call pinContentHeight if media already loaded
-                    // (naturalWidth > 0). On first runLayout pass the spinner is inside
-                    // so we skip it. On the re-run after Promise.all(imgLoadPromises)
-                    // the real media is there and we can pin correctly.
                     if (contentSel && kind !== 'IMG')
                       pinContentHeight(box, contentSel);
-                    // IMG: don't call pinContentHeight — content uses flex:1 and
-                    // fills the box naturally. Only disable scroll class explicitly.
                     if (kind === 'IMG' && contentSel) {
                       const cont = box.querySelector(contentSel);
                       if (cont) cont.classList.remove('needs-scroll');
                     }
 
+                    void box.offsetHeight; // force layout flush
                     const rect = box.getBoundingClientRect();
-                    placedRects[kind] = rect;
+                    placedRects[placedKey] = rect;
+                    // prefer computed bottom for media (hint-sized), rect for text windows
+                    colBottom[screenCol] =
+                      kind === 'IMG' ? startY + effectiveH : rect.bottom;
 
-                    // Update column bottom tracker for dynamic stacking
-                    colBottom[colLetter] = rect.bottom;
+                    // ── STYLISH OFFSET ──
+                    // First window in a column that sits beside the vertical tree connector
+                    // drops 40px so the horizontal connector line doesn't overlap the vertical one.
+                    // colIdx=0 (left perk): connector is left of col1 → no offset needed
+                    // colIdx=1 (mid perk):  connector between col1 and col2 → offset for col1 first win
+                    // colIdx=2 (right perk):connector between col1 and col2 → offset for col1 first win
+                    const isFirstInCol = !firstInCol[screenCol];
+                    firstInCol[screenCol] = true;
+                    // Stylish offset needed only when horizontal line would cross
+                    // the vertical tree connector:
+                    // colIdx=0 (left perk): tree connector LEFT of col1 → no stylish needed
+                    // colIdx=1 (mid perk):  tree connector between col1-col2 → stylish LEFT (side=left)
+                    // colIdx=2 (right perk):tree connector between col2-col3 (RIGHT side) → no stylish for left
+                    const needsStylish =
+                      isFirstInCol && colIdx === 1 && side === 'left';
+                    const STYLISH_OFFSET = needsStylish ? 40 : 0;
 
-                    // ── connector line ──
-                    // Row 1 windows (R1/L1/M1): connect horizontally (Stylish rules apply)
-                    // Row 2/3 windows: short vertical stub from window above in same column
-                    const rowNum = parseInt(slot.charAt(1)); // 1, 2, or 3
-                    const isTop = rowNum === 1;
-                    const sameSide = colLetter;
-
-                    if (isTop) {
-                      // "Stylish" connector: right-side windows (RT) align at mainR.top,
-                      // left-side windows (LT) drop 40px below mainR.top so the two
-                      // horizontal lines visibly start at different heights on the same
-                      // vertical connector — the original "Stylish left" look.
-                      // Stylish rules — offset secondary window 40px down so horizontal
-                      // line doesn't overlap the vertical tree connector:
-                      //
-                      // Row 1 (colIdx=0, leftmost):  vertical line is LEFT of all windows → no offset
-                      // Row 2 (colIdx=1, middle):    vertical line crosses between L and M → Stylish LEFT
-                      // Row 3 (colIdx=2, rightmost): vertical line crosses between M and R → Stylish RIGHT
-                      const STYLISH_OFFSET =
-                        pos.side === 'left' && colIdx === 1
-                          ? 40
-                          : pos.side === 'right' && colIdx === 2
-                            ? 40
-                            : 0;
-                      if (STYLISH_OFFSET) {
-                        // reposition the box itself to match the offset
-                        box.style.top = startY + STYLISH_OFFSET + 'px';
-                        // For IMG: keep maxHeight = effectiveH (content-sized, don't shrink).
-                        // For others: reduce by offset since box moved down.
-                        if (kind !== 'IMG') {
-                          box.style.maxHeight =
-                            Math.max(80, effectiveH - STYLISH_OFFSET) + 'px';
-                        }
-
-                        if (contentSel && kind !== 'IMG')
-                          pinContentHeight(box, contentSel);
-                        if (kind === 'IMG' && contentSel) {
-                          const cont = box.querySelector(contentSel);
-                          if (cont) {
-                            cont.classList.remove('needs-scroll');
-                            cont.style.height = '';
-                            cont.style.maxHeight = '';
-                          }
-                        }
-                        // re-measure
-                        const r2 = box.getBoundingClientRect();
-                        placedRects[kind] = r2;
+                    if (STYLISH_OFFSET) {
+                      box.style.top = startY + STYLISH_OFFSET + 'px';
+                      if (kind !== 'IMG') {
+                        box.style.maxHeight =
+                          Math.max(80, effectiveH - STYLISH_OFFSET) + 'px';
                       }
-                      const finalRect = placedRects[kind];
-                      // Both RT (Stylish right) and LT (Stylish left) get a single
-                      // horizontal line only — the vertical part already exists as the
-                      // icon→tooltip connector. Drawing it again would double the stroke.
-                      {
-                        const R2 = Math.round;
+                      if (contentSel && kind !== 'IMG')
+                        pinContentHeight(box, contentSel);
+                      const r2 = box.getBoundingClientRect();
+                      placedRects[placedKey] = r2;
+                      colBottom[screenCol] = r2.bottom;
+                    }
+
+                    const finalRect = placedRects[placedKey];
+
+                    // ── CONNECTOR LINE ──
+                    if (!svg) continue;
+
+                    if (isFirstInCol || STYLISH_OFFSET) {
+                      const R2 = Math.round;
+                      const isOverflow = screenCol !== fillOrder[0];
+
+                      // for overflow column: L-shape going below all primary-col windows
+                      // for primary column: simple horizontal from mainR / icX
+                      let svgContent, totalLen;
+
+                      if (isOverflow && !needsStylish) {
+                        // short horizontal from last col2 window edge to this window
+                        const primaryColX2 = colScreenX(fillOrder[0])?.x || 0;
+                        const primaryMaxBottom2 = Object.values(placedRects)
+                          .filter(
+                            (r) =>
+                              r &&
+                              Math.abs(
+                                Math.round(r.left) - Math.round(primaryColX2),
+                              ) < 5,
+                          )
+                          .reduce(
+                            (max, r) => Math.max(max, r.bottom),
+                            mainR.top,
+                          );
+                        // find the last primary col window by bottom
+                        const lastPrimaryRect = Object.values(placedRects)
+                          .filter(
+                            (r) =>
+                              r &&
+                              Math.abs(
+                                Math.round(r.left) - Math.round(primaryColX2),
+                              ) < 5,
+                          )
+                          .reduce(
+                            (last, r) =>
+                              r.bottom > (last?.bottom || 0) ? r : last,
+                            null,
+                          );
+                        // start from the right edge of the rightmost window in primary col
+                        // (= right edge of col2 windows, not mainR.right which is further left)
+                        const _primaryRight = Object.values(placedRects)
+                          .filter((r) => r)
+                          .filter((r) =>
+                            side === 'right'
+                              ? Math.round(r.left) >=
+                                  Math.round(mainR.right) - 5 &&
+                                Math.round(r.left) < Math.round(finalRect.left)
+                              : Math.round(r.right) <=
+                                  Math.round(mainR.left) + 5 &&
+                                Math.round(r.right) >
+                                  Math.round(finalRect.right),
+                          )
+                          .reduce(
+                            (best, r) =>
+                              side === 'right'
+                                ? r.right > (best?.right || 0)
+                                  ? r
+                                  : best
+                                : r.left < (best?.left || Infinity)
+                                  ? r
+                                  : best,
+                            null,
+                          );
+                        const fromX2 = _primaryRight
+                          ? side === 'right'
+                            ? R2(_primaryRight.right)
+                            : R2(_primaryRight.left)
+                          : side === 'right'
+                            ? R2(mainR.right)
+                            : R2(mainR.left);
+                        const toX2 =
+                          side === 'right'
+                            ? R2(finalRect.left)
+                            : R2(finalRect.right);
+                        const lineY2 = R2(finalRect.top + 18);
+                        totalLen = Math.abs(toX2 - fromX2);
+                        svgContent = `<line x1="${fromX2}" y1="${lineY2}" x2="${toX2}" y2="${lineY2}"
+                          stroke="#50556a" stroke-width="1.5"
+                          stroke-dasharray="${totalLen}" stroke-dashoffset="${totalLen}"
+                          style="animation:dashIn .4s ease forwards"/>`;
+                      } else {
+                        // simple horizontal — draw at header level of the window
                         const lineY = R2(finalRect.top + 18);
-                        // RT with Stylish offset (colIdx=2): vertical line passes through
-                        //   icX between M and R slots → line starts from icX
-                        // RT without offset (colIdx=0,1): vertical is left of all windows
-                        //   → line starts from mainR.right (no overlap)
-                        // LT with Stylish offset (colIdx=1): starts from icX
-                        const fromX = R2(
-                          pos.side === 'right' && STYLISH_OFFSET
-                            ? icX
-                            : pos.side === 'right'
-                              ? mainR.right
-                              : icX,
-                        );
-                        const toX = R2(
-                          pos.side === 'right'
-                            ? finalRect.left
-                            : finalRect.right,
-                        );
-                        const len = Math.abs(toX - fromX);
-                        svg.style.cssText =
-                          `display:block;position:fixed;left:0;top:0;` +
-                          `width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
-                        svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-                        svg.innerHTML = `<line x1="${fromX}" y1="${lineY}" x2="${toX}" y2="${lineY}"
-                        stroke="#50556a" stroke-width="1.5"
-                        stroke-dasharray="${len}" stroke-dashoffset="${len}"
-                        style="animation:dashIn .4s ease forwards"/>`;
+                        let fromX;
+                        if (needsStylish) {
+                          fromX = R2(icX);
+                        } else {
+                          fromX =
+                            side === 'right' ? R2(mainR.right) : R2(mainR.left);
+                        }
+                        const toX =
+                          side === 'right'
+                            ? R2(finalRect.left)
+                            : R2(finalRect.right);
+                        totalLen = Math.abs(toX - fromX);
+                        svgContent = `<line x1="${fromX}" y1="${lineY}" x2="${toX}" y2="${lineY}"
+                          stroke="#50556a" stroke-width="1.5"
+                          stroke-dasharray="${totalLen}" stroke-dashoffset="${totalLen}"
+                          style="animation:dashIn .4s ease forwards"/>`;
+                      }
+
+                      svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                      svg.setAttribute('width', vwC);
+                      svg.setAttribute('height', vhC);
+                      svg.style.display = 'block';
+                      svg.style.position = 'fixed';
+                      svg.style.left = '0';
+                      svg.style.top = '0';
+                      svg.style.pointerEvents = 'none';
+                      svg.style.zIndex = '501';
+                      svg.style.overflow = 'visible';
+                      svg.innerHTML = svgContent;
+                      if (debugLines) {
+                        const _el = svg.querySelector('line,polyline');
+                        if (_el) {
+                          let _pts = [];
+                          if (_el.tagName === 'line') {
+                            _pts = [
+                              {
+                                x: +_el.getAttribute('x1'),
+                                y: +_el.getAttribute('y1'),
+                              },
+                              {
+                                x: +_el.getAttribute('x2'),
+                                y: +_el.getAttribute('y2'),
+                              },
+                            ];
+                          } else {
+                            _pts = _el
+                              .getAttribute('points')
+                              .trim()
+                              .split(/\s+/)
+                              .map((p) => {
+                                const [x, y] = p.split(',');
+                                return { x: +x, y: +y };
+                              });
+                          }
+                          _pts.forEach((p) => {
+                            svg.innerHTML +=
+                              `<circle cx="${p.x}" cy="${p.y}" r="4" fill="red" style="animation:none"/>` +
+                              `<text x="${p.x + 6}" y="${p.y - 4}" fill="red" font-size="10" font-family="monospace" style="animation:none">${Math.round(p.x)},${Math.round(p.y)}</text>`;
+                          });
+                        }
                       }
                     } else {
-                      // row 2/3: find the window directly above in the same column
-                      const prevSlot = sameSide + (rowNum - 1);
-                      const prevKind = slotMap.find(
-                        (e) => e.slot === prevSlot,
-                      )?.kind;
-                      const anchorRect = prevKind
-                        ? placedRects[prevKind]
-                        : mainR;
-
-                      // re-measure after dynamic startY positioning
-                      const finalRect = box.getBoundingClientRect();
-                      placedRects[kind] = finalRect;
-                      colBottom[colLetter] = finalRect.bottom;
-
-                      // short vertical stub
-                      const R2 = Math.round;
-                      const lx = R2(anchorRect.left + 20);
-                      const ly1 = R2(anchorRect.bottom);
-                      const ly2 = R2(finalRect.top);
-                      const llen = Math.max(1, Math.abs(ly2 - ly1));
-                      svg.style.cssText =
-                        `display:block;position:fixed;left:0;top:0;` +
-                        `width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
-                      svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-                      svg.innerHTML = `<line x1="${lx}" y1="${ly1}" x2="${lx}" y2="${ly2}"
-                      stroke="#50556a" stroke-width="1.5"
-                      stroke-dasharray="${llen}" stroke-dashoffset="${llen}"
-                      style="animation:dashIn .4s ease forwards"/>`;
+                      // short vertical stub from bottom of previous window to top of this one
+                      // find previous window rect in same column using placedKey
+                      const _prevAnchorKey = (() => {
+                        const keys = [];
+                        let ci2 = 0;
+                        for (const e of winColMap) {
+                          const k = e.kind === 'IMG' ? `IMG_${ci2}` : e.kind;
+                          if (e.kind === 'IMG') ci2++;
+                          if (k === placedKey) break;
+                          if (e.col === screenCol) keys.push(k);
+                        }
+                        return keys[keys.length - 1];
+                      })();
+                      const anchorRect =
+                        _prevAnchorKey && placedRects[_prevAnchorKey]
+                          ? placedRects[_prevAnchorKey]
+                          : mainR;
+                      if (anchorRect && svg) {
+                        const R2 = Math.round;
+                        const lx = R2(finalRect.left + 20);
+                        const ly1 = R2(anchorRect.bottom);
+                        const ly2 = R2(finalRect.top);
+                        const llen = Math.max(1, Math.abs(ly2 - ly1));
+                        svg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
+                        svg.setAttribute('width', vwC);
+                        svg.setAttribute('height', vhC);
+                        svg.style.display = 'block';
+                        svg.style.position = 'fixed';
+                        svg.style.left = '0';
+                        svg.style.top = '0';
+                        svg.style.pointerEvents = 'none';
+                        svg.style.zIndex = '501';
+                        svg.style.overflow = 'visible';
+                        svg.innerHTML = `<line x1="${lx}" y1="${ly1}" x2="${lx}" y2="${ly2}"
+                          stroke="#50556a" stroke-width="1.5"
+                          stroke-dasharray="${llen}" stroke-dashoffset="${llen}"
+                          style="animation:dashIn .3s ease forwards"/>`;
+                        if (debugLines) {
+                          svg.innerHTML +=
+                            `<circle cx="${lx}" cy="${ly1}" r="4" fill="red" style="animation:none"/>` +
+                            `<text x="${lx + 6}" y="${ly1 - 4}" fill="red" font-size="10" font-family="monospace" style="animation:none">${lx},${ly1}</text>` +
+                            `<circle cx="${lx}" cy="${ly2}" r="4" fill="red" style="animation:none"/>` +
+                            `<text x="${lx + 6}" y="${ly2 - 4}" fill="red" font-size="10" font-family="monospace" style="animation:none">${lx},${ly2}</text>`;
+                        }
+                      }
                     }
-                  }
-
-                  // ── IMG special: clear any leftover scroll state ──
-                  if (placedRects['IMG']) {
-                    const imgCont = imgBox.querySelector('#img-content');
-                    if (imgCont) {
-                      imgCont.classList.remove('needs-scroll');
-                      imgCont.style.height = '';
-                      imgCont.style.maxHeight = '';
-                    }
-                  }
-
-                  // ── IMG2: second image window (imgs[] with slider:false) ──
-                  // img2 is not in WINDOW_PRIORITY — it always goes right below IMG.
-                  if (hasImg2 && placedRects['IMG']) {
-                    const imgRectForImg2 = placedRects['IMG'];
-                    const i2w = SLOT_COL_W;
-                    img2Box.style.display = 'flex';
-                    img2Box.style.width = i2w + 'px';
-                    img2Box.style.left = imgRectForImg2.left + 'px';
-                    const i2y = Math.round(
-                      imgRectForImg2.bottom + SLOT_ROW_GAP,
-                    );
-                    const i2maxH = Math.max(80, vhC - i2y - 8);
-                    img2Box.style.top = i2y + 'px';
-                    img2Box.style.maxHeight = i2maxH + 'px';
-                    pinContentHeight(img2Box, '#img2-content');
-                    const img2Rect = img2Box.getBoundingClientRect();
-                    // short vertical connector from img bottom to img2 top
-                    const R2 = Math.round;
-                    const lx = R2(imgRectForImg2.left + 20);
-                    const ly1 = R2(imgRectForImg2.bottom);
-                    const ly2 = R2(img2Rect.top);
-                    const llen = Math.max(1, Math.abs(ly2 - ly1));
-                    img2ArwSvg.style.cssText =
-                      `display:block;position:fixed;left:0;top:0;` +
-                      `width:${vwC}px;height:${vhC}px;pointer-events:none;z-index:499;overflow:visible;`;
-                    img2ArwSvg.setAttribute('viewBox', `0 0 ${vwC} ${vhC}`);
-                    img2ArwSvg.innerHTML = `<line x1="${lx}" y1="${ly1}" x2="${lx}" y2="${ly2}"
-                    stroke="#50556a" stroke-width="1.5"
-                    stroke-dasharray="${llen}" stroke-dashoffset="${llen}"
-                    style="animation:dashIn .4s ease forwards"/>`;
-                  }
+                  } // end for winColMap
+                  // IMG2 is now placed by the main winColMap loop as kind='IMG2'
 
                   // ── COMBO: attach click handlers for focus-jump ──
                   if (placedRects['COMBO']) {
@@ -5203,14 +5192,7 @@
           } // end runLayout
 
           runLayout(); // run immediately — no waiting on media load
-          // if media loads AFTER this first pass (slow network), re-run layout
-          // once so the box resizes from spinner-height to its real size and
-          // combo/extra reposition accordingly. Cheap no-op if already sized right.
-          if (imgLoadPromises.length) {
-            Promise.all(imgLoadPromises).then(() =>
-              requestAnimationFrame(() => requestAnimationFrame(runLayout)),
-            );
-          }
+          // size is known from filename hint — no second runLayout needed
         }
 
         // draw L-line — terminates at the NEAR edge of the tooltip, never runs underneath it
@@ -5241,35 +5223,23 @@
         ttOverlay.style.background = 'rgba(0,0,0,0)';
         ttArrowSvg.style.display = 'none';
         ttArrowSvg.innerHTML = '';
-        document.getElementById('extra-box').style.display = 'none';
-        document.getElementById('extra-arrow-svg').style.display = 'none';
-        document.getElementById('tip-box').style.display = 'none';
-        document.getElementById('tip-arrow-svg').style.display = 'none';
-        document.getElementById('audio-box').style.display = 'none';
-        document.getElementById('audio-arrow-svg').style.display = 'none';
-        document.getElementById('audio-box')._audioRefs?.forEach((a) => {
-          try {
-            a.pause();
-          } catch (e) {}
-          a.src = '';
+        // stop audio/video before destroying
+        document.querySelectorAll('.win-audio').forEach((ab) => {
+          ab._audioRefs?.forEach((a) => {
+            try {
+              a.pause();
+            } catch (e) {}
+            a.src = '';
+          });
         });
-        document.getElementById('extended-box').style.display = 'none';
-        document.getElementById('extended-arrow-svg').style.display = 'none';
-        document.getElementById('img-box').style.display = 'none';
-        document.getElementById('img-arrow-svg').style.display = 'none';
-        document.getElementById('img-dots').classList.remove('visible');
-        document.getElementById('img2-box').style.display = 'none';
-        document.getElementById('img2-arrow-svg').style.display = 'none';
-        // stop any playing video so audio doesn't keep going in the background
         document
-          .querySelectorAll('#img-content video, #img2-content video')
+          .querySelectorAll('.win-img video, .win-img-content video')
           .forEach((v) => {
             v.pause();
             v.removeAttribute('src');
             v.load();
           });
-        document.getElementById('combo-box').style.display = 'none';
-        document.getElementById('combo-arrow-svg').style.display = 'none';
+        destroyWins();
         document.body.style.overflow = '';
         if (_currentBtn) {
           _currentBtn.classList.remove('glowing');
@@ -5795,6 +5765,191 @@
           }, 400);
         }, 500);
       });
+
+      // ── DEBUG: window.print() layout snapshot ──
+      window.dbl = function (debugDots = false) {
+        const allCols = document.querySelectorAll('.col');
+        const perkCol =
+          document
+            .querySelector('.perk.glowing, .perk[data-active]')
+            ?.closest('.col') ||
+          document.querySelector('.perk-icon.glowing')?.closest('.col');
+        const colIdx = perkCol ? [...allCols].indexOf(perkCol) : -1;
+        const rowName =
+          ['1-й (левый)', '2-й (средний)', '3-й (правый)'][colIdx] ||
+          'неизвестно';
+
+        const tooltip = document.getElementById('tooltip');
+        const ttR = tooltip?.getBoundingClientRect();
+
+        const winTypes = [
+          'win-img',
+          'win-extra',
+          'win-tip',
+          'win-combo',
+          'win-extended',
+          'win-audio',
+        ];
+        const windows = [];
+        document
+          .querySelectorAll(winTypes.map((c) => '.' + c).join(','))
+          .forEach((box) => {
+            if (box.style.display === 'none') return;
+            const r = box.getBoundingClientRect();
+            windows.push({
+              type: box.className.replace(/\s+/g, ' '),
+              top: Math.round(r.top),
+              left: Math.round(r.left),
+              width: Math.round(r.width),
+              height: Math.round(r.height),
+              bottom: Math.round(r.bottom),
+            });
+          });
+
+        const svgs = [];
+        document.querySelectorAll('.win-connector-svg').forEach((svg) => {
+          if (svg.style.display === 'none') return;
+          const line = svg.querySelector('line,polyline');
+          if (!line) return;
+          svgs.push({
+            kind: line.tagName,
+            points:
+              line.getAttribute('points') ||
+              `${line.getAttribute('x1')},${line.getAttribute('y1')} → ${line.getAttribute('x2')},${line.getAttribute('y2')}`,
+          });
+        });
+
+        const result = {
+          row: rowName,
+          colIdx,
+          viewport: `${window.innerWidth}×${window.innerHeight}`,
+          tooltip: ttR
+            ? {
+                top: Math.round(ttR.top),
+                left: Math.round(ttR.left),
+                w: Math.round(ttR.width),
+                h: Math.round(ttR.height),
+              }
+            : null,
+          windows,
+          connectors: svgs,
+        };
+        console.log(result);
+
+        // debugDots: draw colored anchors + lines for each connector
+        document
+          .querySelectorAll('.win-debug-svg')
+          .forEach((el) => el.remove());
+        if (debugDots) {
+          const dbgSvg = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'svg',
+          );
+          dbgSvg.setAttribute('class', 'win-debug-svg');
+          dbgSvg.setAttribute(
+            'viewBox',
+            `0 0 ${window.innerWidth} ${window.innerHeight}`,
+          );
+          dbgSvg.setAttribute('width', window.innerWidth);
+          dbgSvg.setAttribute('height', window.innerHeight);
+          dbgSvg.style.cssText =
+            'position:fixed;left:0;top:0;pointer-events:none;z-index:9999;overflow:visible;';
+          document.body.appendChild(dbgSvg);
+
+          const palette = [
+            '#ff4444',
+            '#44ff44',
+            '#4488ff',
+            '#ffaa00',
+            '#ff44ff',
+            '#00ffee',
+            '#ffff00',
+            '#ff8844',
+          ];
+
+          document
+            .querySelectorAll('.win-connector-svg')
+            .forEach((svg, idx) => {
+              if (svg.style.display === 'none') return;
+              const el = svg.querySelector('line,polyline');
+              if (!el) return;
+              const color = palette[idx % palette.length];
+
+              // parse points
+              let pts = [];
+              if (el.tagName === 'line') {
+                pts = [
+                  {
+                    x: parseFloat(el.getAttribute('x1')),
+                    y: parseFloat(el.getAttribute('y1')),
+                  },
+                  {
+                    x: parseFloat(el.getAttribute('x2')),
+                    y: parseFloat(el.getAttribute('y2')),
+                  },
+                ];
+              } else {
+                pts = el
+                  .getAttribute('points')
+                  .trim()
+                  .split(/\s+/)
+                  .map((p) => {
+                    const [x, y] = p.split(',');
+                    return { x: parseFloat(x), y: parseFloat(y) };
+                  });
+              }
+              if (pts.length < 2) return;
+
+              // draw line/polyline
+              const line = document.createElementNS(
+                'http://www.w3.org/2000/svg',
+                el.tagName,
+              );
+              if (el.tagName === 'line') {
+                line.setAttribute('x1', pts[0].x);
+                line.setAttribute('y1', pts[0].y);
+                line.setAttribute('x2', pts[pts.length - 1].x);
+                line.setAttribute('y2', pts[pts.length - 1].y);
+              } else {
+                line.setAttribute('points', el.getAttribute('points'));
+              }
+              line.setAttribute('fill', 'none');
+              line.setAttribute('stroke', color);
+              line.setAttribute('stroke-width', '2');
+              dbgSvg.appendChild(line);
+
+              // draw anchor dots at each point
+              pts.forEach((p, pi) => {
+                const dot = document.createElementNS(
+                  'http://www.w3.org/2000/svg',
+                  'circle',
+                );
+                dot.setAttribute('cx', p.x);
+                dot.setAttribute('cy', p.y);
+                dot.setAttribute(
+                  'r',
+                  pi === 0 || pi === pts.length - 1 ? 5 : 3,
+                );
+                dot.setAttribute('fill', color);
+                dbgSvg.appendChild(dot);
+                // label
+                const txt = document.createElementNS(
+                  'http://www.w3.org/2000/svg',
+                  'text',
+                );
+                txt.setAttribute('x', p.x + 7);
+                txt.setAttribute('y', p.y - 4);
+                txt.setAttribute('fill', color);
+                txt.setAttribute('font-size', '10');
+                txt.setAttribute('font-family', 'monospace');
+                txt.textContent = `${Math.round(p.x)},${Math.round(p.y)}`;
+                dbgSvg.appendChild(txt);
+              });
+            });
+        }
+
+        return result;
+      };
 
       licenseToolbar.addEventListener('click', showLicense);
       licenseOverlay.addEventListener('click', hideLicense);
