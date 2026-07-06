@@ -2463,11 +2463,38 @@
       const IMG_MAX_H = 420; // maximum height of img box (px)
       const SOLO_MAX_H = 560; // max height when window is solo in column
 
+      // ── WINDOW RENDER DIRECTION ──
+      // Per-row direction: keys are perk row numbers (1-based in config, 0-based internally).
+      // 'FROM_LEFT'  — fill nearest column first, then further (default)
+      // 'FROM_RIGHT' — fill furthest column first, then closer (RTL style)
+      const WINDOW_ORDER = {
+        1: 'FROM_LEFT', // perk row 1 (leftmost col)
+        2: 'FROM_RIGHT', // perk row 2 (middle col)
+        3: 'FROM_RIGHT', // perk row 3 (rightmost col)
+      };
+
       // column fill order per perk row (column indices, 1-based)
+      const COL_FILL_ORDER_LTR = {
+        0: [2, 3],
+        1: [1, 3],
+        2: [1, 3],
+      };
+      const COL_FILL_ORDER_RTL = {
+        0: [3, 2],
+        1: [3, 1],
+        2: [3, 1],
+      };
+      // build COL_FILL_ORDER from WINDOW_ORDER (convert 1-based keys to 0-based)
       const COL_FILL_ORDER = {
-        0: [2, 3], // perk row 0: fill col2 first, then col3
-        1: [1, 3], // perk row 1: fill col1 first, then col3
-        2: [1, 3], // perk row 2: same as row 1
+        0: (WINDOW_ORDER[1] === 'FROM_RIGHT'
+          ? COL_FILL_ORDER_RTL
+          : COL_FILL_ORDER_LTR)[0],
+        1: (WINDOW_ORDER[2] === 'FROM_RIGHT'
+          ? COL_FILL_ORDER_RTL
+          : COL_FILL_ORDER_LTR)[1],
+        2: (WINDOW_ORDER[3] === 'FROM_RIGHT'
+          ? COL_FILL_ORDER_RTL
+          : COL_FILL_ORDER_LTR)[2],
       };
 
       // which screen column (1/2/3) the levels tooltip occupies
@@ -2818,8 +2845,23 @@
       // ── WINDOW PLACEMENT RESOLVER ──
       // Returns [{kind, col}] — col is 1/2/3 (screen column).
       // positions: {combo: 2} overrides column for that kind.
-      function resolveWindowCols(activeKinds, positions, perkRowIdx) {
-        const fillOrder = COL_FILL_ORDER[perkRowIdx] || [2, 3];
+      function resolveWindowCols(
+        activeKinds,
+        positions,
+        perkRowIdx,
+        localOrder,
+      ) {
+        // localOrder: 'from_left' | 'from_right' — per-perk override
+        // falls back to WINDOW_ORDER[row] → COL_FILL_ORDER
+        let fillOrder;
+        if (localOrder) {
+          const _rtl = localOrder.toLowerCase() === 'from_right';
+          fillOrder = (_rtl ? COL_FILL_ORDER_RTL : COL_FILL_ORDER_LTR)[
+            perkRowIdx
+          ] || [2, 3];
+        } else {
+          fillOrder = COL_FILL_ORDER[perkRowIdx] || [2, 3];
+        }
         const levelsCol = LEVELS_SCREEN_COL[perkRowIdx] || 1;
 
         // parse explicit positions (integer column)
@@ -4680,6 +4722,7 @@
                     activeKinds,
                     perkData?.positions || null,
                     colIdx,
+                    perkData?.order || null,
                   );
 
                   // box/svg/content-selector per kind
@@ -4891,8 +4934,13 @@
                     // colIdx=0 (left perk): tree connector LEFT of col1 → no stylish needed
                     // colIdx=1 (mid perk):  tree connector between col1-col2 → stylish LEFT (side=left)
                     // colIdx=2 (right perk):tree connector between col2-col3 (RIGHT side) → no stylish for left
+                    // Stylish offset: first window drops 40px to avoid crossing vertical tree connector
+                    // colIdx=1 (mid perk, windows go LEFT):  connector is between col1-col2 → offset left side
+                    // colIdx=2 (right perk, windows go RIGHT): connector is between col2-col3 → offset right side
                     const needsStylish =
-                      isFirstInCol && colIdx === 1 && side === 'left';
+                      isFirstInCol &&
+                      ((colIdx === 1 && side === 'left') ||
+                        (colIdx === 2 && side === 'right'));
                     const STYLISH_OFFSET = needsStylish ? 40 : 0;
 
                     if (STYLISH_OFFSET) {
