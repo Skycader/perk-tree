@@ -1090,7 +1090,6 @@
       /* solo mode: content shrinks to fit its own text, not the box height */
       .win-extra-content.solo-content,
       .win-tip-content.solo-content,
-      .win-extended-content.solo-content,
       .win-combo-levels.solo-content {
         flex: 0 0 auto;
         overflow-y: auto;
@@ -1207,13 +1206,13 @@
         overflow-y: auto;
         flex: 1;
         min-height: 0;
-        padding: 0;
+        padding: 8px 12px;
         font-size: 10px;
         color: #7a8090;
         line-height: 1.55;
       }
       .win-tip-content p {
-        padding: 6px 12px 0;
+        padding: 0;
         margin: 0;
       }
       .win-tip-content h1,
@@ -1263,7 +1262,6 @@
       /* explicit blank-line spacer support: <empty-line></empty-line> or <br> */
       .win-extra-content .md-blank-line,
       .win-tip-content .md-blank-line,
-      .win-extended-content .md-blank-line,
       .win-combo-levels .md-blank-line {
         display: block;
         height: 10px;
@@ -1461,119 +1459,6 @@
         border-radius: 50%;
         bottom: 100%;
         pointer-events: none;
-      }
-
-      /* ── EXTENDED WINDOW ── */
-      .win-extended {
-        display: none;
-        position: fixed;
-        z-index: 500;
-        width: 320px;
-        background: #0d0e18;
-        border: 1px solid #2a3050;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
-        pointer-events: auto;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      .win-extended .tt-header {
-        flex-shrink: 0;
-        background: rgba(255, 255, 255, 0.03);
-        border-bottom: 1px solid #1c1f2e;
-        padding: 8px 12px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #8090a0;
-        letter-spacing: 0.05em;
-        font-family: 'JetBrains Mono', monospace;
-      }
-      /* ── EXTENDED CONTENT SPACING — tweak these to taste ── */
-      :root {
-        --ext-row-pad-v: 4px; /* vertical padding per level row  */
-        --ext-row-pad-h: 8px; /* horizontal padding per level row */
-        --ext-font-size: 10px; /* text size inside extended window */
-      }
-      .win-extended-content {
-        overflow-y: auto;
-        flex: 1;
-        min-height: 0;
-        padding: 0;
-        font-size: var(--ext-font-size);
-        color: #7a8090;
-        line-height: 1.55;
-      }
-      .win-extended-content .tt-row {
-        padding: var(--ext-row-pad-v) var(--ext-row-pad-h);
-      }
-      /* extended content shares the same MD styles as extra/tip */
-      .win-extended-content p {
-        padding: 6px 12px 0;
-        margin: 0;
-      }
-      .win-extended-content h1,
-      .win-extended-content h2,
-      .win-extended-content h3 {
-        font-family: 'JetBrains Mono', monospace;
-        color: #c0bdb4;
-        padding: 8px 12px 2px;
-        margin: 0;
-        font-size: 11px;
-        border-bottom: 1px solid #1e2235;
-      }
-      .win-extended-content strong {
-        color: #c0bdb4;
-      }
-      .win-extended-content em {
-        color: #8898b0;
-      }
-      .win-extended-content code {
-        font-family: 'JetBrains Mono', monospace;
-        background: #0a0b14;
-        border: 1px solid #1e2235;
-        padding: 1px 4px;
-        border-radius: 2px;
-        font-size: 9px;
-        color: #7ab0d0;
-      }
-      .win-extended-content ul,
-      .win-extended-content ol {
-        padding: 4px 12px 4px 28px;
-        margin: 0;
-      }
-      .win-extended-content li {
-        margin: 2px 0;
-      }
-      .win-extended-content blockquote {
-        border-left: 2px solid #3a4570;
-        padding: 4px 10px;
-        margin: 4px 12px;
-        color: #7a8090;
-      }
-      .win-extended-content hr {
-        border: none;
-        border-top: 1px solid #1e2235;
-        margin: 6px 12px;
-      }
-      .win-extended-content table {
-        border-collapse: collapse;
-        width: calc(100% - 24px);
-        margin: 6px 12px;
-        font-size: 10px;
-      }
-      .win-extended-content th {
-        background: #0f1020;
-        border: 1px solid #1e2235;
-        padding: 3px 7px;
-        color: #8090a0;
-        font-weight: 600;
-        text-align: left;
-      }
-      .win-extended-content td {
-        border: 1px solid #1a1d2e;
-        padding: 3px 7px;
-      }
-      .win-extended-content tr:nth-child(even) td {
-        background: rgba(255, 255, 255, 0.02);
       }
 
       /* ── COMBO WINDOW ── */
@@ -2425,14 +2310,7 @@
       const IPR_GLOW_SPREAD = 2; // px — glow spread
       const debugLines = false; // set true to show red connector anchors
 
-      const WINDOW_PRIORITY = [
-        'IMG',
-        'AUDIO',
-        'EXTRA',
-        'TIP',
-        'COMBO',
-        'EXTENDED',
-      ];
+      const WINDOW_PRIORITY = ['IMG', 'AUDIO', 'EXTRA', 'TIP', 'COMBO'];
 
       // ── TOOLTIP HEIGHT LIMITS ──
       // maxH = min(vh * PERCENT, PX_CAP) so the tooltip never exceeds either bound.
@@ -2694,6 +2572,14 @@
             font-family="JetBrains Mono,monospace" font-size="8"
             font-weight="700" fill="#8090a0">i</text>
         </svg>`,
+        warning: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"
+          style="display:inline-block;vertical-align:middle;flex-shrink:0">
+          <rect x="1" y="1" width="12" height="12" rx="3" ry="3"
+            fill="rgba(160,40,40,0.18)" stroke="#a03028" stroke-width="1.2"/>
+          <text x="7" y="10" text-anchor="middle"
+            font-family="JetBrains Mono,monospace" font-size="9"
+            font-weight="700" fill="#cc4038">!</text>
+        </svg>`,
       };
 
       // Cache for fetched external SVGs
@@ -2837,7 +2723,7 @@
       function destroyWins() {
         document
           .querySelectorAll(
-            '.win-img,.win-extra,.win-tip,.win-combo,.win-extended,.win-audio,.win-connector-svg',
+            '.win-img,.win-extra,.win-tip,.win-combo,.win-audio,.win-connector-svg',
           )
           .forEach((el) => el.remove());
       }
@@ -3702,14 +3588,6 @@
         const audioArwSvg = _audio.svg;
         // audio header text set later (from track title)
 
-        const _extended = createWin('extended');
-        const extendedBox = _extended.box;
-        const extendedContent = _extended.content;
-        const extendedHeader = _extended.hdr;
-        const extendedSvg = _extended.svg;
-        _extended.hdr.innerHTML =
-          '<span style="opacity:.6;margin-right:5px">⚡</span>Расширенные способности';
-
         const _combo = createWin('combo');
         const comboBox = _combo.box;
         const comboSvg = _combo.svg;
@@ -3843,7 +3721,6 @@
         const hasExtra = !!perkData?.extra;
         const hasTip = !!perkData?.tip;
         // extended lives in skillLevelDescriptions[perkId].extended (like combo)
-        const hasExtended = !!lvlData?.extended;
         const audiosList = Array.isArray(perkData?.audios)
           ? perkData.audios.filter(Boolean)
           : [];
@@ -3912,7 +3789,6 @@
           AUDIO: hasAudio,
           EXTRA: hasExtra,
           TIP: hasTip,
-          EXTENDED: hasExtended,
           COMBO: hasCombo,
         };
         // perkData.priority: optional local override of window order for this perk only.
@@ -4486,133 +4362,6 @@
             });
           }
 
-          if (hasExtended) {
-            const extData = lvlData.extended;
-            const partnerId = Object.keys(extData).find(
-              (k) => k !== 'title' && typeof extData[k] === 'object',
-            );
-            const partnerData = partnerId ? extData[partnerId] : extData;
-
-            // resolve partner perk name + chapter colour (for the clickable square)
-            let partnerName = partnerId || '';
-            let partnerHex = '#585e72';
-            let partnerSkill = null;
-            if (partnerId) {
-              for (const skill of D.skills) {
-                const found = skill.perks.find((pp) => pp.id === partnerId);
-                if (found) {
-                  partnerName = found.name;
-                  partnerSkill = skill;
-                  break;
-                }
-              }
-              if (partnerSkill) {
-                const CM2 = {
-                  orange: '#e09040',
-                  red: '#cc3838',
-                  blue: '#3e80d0',
-                  green: '#28a860',
-                  purple: '#7840c8',
-                  yellow: '#b89030',
-                  black: '#303030',
-                  o: '#e09040',
-                  r: '#cc3838',
-                  b: '#3e80d0',
-                  g: '#28a860',
-                  p: '#7840c8',
-                  y: '#b89030',
-                  k: '#303030',
-                };
-                partnerHex =
-                  CM2[(partnerSkill.color || '').toLowerCase()] || '#585e72';
-              }
-            }
-
-            // header: icon + title
-            const extTitle =
-              extData.title ||
-              partnerData.title ||
-              partnerName ||
-              '⚡ Расширенные способности';
-            extendedHeader.innerHTML = partnerId
-              ? `<span class="combo-sq ext-partner-sq" data-rid="${partnerId}"
-                  style="display:inline-block;width:8px;height:8px;background:${partnerHex};
-                  border-radius:1px;flex-shrink:0;cursor:pointer;margin-right:6px;
-                  transition:box-shadow .2s;vertical-align:middle;"
-                  onmouseenter="this.style.boxShadow='0 0 6px 3px ${partnerHex}88'"
-                  onmouseleave="this.style.boxShadow=''"></span>${extTitle}`
-              : extTitle;
-
-            extendedContent.innerHTML = Object.entries(partnerData)
-              .filter(([k]) => /^\d+$/.test(k))
-              .map(([lvl, txt]) => {
-                const col = LEVEL_COLOURS[parseInt(lvl)] || '#585e72';
-                return `<div class="tt-row">
-                  <span class="tt-lvl" style="color:${col}">${lvl}</span>
-                  <span class="tt-text">${renderMD(txt)}</span>
-                </div>`;
-              })
-              .join('');
-
-            // click on square → focus partner perk (same as combo squares)
-            if (partnerId) {
-              extendedHeader
-                .querySelector('.ext-partner-sq')
-                ?.addEventListener('click', () => {
-                  const allPerks = document.querySelectorAll('.perk');
-                  let target = null;
-                  for (const pe of allPerks) {
-                    if (pe.dataset.perkId === partnerId) {
-                      target = pe;
-                      break;
-                    }
-                  }
-                  if (!target) return;
-                  hideTooltip();
-                  target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                  });
-                  setTimeout(() => {
-                    let fo = document.getElementById('focus-overlay');
-                    if (!fo) {
-                      fo = document.createElement('div');
-                      fo.id = 'focus-overlay';
-                      fo.style.cssText =
-                        'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
-                      document.body.appendChild(fo);
-                    }
-                    requestAnimationFrame(() => {
-                      fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
-                    });
-                    target.style.position = 'relative';
-                    target.style.zIndex = '51';
-                    target.style.transition = 'box-shadow .35s ease';
-                    target.style.boxShadow = `0 0 0 2px ${partnerHex},0 0 30px ${partnerHex}80`;
-                    function clearFocusExt() {
-                      fo.style.background = 'rgba(0,0,0,0)';
-                      target.style.boxShadow = '';
-                      setTimeout(() => {
-                        fo.remove();
-                        target.style.position = '';
-                        target.style.zIndex = '';
-                        target.style.transition = '';
-                      }, 350);
-                    }
-                    fo.addEventListener('click', clearFocusExt, { once: true });
-                    setTimeout(() => {
-                      window.addEventListener('scroll', clearFocusExt, {
-                        once: true,
-                        passive: true,
-                      });
-                      window.addEventListener('keydown', clearFocusExt, {
-                        once: true,
-                      });
-                    }, 400);
-                  }, 500);
-                });
-            }
-          }
           if (hasCombo) {
             // resolve {name, colourHex} for any perk id, searching all chapters
             function resolvePerk(pid) {
@@ -4731,14 +4480,12 @@
                     AUDIO: audioBox,
                     EXTRA: extraBox,
                     TIP: tipBox,
-                    EXTENDED: extendedBox,
                     COMBO: comboBox,
                   };
                   const SVG_STATIC = {
                     AUDIO: audioArwSvg,
                     EXTRA: extraSvg,
                     TIP: tipSvg,
-                    EXTENDED: extendedSvg,
                     COMBO: comboSvg,
                   };
                   const CONTENT_SEL = {
@@ -4746,7 +4493,6 @@
                     AUDIO: '.win-audio-content',
                     EXTRA: '.win-extra-content',
                     TIP: '.win-tip-content',
-                    EXTENDED: '.win-extended-content',
                     COMBO: null,
                   };
 
@@ -5835,7 +5581,6 @@
           'win-extra',
           'win-tip',
           'win-combo',
-          'win-extended',
           'win-audio',
         ];
         const windows = [];
