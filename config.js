@@ -3,6 +3,7 @@ const STAND_DATA = {
   desc: 'Могуществено Властителя неоспоримо.', //Ужасающая сила стэнда!
   version: '0.8',
   user: 'Yamighami',
+  range_columns: ['RANGE', 'NAME', 'LOGO'],
   otherNames: [
     'Авторитет (Authority)',
     'Абсолют (Absolute)',

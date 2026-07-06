@@ -2232,7 +2232,7 @@
     </div>
 
     <!-- Load config -->
-    <script src="overlord.js"></script>
+    <script src="config.js"></script>
     <!-- LICENSE / docs modal — tabs and content are generated from the MODAL constant -->
     <div id="license-overlay"></div>
     <div id="license-modal">
@@ -3311,23 +3311,45 @@
       }
 
       const sb = document.getElementById('sidebar');
+      // ── RANKS TABLE COLUMNS ──
+      // Order and visibility of columns. Remove any entry to hide that column.
+      // Available: '#' | 'RANGE' | 'NAME' | 'LOGO'
+      // range_columns from config takes priority over RANKS_TABLE
+      const RANKS_TABLE =
+        Array.isArray(D.range_columns) && D.range_columns.length
+          ? D.range_columns.map((s) => s.toUpperCase())
+          : ['#', 'RANGE', 'NAME', 'LOGO'];
+
+      const _rankColLabel = {
+        '#': '#',
+        RANGE: 'Уровень',
+        NAME: 'Ранг',
+        LOGO: 'Знак',
+      };
       const ranksHtml = D.ranks
         .map((r, i) => {
           const minLvl = i * lvlPerRank;
           const maxLvl =
             i === D.ranks.length - 1 ? maxLevel : (i + 1) * lvlPerRank - 1;
-          return `<tr>
-    <td class="r-lvl">${minLvl}–${maxLvl}</td>
-    <td class="r-name">${r.name}</td>
-    <td>${makeBadge(r.badge)}</td>
-  </tr>`;
+          const cells = RANKS_TABLE.map((col) => {
+            if (col === '#')
+              return `<td class="r-lvl" style="color:#454a60">${i + 1}</td>`;
+            if (col === 'RANGE')
+              return `<td class="r-lvl">${minLvl}–${maxLvl}</td>`;
+            if (col === 'NAME') return `<td class="r-name">${r.name}</td>`;
+            if (col === 'LOGO') return `<td>${makeBadge(r.badge)}</td>`;
+            return '';
+          }).join('');
+          return `<tr>${cells}</tr>`;
         })
         .join('');
-
+      const _rankHeaders = RANKS_TABLE.map(
+        (col) => `<th>${_rankColLabel[col] || col}</th>`,
+      ).join('');
       sb.innerHTML = `
   <div class="sb-hdr"><span style="display:inline-block;width:9px;height:9px;background:#e09040;border-radius:1px;margin-right:7px;vertical-align:middle"></span>Ранги</div>
   <div class="rtable-wrap"><table class="rtable">
-    <thead><tr><th>Уровень</th><th>Ранг</th><th>Знак</th></tr></thead>
+    <thead><tr>${_rankHeaders}</tr></thead>
     <tbody>${ranksHtml}</tbody>
   </table></div>`;
 
@@ -4779,6 +4801,16 @@
                           : 36;
                         box.style.display = '';
                         effectiveH = Math.min(hinted + hdrH + 20, cap);
+                        console.log('[IMG SIZE]', {
+                          src: firstSrc,
+                          hint,
+                          containerW,
+                          hinted,
+                          hdrH,
+                          cap,
+                          effectiveH,
+                          boxW: box.getBoundingClientRect().width,
+                        });
                       }
                     }
 
