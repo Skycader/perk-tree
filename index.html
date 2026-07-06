@@ -1766,6 +1766,66 @@
         margin: 2px 0;
         color: #7a8090;
       }
+      /* ── LEVEL NAVIGATION ── */
+      .tt-lvl-nav {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        z-index: 10;
+      }
+      .tt-lvl-nav-btn {
+        width: 22px;
+        height: 22px;
+        background: rgba(13,14,24,0.9);
+        border: 1px solid #2a3050;
+        color: #585e72;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: border-color .15s, color .15s;
+        font-family: inherit;
+      }
+      .tt-lvl-nav-btn:hover,
+      .tt-lvl-nav:hover .tt-lvl-nav-btn {
+        border-color: #8090a0;
+        color: #c0bdb4;
+      }
+      .tt-lvl-nav-popup {
+        display: none;
+        position: absolute;
+        bottom: 22px;
+        left: 0;
+        flex-direction: column-reverse;
+        gap: 4px;
+        padding-bottom: 8px; /* bridge gap to button so hover stays active */
+      }
+      .tt-lvl-nav:hover .tt-lvl-nav-popup {
+        display: flex;
+      }
+      .tt-lvl-nav-sq {
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9px;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid #2a3050;
+        background: rgba(13,14,24,0.9);
+        color: #585e72;
+        transition: border-color .15s, color .15s, background .15s;
+        user-select: none;
+      }
+      .tt-lvl-nav-sq:hover {
+        border-color: #8090a0;
+        color: #c0bdb4;
+        background: rgba(30,34,53,0.95);
+      }
+
       /* ── LICENSE TOOLBAR + MODAL ── */
 
       #license-overlay {
@@ -2131,6 +2191,44 @@
         </button>
       </div>
       <div class="tt-levels" id="tt-levels"></div>
+      <div class="tt-lvl-nav" id="tt-lvl-nav">
+        <div class="tt-lvl-nav-popup" id="tt-lvl-nav-popup"></div>
+        <button
+          class="tt-lvl-nav-btn"
+          id="tt-lvl-nav-btn"
+          title="Перейти к уровню"
+        >
+          <svg viewBox="0 0 14 14" width="12" height="12">
+            <line
+              x1="2"
+              y1="4"
+              x2="12"
+              y2="4"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+            <line
+              x1="2"
+              y1="7"
+              x2="12"
+              y2="7"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+            <line
+              x1="2"
+              y1="10"
+              x2="8"
+              y2="10"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Load config -->
@@ -3437,6 +3535,42 @@
             })
             .join('');
         }
+
+        // ── LEVEL NAV: populate 0-10 jump buttons ──
+        const ttLvlNavPopup = document.getElementById('tt-lvl-nav-popup');
+        ttLvlNavPopup.innerHTML = '';
+        // collect which level numbers actually exist in this tooltip
+        const _navLevels = Array.from(
+          ttLevels.querySelectorAll('.tt-row:not(.tt-row-sub)'),
+        )
+          .map((row) => {
+            const lvlEl = row.querySelector('.tt-lvl');
+            return lvlEl ? parseInt(lvlEl.textContent) : NaN;
+          })
+          .filter((n) => !isNaN(n))
+          .sort((a, b) => a - b);
+        _navLevels.forEach((lvl) => {
+          const sq = document.createElement('div');
+          sq.className = 'tt-lvl-nav-sq';
+          sq.textContent = lvl;
+          const col = LEVEL_COLOURS[lvl] || '#585e72';
+          sq.style.borderColor = col + '80';
+          sq.style.color = col;
+          sq.addEventListener('click', () => {
+            const rows = ttLevels.querySelectorAll('.tt-row:not(.tt-row-sub)');
+            for (const row of rows) {
+              const lvlEl = row.querySelector('.tt-lvl');
+              if (lvlEl && parseInt(lvlEl.textContent) === lvl) {
+                row.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                break;
+              }
+            }
+          });
+          ttLvlNavPopup.appendChild(sq);
+        });
+        // show nav only when tooltip has enough rows to need scrolling
+        const ttLvlNav = document.getElementById('tt-lvl-nav');
+        ttLvlNav.style.display = _navLevels.length > 4 ? 'block' : 'none';
 
         // hover for left-column perk squares — use mouseenter/mouseleave on each
         // square directly (added after innerHTML is set) to avoid bubbling issues.
