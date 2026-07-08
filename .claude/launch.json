@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [".claude/nocache_server.py", "8199"],
+      "port": 8199
+    }
+  ]
+}

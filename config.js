@@ -1,4 +1,4 @@
-const STAND_DATA = {
+export const STAND_DATA = {
   standName: 'Властитель',
   desc: 'Могуществено Властителя неоспоримо.', //Ужасающая сила стэнда!
   version: '0.8',
