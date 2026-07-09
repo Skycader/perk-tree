@@ -11,6 +11,14 @@ body {
   color: #c0bdb4;
 }
 
+/* ── MD HIGHLIGHT (==text==) — used across all rendered-MD containers ── */
+mark {
+  background: rgba(224, 144, 64, 0.22);
+  color: #e0ddd6;
+  padding: 0 3px;
+  border-radius: 2px;
+}
+
 /* ── CUSTOM SCROLLBAR ── */
 ::-webkit-scrollbar {
   width: 4px;

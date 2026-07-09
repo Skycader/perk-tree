@@ -112,7 +112,7 @@ export function renderLevelMD(text) {
   } else {
     html = preprocessed.replace(/\n/g, '<br>');
   }
-  return processSvgTags(processPerkTags(html));
+  return processSvgTags(processPerkTags(processHighlightTags(html)));
 }
 
 export function renderMD(text) {
@@ -131,5 +131,5 @@ export function renderMD(text) {
   } else {
     html = preprocessed.replace(/\n/g, '<br>');
   }
-  return processSvgTags(processPerkTags(html));
+  return processSvgTags(processPerkTags(processHighlightTags(html)));
 }
