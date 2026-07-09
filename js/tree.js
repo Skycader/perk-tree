@@ -1,7 +1,7 @@
 import { STAND_DATA } from '../config.js';
 import { ttArrowSvg } from './dom-refs.js';
 import { renderLevelMD } from './markdown.js';
-import { showTooltip } from './tooltip.js';
+import { showTooltip, isCurrentBtn } from './tooltip.js';
 import { showSpectre, isSpectreOpen } from './spectre.js';
 import { COLOURS, FOCUS_DIM } from './constants.js';
 

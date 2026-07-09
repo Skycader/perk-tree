@@ -66,6 +66,11 @@ export function processSvgTags(html) {
   return html;
 }
 
+// Replace ==text== with <mark>text</mark> (marked has no native syntax for this).
+export function processHighlightTags(html) {
+  return html.replace(/==([^=\n]+?)==/g, '<mark>$1</mark>');
+}
+
 export function processPerkTags(html) {
   // New syntax: <perk name="standVisor">optional label</perk>
   // Old syntax: <perk>standVisor</perk> (still supported for compat)
