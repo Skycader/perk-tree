@@ -1,0 +1,734 @@
+/* ── EXTRA WINDOW ── */
+.win-img {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  width: 320px;
+  background: #0d0e18;
+  border: 1px solid #2a3050;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+  pointer-events: auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+.win-img-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+/* only enable scroll when pinContentHeight explicitly decides media overflows */
+.win-img-content.needs-scroll {
+  overflow-y: auto;
+}
+/* loading spinner shown in img-content/img2-content while media is fetching */
+.media-loading-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.media-loading-svg {
+  width: 26px;
+  height: 26px;
+  animation: media-spin 0.8s linear infinite;
+}
+.media-loading-svg circle {
+  fill: none;
+  stroke: #50556a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 60 200;
+}
+@keyframes media-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.win-img-content img,
+.win-img-content video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 2px;
+}
+/* applied via JS when natural content height exceeds the available space:
+   drop the max-height cap so the image renders at its real (width-limited)
+   size, letting the container's overflow-y:auto actually scroll the excess
+   instead of squeezing the whole image into a sliver that still gets clipped. */
+.win-img-content img.media-overflow,
+.win-img-content video.media-overflow,
+.win-img-content img.media-overflow,
+.win-img-content video.media-overflow {
+  max-height: none;
+  align-self: flex-start;
+}
+/* hide any native video chrome (progress bar / controls) on hover or otherwise */
+.win-img-content video::-webkit-media-controls,
+.win-img-content video::-webkit-media-controls-panel,
+.win-img-content video::-webkit-media-controls-play-button,
+.win-img-content video::-webkit-media-controls-timeline,
+.win-img-content video::-webkit-media-controls-volume-slider {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* fit:true (default) on video — fill the box, crop overflow, no black bars */
+.win-img-content video.fit-cover,
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+/* ── audio:true — speaker toggle wrapper for video ── */
+.media-audio-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+.media-audio-wrap video {
+  pointer-events: none;
+}
+.media-audio-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  background: rgba(13, 14, 24, 0.85);
+  border: 1px solid #2a3050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  z-index: 2;
+}
+.media-audio-btn:hover {
+  border-color: #e09040;
+  background: rgba(20, 16, 10, 0.9);
+}
+
+/* ── slider dots (used when imgs[] has >=2 items and slider:true) ── */
+#img-dots {
+  display: none;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 0 10px;
+}
+#img-dots.visible {
+  display: flex;
+}
+.img-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2a3050;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.img-dot:hover {
+  background: #4a5580;
+}
+.img-dot.active {
+  background: #e09040;
+  transform: scale(1.2);
+}
+.win-img-content video {
+  pointer-events: none;
+}
+
+.win-extra {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  width: 320px;
+  background: #0d0e18;
+  border: 1px solid #2a3050;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+  pointer-events: auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+.win-extra .tt-header {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1c1f2e;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8090a0;
+  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.win-extra-content {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  font-size: 10px;
+  color: #7a8090;
+  line-height: 1.55;
+}
+/* solo mode: content shrinks to fit its own text, not the box height */
+.win-extra-content.solo-content,
+.win-tip-content.solo-content,
+.win-combo-levels.solo-content {
+  flex: 0 0 auto;
+  overflow-y: auto;
+}
+/* md styles matching combo */
+.win-extra-content p {
+  padding: 6px 12px 0;
+  margin: 0;
+}
+.win-extra-content h1,
+.win-extra-content h2,
+.win-extra-content h3 {
+  font-family: 'JetBrains Mono', monospace;
+  color: #c0bdb4;
+  padding: 8px 12px 2px;
+  margin: 0;
+  font-size: 11px;
+  border-bottom: 1px solid #1e2235;
+}
+.win-extra-content strong {
+  color: #c0bdb4;
+}
+.win-extra-content em {
+  color: #8898b0;
+}
+.win-extra-content code {
+  font-family: 'JetBrains Mono', monospace;
+  background: #0a0b14;
+  border: 1px solid #1e2235;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  color: #7ab0d0;
+}
+.win-extra-content pre {
+  background: #0a0b14;
+  border: 1px solid #1e2235;
+  margin: 4px 12px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  border-radius: 2px;
+}
+.win-extra-content pre code {
+  border: none;
+  background: none;
+  padding: 0;
+}
+.win-extra-content ul,
+.win-extra-content ol {
+  padding: 4px 12px 4px 28px;
+  margin: 0;
+}
+.win-extra-content li {
+  margin: 2px 0;
+}
+.win-extra-content blockquote {
+  border-left: 2px solid #3a4570;
+  padding: 4px 10px;
+  margin: 4px 12px;
+  color: #7a8090;
+}
+.win-extra-content hr {
+  border: none;
+  border-top: 1px solid #1e2235;
+  margin: 6px 12px;
+}
+.win-extra-content table {
+  border-collapse: collapse;
+  width: calc(100% - 24px);
+  margin: 6px 12px;
+  font-size: 10px;
+}
+.win-extra-content th {
+  background: #0f1020;
+  border: 1px solid #1e2235;
+  padding: 3px 7px;
+  color: #8090a0;
+  font-weight: 600;
+  text-align: left;
+}
+.win-extra-content td {
+  border: 1px solid #1a1d2e;
+  padding: 3px 7px;
+}
+.win-extra-content tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── TIP WINDOW (small hint, same visual language as extra) ── */
+.win-tip {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  width: 320px;
+  background: #0d0e18;
+  border: 1px solid #2a3050;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+  pointer-events: auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+.win-tip .tt-header {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1c1f2e;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8090a0;
+  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.win-tip-content {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 12px;
+  font-size: 10px;
+  color: #7a8090;
+  line-height: 1.55;
+}
+.win-tip-content p {
+  padding: 0;
+  margin: 0;
+}
+.win-tip-content h1,
+.win-tip-content h2,
+.win-tip-content h3 {
+  font-family: 'JetBrains Mono', monospace;
+  color: #c0bdb4;
+  padding: 8px 12px 2px;
+  margin: 0;
+  font-size: 11px;
+  border-bottom: 1px solid #1e2235;
+}
+.win-tip-content strong {
+  color: #c0bdb4;
+}
+.win-tip-content em {
+  color: #8898b0;
+}
+.win-tip-content code {
+  font-family: 'JetBrains Mono', monospace;
+  background: #0a0b14;
+  border: 1px solid #1e2235;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  color: #7ab0d0;
+}
+.win-tip-content ul,
+.win-tip-content ol {
+  padding: 4px 12px 4px 28px;
+  margin: 0;
+}
+.win-tip-content li {
+  margin: 2px 0;
+}
+.win-tip-content blockquote {
+  border-left: 2px solid #3a4570;
+  padding: 4px 10px;
+  margin: 4px 12px;
+  color: #7a8090;
+}
+.win-tip-content hr {
+  border: none;
+  border-top: 1px solid #1e2235;
+  margin: 6px 12px;
+}
+/* explicit blank-line spacer support: <empty-line></empty-line> or <br> */
+.win-extra-content .md-blank-line,
+.win-tip-content .md-blank-line,
+.win-combo-levels .md-blank-line {
+  display: block;
+  height: 10px;
+}
+
+/* ── AUDIO WINDOW ── */
+.win-audio {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  width: 320px;
+  background: #0d0e18;
+  border: 1px solid #2a3050;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+  pointer-events: auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+.win-audio .tt-header {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1c1f2e;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8090a0;
+  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.audio-header-srt {
+  font-size: 10px;
+  font-weight: 400;
+  color: #c0bdb4;
+  letter-spacing: 0.06em;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+}
+.win-audio-content {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 0;
+}
+/* one track row — compact */
+.audio-track {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 12px 6px;
+  border-bottom: 1px solid #1a1d2e;
+  gap: 4px;
+}
+.audio-track:last-child {
+  border-bottom: none;
+}
+.audio-track-title {
+  font-size: 9px;
+  font-weight: 600;
+  color: #8090a0;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* controls row */
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.audio-play-btn {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.audio-play-btn:hover {
+  opacity: 1;
+}
+.audio-play-btn svg {
+  display: block;
+}
+/* progress bar */
+.audio-progress-wrap {
+  flex: 1;
+  height: 2px;
+  background: #1e2235;
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+}
+.audio-progress-wrap::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: 0;
+  right: 0;
+}
+.audio-progress-wrap.no-seek {
+  cursor: default;
+  pointer-events: none;
+}
+.audio-progress-fill {
+  height: 100%;
+  background: #e09040;
+  border-radius: 2px;
+  width: 0%;
+}
+.audio-progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background: #e09040;
+  border-radius: 50%;
+  left: 0%;
+}
+.audio-time {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #50556a;
+  flex-shrink: 0;
+  min-width: 34px;
+  text-align: right;
+}
+/* subtitle moved to header */
+/* volume popover — fixed position singleton, shown via JS */
+.audio-vol-btn {
+  flex-shrink: 0;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+  line-height: 0;
+  padding: 2px;
+}
+.audio-vol-btn:hover {
+  opacity: 1;
+}
+#audio-vol-popup {
+  display: none;
+  position: fixed;
+  background: #0d0e18;
+  border: 1px solid #2a3050;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+  padding: 8px 6px;
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+/* custom vertical volume slider — same style as progress bar */
+.audio-vol-track {
+  width: 2px;
+  height: 72px;
+  background: #1e2235;
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+}
+.audio-vol-track::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -12px;
+  right: -12px;
+}
+.audio-vol-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #e09040;
+  border-radius: 2px;
+}
+.audio-vol-thumb {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  width: 6px;
+  height: 6px;
+  background: #e09040;
+  border-radius: 50%;
+  bottom: 100%;
+  pointer-events: none;
+}
+
+/* ── COMBO WINDOW ── */
+.win-combo {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  width: 320px;
+  background: #0d0e18;
+  border: 1px solid #2a3050;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+  pointer-events: auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+.win-combo .tt-header {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #1c1f2e;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8090a0;
+  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.combo-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(28, 31, 46, 0.6);
+  font-size: 10px;
+  color: #7a8090;
+  line-height: 1.55;
+}
+.combo-item:last-child {
+  border-bottom: none;
+}
+.combo-item-hdr {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+.combo-item-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8090a0;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.combo-item-hdr {
+  cursor: pointer;
+}
+.combo-item-hdr:hover .combo-item-name {
+  color: #e0ddd6;
+}
+.combo-item-hdr:hover .combo-sq {
+  box-shadow: var(--combo-glow, none);
+}
+.combo-sq {
+  transition: box-shadow 0.2s;
+}
+.combo-item-lvl {
+  font-size: 9px;
+  color: #585e72;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.combo-item-desc {
+  font-size: 10px;
+  color: #7a8090;
+  line-height: 1.55;
+}
+.combo-item-desc p {
+  margin: 6px 0 0;
+  padding: 0;
+}
+.combo-item-desc p:first-child {
+  margin-top: 0;
+}
+.combo-item-desc h1,
+.combo-item-desc h2,
+.combo-item-desc h3 {
+  font-family: 'JetBrains Mono', monospace;
+  color: #c0bdb4;
+  margin: 8px 0 2px;
+  font-size: 11px;
+  border-bottom: 1px solid #1e2235;
+  padding-bottom: 2px;
+}
+.combo-item-desc strong {
+  color: #c0bdb4;
+}
+.combo-item-desc em {
+  color: #8898b0;
+}
+.combo-item-desc code {
+  font-family: 'JetBrains Mono', monospace;
+  background: #0a0b14;
+  border: 1px solid #1e2235;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  color: #7ab0d0;
+}
+.combo-item-desc pre {
+  background: #0a0b14;
+  border: 1px solid #1e2235;
+  margin: 4px 0;
+  padding: 6px 8px;
+  overflow-x: auto;
+  border-radius: 2px;
+}
+.combo-item-desc pre code {
+  border: none;
+  background: none;
+  padding: 0;
+}
+.combo-item-desc ul,
+.combo-item-desc ol {
+  padding: 0 0 0 18px;
+  margin: 4px 0;
+}
+.combo-item-desc li {
+  margin: 2px 0;
+}
+.combo-item-desc blockquote {
+  border-left: 2px solid #3a4570;
+  padding: 4px 10px;
+  margin: 4px 0;
+  color: #7a8090;
+}
+.combo-item-desc hr {
+  border: none;
+  border-top: 1px solid #1e2235;
+  margin: 6px 0;
+}
+.combo-item-desc table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 6px 0;
+  font-size: 10px;
+}
+.combo-item-desc th {
+  background: #0f1020;
+  border: 1px solid #1e2235;
+  padding: 3px 7px;
+  color: #8090a0;
+  font-weight: 600;
+  text-align: left;
+}
+.combo-item-desc td {
+  border: 1px solid #1a1d2e;
+  padding: 3px 7px;
+}
+.combo-item-desc tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+.win-combo-levels {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
