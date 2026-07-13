@@ -1,0 +1,2 @@
+- Release the notes of the unknown
+- Release the global search

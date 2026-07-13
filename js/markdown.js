@@ -90,12 +90,34 @@ export function processPerkTags(html) {
   );
 }
 
+// Strip the common leading whitespace that template-literal config values
+// pick up from matching the surrounding object's indentation in the source
+// file (e.g. `extra: \`text...\n          more text\`` — the 10 spaces are
+// a source-formatting artifact, not part of the actual content). Without
+// this, a second paragraph indented 4+ spaces after a blank line gets
+// misread by CommonMark as an indented code block. The first line is
+// ignored when computing the common indent since it always starts at the
+// opening backtick with zero indentation, regardless of the rest.
+function dedent(text) {
+  const lines = text.split('\n');
+  if (lines.length < 2) return text;
+  let minIndent = Infinity;
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '') continue;
+    minIndent = Math.min(minIndent, lines[i].match(/^[ \t]*/)[0].length);
+  }
+  if (!isFinite(minIndent) || minIndent === 0) return text;
+  return lines
+    .map((line) => line.slice(Math.min(line.match(/^[ \t]*/)[0].length, minIndent)))
+    .join('\n');
+}
+
 // Lightweight MD renderer for level description rows — avoids wrapping
 // everything in <p> blocks which inflate scrollHeight and break layout.
 // Uses parseInline for simple text, full parse only when block MD detected.
 export function renderLevelMD(text) {
   if (!text) return '';
-  const preprocessed = text
+  const preprocessed = dedent(text)
     .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '<br>')
     .replace(
       /<empty-line\s*\/?>(<\/empty-line>)?/gi,
@@ -118,7 +140,7 @@ export function renderLevelMD(text) {
 export function renderMD(text) {
   if (!text) return '';
   // normalise explicit line-break tags and \n before markdown parsing
-  let preprocessed = text
+  let preprocessed = dedent(text)
     .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '  \n') // → MD hard break
     .replace(
       /<empty-line\s*\/?>(<\/empty-line>)?/gi,
