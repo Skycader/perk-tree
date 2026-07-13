@@ -367,6 +367,12 @@
 .perk-chain-dep:hover {
   color: #c0bdb4;
 }
+.perk-chain-dep-lvl {
+  font-size: 9px;
+  color: #585e72;
+  margin-left: auto;
+  white-space: nowrap;
+}
 .perk-icon.glowing.ic-o {
   box-shadow:
     0 0 6px 3px rgba(224, 144, 64, 0.9),

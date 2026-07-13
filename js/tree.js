@@ -166,7 +166,9 @@ columns.forEach((chapters) => {
         tip.innerHTML =
           `<strong>Эта способность требует развития:</strong>` +
           p.requiredPerks
-            .map((rid) => {
+            .map((entry) => {
+              const [rid, reqLvlStr] = entry.split(':');
+              const reqLvl = reqLvlStr ? parseInt(reqLvlStr, 10) : null;
               let rname = rid,
                 rcolor = 'o';
               for (const skill of D.skills) {
@@ -209,7 +211,7 @@ columns.forEach((chapters) => {
           onmouseenter="this.querySelector('span').style.boxShadow='0 0 6px 3px ${hex}88, 0 0 14px 5px ${hex}44'; this.querySelectorAll('span')[1].style.color='#e0ddd6'"
           onmouseleave="this.querySelector('span').style.boxShadow=''; this.querySelectorAll('span')[1].style.color=''">
         <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
-        <span style="transition:color .15s">${rname}</span>
+        <span style="transition:color .15s">${rname}</span>${reqLvl ? `<span class="perk-chain-dep-lvl">от ур. ${reqLvl}</span>` : ''}
       </div>`;
             })
             .join('');
