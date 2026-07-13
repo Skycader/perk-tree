@@ -1,2 +1,3 @@
-- Release the notes of the unknown
-- Release the global search
+- Сделать загрузочные экраны с подсказками
+- Сделать лупу - навелся на выделенное слово - открыл окно с запиской неизветного
+- level descriptions в отдельные json
