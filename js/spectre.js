@@ -1,6 +1,7 @@
 import { STAND_DATA } from '../config.js';
 import { COLOUR_KEYS } from './constants.js';
 import { spTooltip, spOverlay, spHeader, spLevels, ttArrowSvg } from './dom-refs.js';
+import { perkCountByColor, totalPerks } from './tree.js';
 
 const D = STAND_DATA;
 
@@ -22,8 +23,13 @@ export function showSpectre(iconEl) {
   spLevels.innerHTML = Object.entries(D.spectre)
     .map(([colour, txt]) => {
       const hex = COLOUR_KEYS[colour] || '#888';
+      const count = perkCountByColor[colour] || 0;
+      const percent = totalPerks
+        ? Math.round((count / totalPerks) * 100)
+        : 0;
       return `<div class="tt-row">
 <span style="display:inline-block;width:10px;height:10px;background:${hex};border-radius:1px;flex-shrink:0;margin-top:2px"></span>
+<mark class="sp-share">${count}/${totalPerks} (${percent}%)</mark>
 <span class="tt-text">${txt}</span>
     </div>`;
     })
