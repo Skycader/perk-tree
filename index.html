@@ -258,15 +258,17 @@
 
     <!-- STARTUP NOTE — random tip from notes.js, shown once the tree has loaded -->
     <div id="notes-popup">
-      <button class="notes-nav notes-nav-prev" id="notes-prev" title="Предыдущая">
-        ‹
-      </button>
-      <button class="notes-nav notes-nav-next" id="notes-next" title="Следующая">
-        ›
-      </button>
       <div class="notes-title-box">
         <span id="notes-title"></span>
-        <button class="notes-close" id="notes-close" title="Закрыть">✕</button>
+        <div class="notes-header-actions">
+          <button class="notes-nav notes-nav-prev" id="notes-prev" title="Предыдущая">
+            ‹
+          </button>
+          <button class="notes-nav notes-nav-next" id="notes-next" title="Следующая">
+            ›
+          </button>
+          <button class="notes-close" id="notes-close" title="Закрыть">✕</button>
+        </div>
       </div>
       <div class="notes-content" id="notes-content"></div>
       <div class="notes-footer-author"><span id="notes-author"></span></div>
