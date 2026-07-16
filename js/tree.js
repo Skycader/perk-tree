@@ -1,6 +1,6 @@
 import { STAND_DATA } from '../config.js';
 import { ttArrowSvg } from './dom-refs.js';
-import { renderLevelMD } from './markdown.js';
+import { renderLevelMD, renderMD } from './markdown.js';
 import { showTooltip, isCurrentBtn } from './tooltip.js';
 import { showSpectre, isSpectreOpen } from './spectre.js';
 import { COLOURS, FOCUS_DIM } from './constants.js';
@@ -487,7 +487,7 @@ document.getElementById('bottom-bar').innerHTML = vulns.length
    .map(
      (v) => `<div class="bb-item">
    <div class="bb-item-name">${v.name}</div>
-   <div class="bb-item-desc">${(v.desc || '').replace(/\\n/g, '\n')}</div>
+   <div class="bb-item-desc">${renderMD(v.desc || '')}</div>
  </div>`,
    )
    .join('')}</div>`
