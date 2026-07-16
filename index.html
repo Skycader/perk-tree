@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="css/windows.css" />
     <link rel="stylesheet" href="css/loader.css" />
     <link rel="stylesheet" href="css/license.css" />
+    <link rel="stylesheet" href="css/notes.css" />
   </head>
   <body>
     <!-- global page-loading spinner: hidden by the inline script once init finishes -->
@@ -252,6 +253,29 @@
       <div id="license-panes"></div>
       <div id="license-footer">
         <a id="license-download" download>⬇ Скачать</a>
+      </div>
+    </div>
+
+    <!-- STARTUP NOTE — random tip from notes.js, shown once the tree has loaded -->
+    <div id="notes-popup">
+      <button class="notes-nav notes-nav-prev" id="notes-prev" title="Предыдущая">
+        ‹
+      </button>
+      <button class="notes-nav notes-nav-next" id="notes-next" title="Следующая">
+        ›
+      </button>
+      <div class="notes-title-box">
+        <span id="notes-title"></span>
+        <button class="notes-close" id="notes-close" title="Закрыть">✕</button>
+      </div>
+      <div class="notes-content" id="notes-content"></div>
+      <div class="notes-footer-author"><span id="notes-author"></span></div>
+      <label class="notes-startup-row" id="notes-startup-row">
+        <input type="checkbox" id="notes-startup-checkbox" />
+        Показывать заметки при запуске
+      </label>
+      <div class="notes-timer-track" id="notes-timer-track">
+        <div class="notes-timer-fill" id="notes-timer-fill"></div>
       </div>
     </div>
 

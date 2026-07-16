@@ -8,11 +8,13 @@ import { IPR_GLOW_BLUR, IPR_GLOW_SPREAD, FOCUS_DIM } from './constants.js';
 import { colRefs } from './tree.js';
 import { exportPNG } from './export-png.js';
 import { dbl } from './debug.js';
+import { maybeShowNotesOnStartup, hideNotesPopup } from './notes-popup.js';
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     hideTooltip();
     hideSpectre();
+    hideNotesPopup();
   }
 });
 
@@ -30,6 +32,7 @@ document.fonts.ready.then(() =>
       // initial layout is complete — hide the global page loader
       const pageLoader = document.getElementById('page-loader');
       if (pageLoader) pageLoader.classList.add('hidden');
+      maybeShowNotesOnStartup();
     }),
   ),
 );

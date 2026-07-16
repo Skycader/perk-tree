@@ -157,6 +157,12 @@ export const COLOUR_KEYS = {
   black: '#282827',
 };
 
+// ── STARTUP NOTES POPUP (notes.js) ──
+export const NOTES = {
+  timer: false, // false = no auto-close countdown, stays until closed manually
+  check: false, // false = hide the "show notes on startup" checkbox
+};
+
 // ── DOCUMENTATION MODAL ──
 // Tabs and their source files are declared here. Add/remove entries to
 // change what shows up in the modal — tabs, panes, and fetch calls are
