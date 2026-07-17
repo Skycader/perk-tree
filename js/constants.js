@@ -161,6 +161,7 @@ export const COLOUR_KEYS = {
 export const NOTES = {
   timer: false, // false = no auto-close countdown, stays until closed manually
   check: false, // false = hide the "show notes on startup" checkbox
+  extraHeight: 50, // px added on top of the note's natural content height
 };
 
 // ── PAGE LOADER ──

@@ -40,13 +40,25 @@ function renderNote(idx) {
 }
 
 // Sets `top` so the box's bottom edge sits REST_BOTTOM_GAP above the
-// viewport bottom, given its CURRENT height. Only called when first
-// resting (never on every note switch) — anchoring via `top` means content
-// height changes afterwards grow/shrink the box downward, keeping the
-// header fixed in place instead of dragging it up and down.
+// viewport bottom, given its CURRENT height (padded by NOTES.extraHeight —
+// see constants.js — so the box always has a bit of breathing room beyond
+// what the note's content strictly needs). Only called when first resting
+// (never on every note switch) — anchoring via `top` means content height
+// changes afterwards grow/shrink the box downward, keeping the header
+// fixed in place instead of dragging it up and down.
+//
+// min-height enforces that padded base height (.notes-content, flex: 1,
+// stretches to fill it); max-height caps the box to exactly the space
+// between the fixed top and the viewport bottom, so a later note switch
+// can't push it past the fixed top and off the bottom of the screen —
+// .notes-content (min-height: 0; overflow-y: auto — see notes.css) scrolls
+// internally once content exceeds that budget instead.
 function applyRestPosition() {
-  popup.style.top =
-    window.innerHeight - REST_BOTTOM_GAP - popup.offsetHeight + 'px';
+  const baseHeight = popup.offsetHeight + NOTES.extraHeight;
+  const top = window.innerHeight - REST_BOTTOM_GAP - baseHeight;
+  popup.style.top = top + 'px';
+  popup.style.minHeight = baseHeight + 'px';
+  popup.style.maxHeight = window.innerHeight - top - REST_BOTTOM_GAP + 'px';
 }
 
 function restartTimer() {

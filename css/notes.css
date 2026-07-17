@@ -25,11 +25,18 @@
   z-index: 10000;
   overflow: visible;
 }
+/* flex column: header/footer/timer are fixed-size, .notes-content is the
+   one flexible section — see applyRestPosition() in notes-popup.js, which
+   caps the whole box's height to whatever fits below the (fixed) header
+   down to the viewport bottom. Content beyond that scrolls internally
+   instead of pushing the box past the edge of the screen. */
 #notes-popup.visible {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 .notes-title-box {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -102,11 +109,12 @@
 }
 
 .notes-content {
+  flex: 1;
+  min-height: 0; /* let a flex child shrink below its content size — required for overflow-y:auto to actually kick in instead of the box just growing */
   padding: 10px 14px 0;
   font-size: 11px;
   color: #9098ac;
   line-height: 1.6;
-  max-height: 220px;
   overflow-y: auto;
 }
 .notes-content p {
@@ -152,6 +160,7 @@
 }
 
 .notes-footer-author {
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
   padding: 8px 14px 14px;
@@ -161,6 +170,7 @@
 }
 
 .notes-startup-row {
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -180,6 +190,7 @@
 }
 
 .notes-timer-track {
+  flex-shrink: 0;
   height: 3px;
   background: rgba(184, 144, 48, 0.12);
   overflow: hidden;

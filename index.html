@@ -76,6 +76,7 @@
          just for this one lightweight use. -->
     <script type="module" async>
       import { notes } from './notes.js';
+      import { NOTES } from './js/constants.js';
       const STORAGE_KEY = 'showNotesOnStartup';
       const showOnStartup =
         localStorage.getItem(STORAGE_KEY) !== 'false'; /* null (unset) → true */
@@ -95,6 +96,11 @@
           note.author || '';
         const popupEl = document.getElementById('notes-popup');
         popupEl.classList.add('visible', 'notes-loading-pos');
+        // same base-height padding as the resting state (settleNotesPopup →
+        // applyRestPosition in notes-popup.js), set here too so the box
+        // doesn't visibly grow when it settles — only its position animates.
+        popupEl.style.minHeight =
+          popupEl.offsetHeight + NOTES.extraHeight + 'px';
         // positioned via `top` (see notes.css) so the header stays put once
         // settled, regardless of content height changes. A static vh offset
         // can't reliably clear the spinner either way — its distance from
