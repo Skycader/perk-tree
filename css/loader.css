@@ -4,10 +4,8 @@
   inset: 0;
   z-index: 9999;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 22px;
   background: #070810;
   transition: opacity 0.3s ease;
 }
@@ -26,34 +24,4 @@
   stroke-width: 3;
   stroke-linecap: round;
   stroke-dasharray: 80 200;
-}
-
-/* ── loading-screen tip (notes.js), game-style "hint while the level loads" ── */
-#loader-tip {
-  width: 380px;
-  max-width: calc(100vw - 64px);
-  text-align: center;
-  min-height: 1px; /* avoid a layout jump once content pops in */
-}
-#loader-tip:empty {
-  display: none;
-}
-.loader-tip-title {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: #c8a038;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
-}
-.loader-tip-content {
-  font-size: 11px;
-  color: #7a8090;
-  line-height: 1.6;
-}
-.loader-tip-content strong {
-  color: #c0bdb4;
-}
-.loader-tip-content em {
-  color: #8898b0;
 }

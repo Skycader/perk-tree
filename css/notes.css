@@ -1,8 +1,20 @@
-/* ── STARTUP NOTE popup (notes.js) ── */
+/* ── STARTUP NOTE popup (notes.js) ──
+   z-index sits above #page-loader (9999) on purpose: an inline script in
+   index.html shows this same element early, while the loader is still up,
+   so the loading-screen tip and the post-load popup are literally the same
+   box, not two different UIs.
+
+   Positioned via `top`, not `bottom`, and always set inline from JS (see
+   index.html's early script and settleNotesPopup() in notes-popup.js) —
+   never a static CSS default. Anchoring from the top keeps the header
+   pinned in place when the content height changes (switching notes via the
+   arrows): the box grows/shrinks downward instead of dragging the header
+   up and down with it. `transition` is likewise added inline only for the
+   one intentional "settle" move, not unconditionally — otherwise the very
+   first appearance would itself animate. */
 #notes-popup {
   display: none;
   position: fixed;
-  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   width: 420px;
@@ -10,7 +22,7 @@
   background: #0d0e18;
   border: 1px solid #2a3050;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
-  z-index: 700;
+  z-index: 10000;
   overflow: visible;
 }
 #notes-popup.visible {

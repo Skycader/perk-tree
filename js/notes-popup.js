@@ -4,6 +4,7 @@ import { NOTES } from './constants.js';
 
 const STORAGE_KEY = 'showNotesOnStartup';
 const TIMER_SECONDS = 16;
+const REST_BOTTOM_GAP = 24; // px clearance from the viewport bottom, at rest
 
 const popup = document.getElementById('notes-popup');
 const titleEl = document.getElementById('notes-title');
@@ -20,7 +21,9 @@ const startupCheckbox = document.getElementById('notes-startup-checkbox');
 if (!NOTES.timer) timerTrack.style.display = 'none';
 if (!NOTES.check) startupRow.style.display = 'none';
 
-let currentIdx = 0;
+// sync immediately (not just in settleNotesPopup) so prev/next work off the
+// right baseline if clicked before the loading screen has settled
+let currentIdx = window.__earlyNoteShown ? window.__earlyNoteIdx || 0 : 0;
 let closeTimer = null;
 
 function getShowOnStartup() {
@@ -34,6 +37,16 @@ function renderNote(idx) {
   titleEl.textContent = note.title || '';
   contentEl.innerHTML = renderMD(note.content || '');
   authorEl.textContent = note.author || '';
+}
+
+// Sets `top` so the box's bottom edge sits REST_BOTTOM_GAP above the
+// viewport bottom, given its CURRENT height. Only called when first
+// resting (never on every note switch) — anchoring via `top` means content
+// height changes afterwards grow/shrink the box downward, keeping the
+// header fixed in place instead of dragging it up and down.
+function applyRestPosition() {
+  popup.style.top =
+    window.innerHeight - REST_BOTTOM_GAP - popup.offsetHeight + 'px';
 }
 
 function restartTimer() {
@@ -54,6 +67,7 @@ export function showNotesPopup() {
   currentIdx = Math.floor(Math.random() * notes.length);
   renderNote(currentIdx);
   popup.classList.add('visible');
+  applyRestPosition();
   restartTimer();
 }
 
@@ -79,7 +93,24 @@ startupCheckbox.addEventListener('change', () => {
   localStorage.setItem(STORAGE_KEY, String(startupCheckbox.checked));
 });
 
-// shown once the tree has finished its initial render — see main.js
-export function maybeShowNotesOnStartup() {
-  if (getShowOnStartup()) showNotesPopup();
+// Called once the tree has finished its initial render — see main.js.
+// The inline script in index.html may already have shown this exact popup
+// while #page-loader was still up (same box, measured and parked just below
+// the spinner via an inline `style.top` — see notes.css). If so, adopt it:
+// sync currentIdx to whatever it picked, then animate it down into its
+// resting position — the `transition` is added inline just for this one
+// move, not left on permanently, so the box's very first appearance (in the
+// early script) doesn't itself animate up from some default position.
+export function settleNotesPopup() {
+  if (window.__earlyNoteShown) {
+    currentIdx = window.__earlyNoteIdx || 0;
+    popup.classList.remove('notes-loading-pos');
+    popup.style.transition = 'top 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+    void popup.offsetHeight; // force reflow so the transition is active before the change below
+    applyRestPosition();
+    restartTimer();
+  } else if (getShowOnStartup()) {
+    // fallback — e.g. the early script errored or notes.js failed to load
+    showNotesPopup();
+  }
 }

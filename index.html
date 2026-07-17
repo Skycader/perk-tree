@@ -37,26 +37,74 @@
       <svg class="page-loader-svg" viewBox="0 0 48 48">
         <circle cx="24" cy="24" r="18"></circle>
       </svg>
-      <div id="loader-tip"></div>
+    </div>
+
+    <!-- STARTUP NOTE — random tip from notes.js. Populated early (while
+         #page-loader is still up) by the inline script below so it looks
+         identical from the very first paint; js/notes-popup.js later adopts
+         it (arrows/close/timer) and drops it into its resting position once
+         the real app is ready — see settleNotesPopup(). -->
+    <div id="notes-popup">
+      <div class="notes-title-box">
+        <span id="notes-title"></span>
+        <div class="notes-header-actions">
+          <button class="notes-nav notes-nav-prev" id="notes-prev" title="Предыдущая">
+            ‹
+          </button>
+          <button class="notes-nav notes-nav-next" id="notes-next" title="Следующая">
+            ›
+          </button>
+          <button class="notes-close" id="notes-close" title="Закрыть">✕</button>
+        </div>
+      </div>
+      <div class="notes-content" id="notes-content"></div>
+      <div class="notes-footer-author"><span id="notes-author"></span></div>
+      <label class="notes-startup-row" id="notes-startup-row">
+        <input type="checkbox" id="notes-startup-checkbox" />
+        Показывать заметки при запуске
+      </label>
+      <div class="notes-timer-track" id="notes-timer-track">
+        <div class="notes-timer-fill" id="notes-timer-fill"></div>
+      </div>
     </div>
     <!-- `async` + placed ahead of js/main.js on purpose: on a slow connection the
          full app module graph (tooltip.js, tree.js, config.js, …) can take a
          while to arrive, but this only needs the small notes.js file, so the
-         loading-screen tip shows up long before the spinner would otherwise
-         hide. Renders inline with `marked` (already loaded as a classic
-         script above) instead of importing markdown.js, which would drag in
-         config.js just for this one lightweight use. -->
+         note shows up long before the spinner would otherwise hide. Renders
+         inline with `marked` (already loaded as a classic script above)
+         instead of importing markdown.js, which would drag in config.js
+         just for this one lightweight use. -->
     <script type="module" async>
       import { notes } from './notes.js';
-      const tipEl = document.getElementById('loader-tip');
-      if (notes.length && tipEl) {
-        const note = notes[Math.floor(Math.random() * notes.length)];
+      const STORAGE_KEY = 'showNotesOnStartup';
+      const showOnStartup =
+        localStorage.getItem(STORAGE_KEY) !== 'false'; /* null (unset) → true */
+      if (notes.length && showOnStartup) {
+        const idx = Math.floor(Math.random() * notes.length);
+        const note = notes[idx];
         const md = (s) =>
           (typeof marked !== 'undefined' ? marked.parseInline(s) : s).replace(
             /==([^=\n]+?)==/g,
             '<mark>$1</mark>',
           );
-        tipEl.innerHTML = `<div class="loader-tip-title">${note.title || ''}</div><div class="loader-tip-content">${md(note.content || '')}</div>`;
+        document.getElementById('notes-title').textContent = note.title || '';
+        document.getElementById('notes-content').innerHTML = md(
+          note.content || '',
+        );
+        document.getElementById('notes-author').textContent =
+          note.author || '';
+        const popupEl = document.getElementById('notes-popup');
+        popupEl.classList.add('visible', 'notes-loading-pos');
+        // positioned via `top` (see notes.css) so the header stays put once
+        // settled, regardless of content height changes. A static vh offset
+        // can't reliably clear the spinner either way — its distance from
+        // viewport-center is fixed (48px tall) but the popup's own height
+        // varies with note length, so just measure it for real.
+        const spinnerHalf = 24,
+          gap = 24;
+        popupEl.style.top = window.innerHeight / 2 + spinnerHalf + gap + 'px';
+        window.__earlyNoteShown = true;
+        window.__earlyNoteIdx = idx;
       }
     </script>
 
@@ -274,31 +322,6 @@
       <div id="license-panes"></div>
       <div id="license-footer">
         <a id="license-download" download>⬇ Скачать</a>
-      </div>
-    </div>
-
-    <!-- STARTUP NOTE — random tip from notes.js, shown once the tree has loaded -->
-    <div id="notes-popup">
-      <div class="notes-title-box">
-        <span id="notes-title"></span>
-        <div class="notes-header-actions">
-          <button class="notes-nav notes-nav-prev" id="notes-prev" title="Предыдущая">
-            ‹
-          </button>
-          <button class="notes-nav notes-nav-next" id="notes-next" title="Следующая">
-            ›
-          </button>
-          <button class="notes-close" id="notes-close" title="Закрыть">✕</button>
-        </div>
-      </div>
-      <div class="notes-content" id="notes-content"></div>
-      <div class="notes-footer-author"><span id="notes-author"></span></div>
-      <label class="notes-startup-row" id="notes-startup-row">
-        <input type="checkbox" id="notes-startup-checkbox" />
-        Показывать заметки при запуске
-      </label>
-      <div class="notes-timer-track" id="notes-timer-track">
-        <div class="notes-timer-fill" id="notes-timer-fill"></div>
       </div>
     </div>
 

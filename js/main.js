@@ -4,11 +4,11 @@ import { hideSpectre } from './spectre.js';
 import { licenseToolbar, licenseOverlay, showLicense, hideLicense } from './license-modal.js';
 import { hideTooltip } from './tooltip.js';
 import { resolvePerkInline } from './markdown.js';
-import { IPR_GLOW_BLUR, IPR_GLOW_SPREAD, FOCUS_DIM } from './constants.js';
+import { IPR_GLOW_BLUR, IPR_GLOW_SPREAD, FOCUS_DIM, MIN_LOADER_MS } from './constants.js';
 import { colRefs } from './tree.js';
 import { exportPNG } from './export-png.js';
 import { dbl } from './debug.js';
-import { maybeShowNotesOnStartup, hideNotesPopup } from './notes-popup.js';
+import { settleNotesPopup, hideNotesPopup } from './notes-popup.js';
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -29,10 +29,16 @@ document.fonts.ready.then(() =>
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       redrawAll();
-      // initial layout is complete — hide the global page loader
-      const pageLoader = document.getElementById('page-loader');
-      if (pageLoader) pageLoader.classList.add('hidden');
-      maybeShowNotesOnStartup();
+      // the tree itself is ready now — the loading screen (spinner + tip)
+      // stays up until MIN_LOADER_MS has elapsed since navigation started,
+      // simulating a big-level load even on a fast connection.
+      const elapsedMs = performance.now();
+      const remainingMs = Math.max(0, MIN_LOADER_MS - elapsedMs);
+      setTimeout(() => {
+        const pageLoader = document.getElementById('page-loader');
+        if (pageLoader) pageLoader.classList.add('hidden');
+        settleNotesPopup();
+      }, remainingMs);
     }),
   ),
 );
