@@ -37,7 +37,28 @@
       <svg class="page-loader-svg" viewBox="0 0 48 48">
         <circle cx="24" cy="24" r="18"></circle>
       </svg>
+      <div id="loader-tip"></div>
     </div>
+    <!-- `async` + placed ahead of js/main.js on purpose: on a slow connection the
+         full app module graph (tooltip.js, tree.js, config.js, …) can take a
+         while to arrive, but this only needs the small notes.js file, so the
+         loading-screen tip shows up long before the spinner would otherwise
+         hide. Renders inline with `marked` (already loaded as a classic
+         script above) instead of importing markdown.js, which would drag in
+         config.js just for this one lightweight use. -->
+    <script type="module" async>
+      import { notes } from './notes.js';
+      const tipEl = document.getElementById('loader-tip');
+      if (notes.length && tipEl) {
+        const note = notes[Math.floor(Math.random() * notes.length)];
+        const md = (s) =>
+          (typeof marked !== 'undefined' ? marked.parseInline(s) : s).replace(
+            /==([^=\n]+?)==/g,
+            '<mark>$1</mark>',
+          );
+        tipEl.innerHTML = `<div class="loader-tip-title">${note.title || ''}</div><div class="loader-tip-content">${md(note.content || '')}</div>`;
+      }
+    </script>
 
     <div class="topbar">
       <div class="tb-left">
