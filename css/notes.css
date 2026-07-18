@@ -217,3 +217,31 @@
     width: 0%;
   }
 }
+
+/* ── LINKED NOTE POPUP (<note id="..."> refs — see note-link-popup.js) ──
+   Visually the same box as #notes-popup — reuses .notes-title-box,
+   .notes-content and .note-author-line above directly — but positioned
+   next to whatever word was clicked (like .perk-chain-tip in tree.css)
+   instead of bottom-anchored, so it needs its own container rules rather
+   than #notes-popup's. */
+#note-link-popup {
+  display: none;
+  position: fixed;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 16px);
+  background: #0d0e18;
+  border: 1px solid #2a3050;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
+  z-index: 700;
+}
+#note-link-popup.visible {
+  display: flex;
+  flex-direction: column;
+}
+.note-link-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

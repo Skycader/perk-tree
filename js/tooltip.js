@@ -5,6 +5,7 @@ import { showChainTip, hideChainTip } from './chain-tip.js';
 import { createWin, destroyWins, resolveWindowCols } from './windows.js';
 import { resolvePerkInline, renderLevelMD, renderMD } from './markdown.js';
 import { openVideoLightbox } from './video-lightbox.js';
+import { hideNoteLinkPopup } from './note-link-popup.js';
 import {
   COLOURS,
   COL_HEX,
@@ -1883,6 +1884,7 @@ style="animation:dashIn .3s ease forwards"/>`;
 export function hideTooltip() {
   if (!_isVisible) return;
   _isVisible = false;
+  hideNoteLinkPopup(); // the trigger word this popup is linked to is about to disappear
   tooltipEl.style.display = 'none';
   tooltipEl.style.maxHeight = '';
   tooltipEl.style.opacity = '0';

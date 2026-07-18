@@ -19,6 +19,21 @@ mark {
   border-radius: 2px;
 }
 
+/* <note id="..."> reference — see processNoteTags in markdown.js and
+   note-link-popup.js */
+.inline-note-ref {
+  color: #9868d8;
+  cursor: pointer;
+  border-bottom: 1px dotted rgba(152, 104, 216, 0.55);
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.inline-note-ref:hover {
+  color: #b490f0;
+  border-bottom-color: #b490f0;
+}
+
 /* ── CUSTOM SCROLLBAR ── */
 ::-webkit-scrollbar {
   width: 4px;

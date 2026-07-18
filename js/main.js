@@ -9,12 +9,14 @@ import { colRefs } from './tree.js';
 import { exportPNG } from './export-png.js';
 import { dbl } from './debug.js';
 import { settleNotesPopup, hideNotesPopup } from './notes-popup.js';
+import { showNoteLinkPopup, hideNoteLinkPopup } from './note-link-popup.js';
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     hideTooltip();
     hideSpectre();
     hideNotesPopup();
+    hideNoteLinkPopup();
   }
 });
 
@@ -127,6 +129,15 @@ document.addEventListener('click', (e) => {
   }, 500);
 });
 
+// ── GLOBAL inline-note-ref handler ──
+// Same delegated-listener pattern as inline-perk-ref above.
+document.addEventListener('click', (e) => {
+  const ref = e.target.closest('.inline-note-ref');
+  if (!ref) return;
+  const noteId = ref.dataset.noteId;
+  if (!noteId) return;
+  showNoteLinkPopup(ref, noteId);
+});
 
 licenseToolbar.addEventListener('click', showLicense);
 licenseOverlay.addEventListener('click', hideLicense);
