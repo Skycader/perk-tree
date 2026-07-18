@@ -5,13 +5,12 @@
    box, not two different UIs.
 
    Positioned via `top`, not `bottom`, and always set inline from JS (see
-   index.html's early script and settleNotesPopup() in notes-popup.js) —
-   never a static CSS default. Anchoring from the top keeps the header
-   pinned in place when the content height changes (switching notes via the
-   arrows): the box grows/shrinks downward instead of dragging the header
-   up and down with it. `transition` is likewise added inline only for the
-   one intentional "settle" move, not unconditionally — otherwise the very
-   first appearance would itself animate. */
+   index.html's early script and applyRestPosition() in notes-popup.js) —
+   never a static CSS default. Recomputed on every open/switch so the
+   bottom edge always sits the same small gap above the viewport bottom,
+   for THIS note's real height — the trade-off being the header moves
+   between notes of different lengths instead of staying pinned. No
+   transition/animation on position: it repositions instantly. */
 #notes-popup {
   display: none;
   position: fixed;
@@ -25,11 +24,15 @@
   z-index: 10000;
   overflow: visible;
 }
-/* flex column: header/footer/timer are fixed-size, .notes-content is the
-   one flexible section — see applyRestPosition() in notes-popup.js, which
-   caps the whole box's height to whatever fits below the (fixed) header
-   down to the viewport bottom. Content beyond that scrolls internally
-   instead of pushing the box past the edge of the screen. */
+/* flex column: header/footer/timer are fixed-size (flex-shrink:0).
+   .notes-content deliberately has NO flex-grow (flex: 0 1 auto) — it sizes
+   to its own text, it does not stretch to fill leftover space, that's the
+   whole point. It CAN flex-shrink though: applyRestPosition() (in
+   notes-popup.js) caps the whole box's height at NOTES.topGap from the
+   top of the screen, and when a note's content is taller than that,
+   .notes-content is the only shrinkable child, so it's the one that gets
+   compressed and scrolls (overflow-y: auto) instead of the box pushing
+   past the edge of the screen. */
 #notes-popup.visible {
   display: flex;
   flex-direction: column;
@@ -109,8 +112,13 @@
 }
 
 .notes-content {
-  flex: 1;
-  min-height: 0; /* let a flex child shrink below its content size — required for overflow-y:auto to actually kick in instead of the box just growing */
+  flex: 0 1 auto; /* size to own content; shrinkable (not growable) so it's the one that scrolls when the box hits its max-height ceiling */
+  /* No floor here on purpose — the box renders at its OWN content's real
+     size (short note = small box), never padded up. min-height:0 lets it
+     shrink below content size — required for overflow-y:auto to actually
+     kick in when a note is taller than the NOTES.topGap-derived cap (see
+     applyRestPosition() in notes-popup.js). */
+  min-height: 0;
   padding: 10px 14px 0;
   font-size: 11px;
   color: #9098ac;
@@ -159,11 +167,12 @@
   margin: 6px 0;
 }
 
-.notes-footer-author {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px 14px 14px;
+/* author — rendered as the last line of .notes-content itself (see
+   renderNote() in notes-popup.js), not a separate footer element. */
+.notes-content .note-author-line {
+  margin-top: 10px;
+  padding-bottom: 10px;
+  text-align: right;
   font-size: 10px;
   color: #585e72;
   font-style: italic;

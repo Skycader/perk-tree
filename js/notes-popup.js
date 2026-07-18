@@ -1,15 +1,13 @@
 import { notes } from '../notes.js';
-import { renderMD } from './markdown.js';
+import { renderMD, renderLevelMD } from './markdown.js';
 import { NOTES } from './constants.js';
 
 const STORAGE_KEY = 'showNotesOnStartup';
 const TIMER_SECONDS = 16;
-const REST_BOTTOM_GAP = 24; // px clearance from the viewport bottom, at rest
 
 const popup = document.getElementById('notes-popup');
 const titleEl = document.getElementById('notes-title');
 const contentEl = document.getElementById('notes-content');
-const authorEl = document.getElementById('notes-author');
 const closeBtn = document.getElementById('notes-close');
 const prevBtn = document.getElementById('notes-prev');
 const nextBtn = document.getElementById('notes-next');
@@ -35,30 +33,42 @@ function renderNote(idx) {
   const note = notes[idx];
   if (!note) return;
   titleEl.textContent = note.title || '';
-  contentEl.innerHTML = renderMD(note.content || '');
-  authorEl.textContent = note.author || '';
+  // author is just the last line of the content area (see .note-author-line
+  // in notes.css) — not a separate footer element.
+  const authorLine = note.author
+    ? `<div class="note-author-line">${renderLevelMD(note.author)}</div>`
+    : '';
+  contentEl.innerHTML = renderMD(note.content || '') + authorLine;
 }
 
-// Sets `top` so the box's bottom edge sits REST_BOTTOM_GAP above the
-// viewport bottom, given its CURRENT height (padded by NOTES.extraHeight —
-// see constants.js — so the box always has a bit of breathing room beyond
-// what the note's content strictly needs). Only called when first resting
-// (never on every note switch) — anchoring via `top` means content height
-// changes afterwards grow/shrink the box downward, keeping the header
-// fixed in place instead of dragging it up and down.
+// Sets `top` so the box's bottom edge sits NOTES.bottomGap above the
+// viewport bottom, sized to THIS note's real height — recomputed on every
+// open/switch (see showNotesPopup, settleNotesPopup, and the prev/next
+// handlers below), so the box always hugs the bottom edge by the same
+// small gap. Trade-off, chosen deliberately: the header moves up/down when
+// switching between notes of different lengths, in exchange for never
+// leaving a gap between the box and the bottom of the screen.
 //
-// min-height enforces that padded base height (.notes-content, flex: 1,
-// stretches to fill it); max-height caps the box to exactly the space
-// between the fixed top and the viewport bottom, so a later note switch
-// can't push it past the fixed top and off the bottom of the screen —
-// .notes-content (min-height: 0; overflow-y: auto — see notes.css) scrolls
-// internally once content exceeds that budget instead.
+// Height is still capped via max-height so a pathologically long note
+// can't push the box above NOTES.topGap from the top of the screen —
+// beyond that it scrolls instead (.notes-content, see notes.css).
 function applyRestPosition() {
-  const baseHeight = popup.offsetHeight + NOTES.extraHeight;
-  const top = window.innerHeight - REST_BOTTOM_GAP - baseHeight;
-  popup.style.top = top + 'px';
-  popup.style.minHeight = baseHeight + 'px';
-  popup.style.maxHeight = window.innerHeight - top - REST_BOTTOM_GAP + 'px';
+  popup.style.maxHeight = ''; // clear any previous cap so the measurement below reflects this note's real, uncapped size
+  const naturalHeight = popup.offsetHeight;
+  const available = window.innerHeight - NOTES.bottomGap - NOTES.topGap;
+  if (naturalHeight > available) {
+    popup.style.top = NOTES.topGap + 'px';
+    popup.style.maxHeight = available + 'px';
+  } else {
+    // No cap needed — leave max-height unset. offsetHeight rounds to a
+    // whole pixel, but line-height (1.6 × 11px = 17.6px/line) doesn't; a
+    // max-height pinned to that rounded integer can land a fraction of a
+    // pixel below the flex children's real fractional height, forcing
+    // .notes-content to shrink by that sliver and show a scrollbar even on
+    // a two-line note. Leaving max-height unset removes that constraint
+    // entirely when we don't actually need one.
+    popup.style.top = window.innerHeight - NOTES.bottomGap - naturalHeight + 'px';
+  }
 }
 
 function restartTimer() {
@@ -92,11 +102,13 @@ closeBtn.addEventListener('click', hideNotesPopup);
 prevBtn.addEventListener('click', () => {
   currentIdx = (currentIdx - 1 + notes.length) % notes.length;
   renderNote(currentIdx);
+  applyRestPosition();
   restartTimer();
 });
 nextBtn.addEventListener('click', () => {
   currentIdx = (currentIdx + 1) % notes.length;
   renderNote(currentIdx);
+  applyRestPosition();
   restartTimer();
 });
 
@@ -107,19 +119,15 @@ startupCheckbox.addEventListener('change', () => {
 
 // Called once the tree has finished its initial render — see main.js.
 // The inline script in index.html may already have shown this exact popup
-// while #page-loader was still up (same box, measured and parked just below
-// the spinner via an inline `style.top` — see notes.css). If so, adopt it:
-// sync currentIdx to whatever it picked, then animate it down into its
-// resting position — the `transition` is added inline just for this one
-// move, not left on permanently, so the box's very first appearance (in the
-// early script) doesn't itself animate up from some default position.
+// while #page-loader was still up (same box, already parked at its
+// bottom-anchored resting spot for the note it picked — see notes.css and
+// the early script). If so, just adopt it: sync currentIdx and re-run
+// applyRestPosition() (covers a viewport resize while loading, and is a
+// harmless no-op otherwise since the content hasn't changed).
 export function settleNotesPopup() {
   if (window.__earlyNoteShown) {
     currentIdx = window.__earlyNoteIdx || 0;
-    popup.classList.remove('notes-loading-pos');
-    popup.style.transition = 'top 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
-    void popup.offsetHeight; // force reflow so the transition is active before the change below
-    applyRestPosition();
+    applyRestPosition(); // re-affirm in case the viewport was resized while loading
     restartTimer();
   } else if (getShowOnStartup()) {
     // fallback — e.g. the early script errored or notes.js failed to load

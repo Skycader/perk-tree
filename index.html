@@ -29,7 +29,7 @@
     <link rel="stylesheet" href="css/windows.css" />
     <link rel="stylesheet" href="css/loader.css" />
     <link rel="stylesheet" href="css/license.css" />
-    <link rel="stylesheet" href="css/notes.css" />
+    <link rel="stylesheet" href="css/notes.css" id="notes-css" />
   </head>
   <body>
     <!-- global page-loading spinner: hidden by the inline script once init finishes -->
@@ -40,10 +40,10 @@
     </div>
 
     <!-- STARTUP NOTE — random tip from notes.js. Populated early (while
-         #page-loader is still up) by the inline script below so it looks
-         identical from the very first paint; js/notes-popup.js later adopts
-         it (arrows/close/timer) and drops it into its resting position once
-         the real app is ready — see settleNotesPopup(). -->
+         #page-loader is still up) by the inline script below, already
+         parked at its final bottom-anchored resting spot (see notes.css) so
+         it never moves; js/notes-popup.js later adopts it (arrows/close/
+         timer) — see settleNotesPopup(). -->
     <div id="notes-popup">
       <div class="notes-title-box">
         <span id="notes-title"></span>
@@ -58,7 +58,6 @@
         </div>
       </div>
       <div class="notes-content" id="notes-content"></div>
-      <div class="notes-footer-author"><span id="notes-author"></span></div>
       <label class="notes-startup-row" id="notes-startup-row">
         <input type="checkbox" id="notes-startup-checkbox" />
         Показывать заметки при запуске
@@ -89,26 +88,51 @@
             '<mark>$1</mark>',
           );
         document.getElementById('notes-title').textContent = note.title || '';
-        document.getElementById('notes-content').innerHTML = md(
-          note.content || '',
-        );
-        document.getElementById('notes-author').textContent =
-          note.author || '';
+        // author is just the last line of the content area (see
+        // .note-author-line in notes.css) — not a separate footer element.
+        const authorLine = note.author
+          ? '<div class="note-author-line">' + md(note.author) + '</div>'
+          : '';
+        document.getElementById('notes-content').innerHTML =
+          md(note.content || '') + authorLine;
         const popupEl = document.getElementById('notes-popup');
-        popupEl.classList.add('visible', 'notes-loading-pos');
-        // same base-height padding as the resting state (settleNotesPopup →
-        // applyRestPosition in notes-popup.js), set here too so the box
-        // doesn't visibly grow when it settles — only its position animates.
-        popupEl.style.minHeight =
-          popupEl.offsetHeight + NOTES.extraHeight + 'px';
-        // positioned via `top` (see notes.css) so the header stays put once
-        // settled, regardless of content height changes. A static vh offset
-        // can't reliably clear the spinner either way — its distance from
-        // viewport-center is fixed (48px tall) but the popup's own height
-        // varies with note length, so just measure it for real.
-        const spinnerHalf = 24,
-          gap = 24;
-        popupEl.style.top = window.innerHeight / 2 + spinnerHalf + gap + 'px';
+        // Wait for notes.css itself before measuring/positioning below.
+        // This script is `async`, so — unlike a normal parser-blocking
+        // script — it can execute before the stylesheet has finished
+        // loading, measuring an unstyled (wrong-width, wrong-wrapping) box
+        // and baking that wrong height into the one-time `top` calc, which
+        // then visibly jumps once notes-popup.js re-measures the properly
+        // styled box later.
+        const cssLink = document.getElementById('notes-css');
+        if (cssLink && !cssLink.sheet) {
+          await new Promise((resolve) =>
+            cssLink.addEventListener('load', resolve, { once: true }),
+          );
+        }
+        // Layout CSS alone isn't enough — text still wraps against a
+        // fallback font's metrics until the actual JetBrains Mono webfont
+        // finishes downloading (a separate, slower fetch than the
+        // stylesheet itself), which can reflow the content to a different
+        // line count/height. main.js already waits on this same signal
+        // before measuring the tree for the same reason.
+        await document.fonts.ready;
+        popupEl.classList.add('visible');
+        // Always bottom-anchored — no spinner-adjacent parking spot or
+        // descend-into-place animation, the popup simply lives at its
+        // resting position from the very first frame, sized to THIS note's
+        // real height. Same math as applyRestPosition() in notes-popup.js
+        // (including the "only cap max-height when actually needed"
+        // rounding-safety note there), duplicated here since that module
+        // isn't imported this early (see the note above on why).
+        const naturalHeight = popupEl.offsetHeight;
+        const available = window.innerHeight - NOTES.bottomGap - NOTES.topGap;
+        if (naturalHeight > available) {
+          popupEl.style.top = NOTES.topGap + 'px';
+          popupEl.style.maxHeight = available + 'px';
+        } else {
+          popupEl.style.top =
+            window.innerHeight - NOTES.bottomGap - naturalHeight + 'px';
+        }
         window.__earlyNoteShown = true;
         window.__earlyNoteIdx = idx;
       }
