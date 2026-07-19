@@ -108,9 +108,9 @@ export function showNoteLinkPopup(triggerEl, noteId) {
   arrowSvg.style.height = vh + 'px';
   arrowSvg.style.display = 'block';
   arrowSvg.innerHTML = `
-    <circle cx="${icX}" cy="${icY}" r="3" fill="#9868d8"/>
+    <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
     <polyline points="${icX},${icY} ${icX},${toY} ${toX},${toY}"
-      fill="none" stroke="#9868d8" stroke-width="1.5"
+      fill="none" stroke="#50556a" stroke-width="1.5"
       stroke-dasharray="${total}" stroke-dashoffset="${total}"
       style="animation:dashIn .3s ease forwards"/>`;
 }

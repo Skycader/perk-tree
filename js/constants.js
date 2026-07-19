@@ -170,7 +170,7 @@ export const NOTES = {
 // tip (see index.html) stay up long enough to actually read — same trick
 // big-level loading screens in games use, even after the real work is
 // already done. Set to 0 to disable and hide the loader as soon as ready.
-export const MIN_LOADER_MS = 5000;
+export const MIN_LOADER_MS = 1000;
 
 // ── DOCUMENTATION MODAL ──
 // Tabs and their source files are declared here. Add/remove entries to
