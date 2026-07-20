@@ -1,13 +1,13 @@
 import { STAND_DATA } from '../config.js';
 import { ttArrowSvg } from './dom-refs.js';
-import { renderLevelMD } from './markdown.js';
+import { renderLevelMD, renderMD } from './markdown.js';
 import { showTooltip, isCurrentBtn } from './tooltip.js';
 import { showSpectre, isSpectreOpen } from './spectre.js';
 import { COLOURS, FOCUS_DIM } from './constants.js';
 
 // ── PROCESS CONFIG ──
 const D = STAND_DATA;
-const totalPerks = D.skills.reduce((s, ch) => s + ch.perks.length, 0);
+export const totalPerks = D.skills.reduce((s, ch) => s + ch.perks.length, 0);
 const nRanks = D.ranks.length;
 const maxLevelPerSkill = D.maxLevelPerSkill || 10;
 const maxLevel = totalPerks * maxLevelPerSkill;
@@ -67,12 +67,47 @@ function distributeToColumns(skills, nCols) {
 }
 const columns = distributeToColumns(D.skills, 3);
 
+// use explicit color from config if set, else auto-assigned
+const COLOR_MAP = {
+  orange: 'o',
+  red: 'r',
+  blue: 'b',
+  green: 'g',
+  purple: 'p',
+  yellow: 'y',
+  black: 'k',
+  o: 'o',
+  r: 'r',
+  b: 'b',
+  g: 'g',
+  p: 'p',
+  y: 'y',
+};
+const LETTER_TO_NAME = {
+  o: 'orange',
+  r: 'red',
+  b: 'blue',
+  g: 'green',
+  p: 'purple',
+  y: 'yellow',
+  k: 'black',
+};
+
 // assign colour index globally (sequential across all chapters)
 let globalColIdx = 0;
 const chapterColour = new Map();
+// perk count per full colour name — used by the Spectre popup to show
+// what share of all perks each colour group makes up.
+export const perkCountByColor = {};
 D.skills.forEach((ch) => {
   chapterColour.set(ch, COLOURS[globalColIdx % COLOURS.length]);
   globalColIdx++;
+  const c = ch.color
+    ? COLOR_MAP[ch.color.toLowerCase()] || ch.color[0]
+    : chapterColour.get(ch);
+  const colourName = LETTER_TO_NAME[c] || c;
+  perkCountByColor[colourName] =
+    (perkCountByColor[colourName] || 0) + ch.perks.length;
 });
 
 
@@ -101,21 +136,6 @@ columns.forEach((chapters) => {
   const chRefs = [];
   chapters.forEach((ch) => {
     // use explicit color from config if set, else auto-assigned
-    const COLOR_MAP = {
-      orange: 'o',
-      red: 'r',
-      blue: 'b',
-      green: 'g',
-      purple: 'p',
-      yellow: 'y',
-      black: 'k',
-      o: 'o',
-      r: 'r',
-      b: 'b',
-      g: 'g',
-      p: 'p',
-      y: 'y',
-    };
     const c = ch.color
       ? COLOR_MAP[ch.color.toLowerCase()] || ch.color[0]
       : chapterColour.get(ch);
@@ -467,7 +487,7 @@ document.getElementById('bottom-bar').innerHTML = vulns.length
    .map(
      (v) => `<div class="bb-item">
    <div class="bb-item-name">${v.name}</div>
-   <div class="bb-item-desc">${(v.desc || '').replace(/\\n/g, '\n')}</div>
+   <div class="bb-item-desc">${renderMD(v.desc || '')}</div>
  </div>`,
    )
    .join('')}</div>`

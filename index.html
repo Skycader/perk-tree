@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="css/windows.css" />
     <link rel="stylesheet" href="css/loader.css" />
     <link rel="stylesheet" href="css/license.css" />
+    <link rel="stylesheet" href="css/notes.css" id="notes-css" />
   </head>
   <body>
     <!-- global page-loading spinner: hidden by the inline script once init finishes -->
@@ -37,6 +38,105 @@
         <circle cx="24" cy="24" r="18"></circle>
       </svg>
     </div>
+
+    <!-- STARTUP NOTE — random tip from notes.js. Populated early (while
+         #page-loader is still up) by the inline script below, already
+         parked at its final bottom-anchored resting spot (see notes.css) so
+         it never moves; js/notes-popup.js later adopts it (arrows/close/
+         timer) — see settleNotesPopup(). -->
+    <div id="notes-popup">
+      <div class="notes-title-box">
+        <span id="notes-title"></span>
+        <div class="notes-header-actions">
+          <button class="notes-nav notes-nav-prev" id="notes-prev" title="Предыдущая">
+            ‹
+          </button>
+          <button class="notes-nav notes-nav-next" id="notes-next" title="Следующая">
+            ›
+          </button>
+          <button class="notes-close" id="notes-close" title="Закрыть">✕</button>
+        </div>
+      </div>
+      <div class="notes-content" id="notes-content"></div>
+      <label class="notes-startup-row" id="notes-startup-row">
+        <input type="checkbox" id="notes-startup-checkbox" />
+        Показывать заметки при запуске
+      </label>
+      <div class="notes-timer-track" id="notes-timer-track">
+        <div class="notes-timer-fill" id="notes-timer-fill"></div>
+      </div>
+    </div>
+    <!-- `async` + placed ahead of js/main.js on purpose: on a slow connection the
+         full app module graph (tooltip.js, tree.js, config.js, …) can take a
+         while to arrive, but this only needs the small notes.js file, so the
+         note shows up long before the spinner would otherwise hide. Renders
+         inline with `marked` (already loaded as a classic script above)
+         instead of importing markdown.js, which would drag in config.js
+         just for this one lightweight use. -->
+    <script type="module" async>
+      import { notes } from './notes.js';
+      import { NOTES } from './js/constants.js';
+      const STORAGE_KEY = 'showNotesOnStartup';
+      const showOnStartup =
+        localStorage.getItem(STORAGE_KEY) !== 'false'; /* null (unset) → true */
+      if (notes.length && showOnStartup) {
+        const idx = Math.floor(Math.random() * notes.length);
+        const note = notes[idx];
+        const md = (s) =>
+          (typeof marked !== 'undefined' ? marked.parseInline(s) : s).replace(
+            /==([^=\n]+?)==/g,
+            '<mark>$1</mark>',
+          );
+        document.getElementById('notes-title').textContent = note.title || '';
+        // author is just the last line of the content area (see
+        // .note-author-line in notes.css) — not a separate footer element.
+        const authorLine = note.author
+          ? '<div class="note-author-line">' + md(note.author) + '</div>'
+          : '';
+        document.getElementById('notes-content').innerHTML =
+          md(note.content || '') + authorLine;
+        const popupEl = document.getElementById('notes-popup');
+        // Wait for notes.css itself before measuring/positioning below.
+        // This script is `async`, so — unlike a normal parser-blocking
+        // script — it can execute before the stylesheet has finished
+        // loading, measuring an unstyled (wrong-width, wrong-wrapping) box
+        // and baking that wrong height into the one-time `top` calc, which
+        // then visibly jumps once notes-popup.js re-measures the properly
+        // styled box later.
+        const cssLink = document.getElementById('notes-css');
+        if (cssLink && !cssLink.sheet) {
+          await new Promise((resolve) =>
+            cssLink.addEventListener('load', resolve, { once: true }),
+          );
+        }
+        // Layout CSS alone isn't enough — text still wraps against a
+        // fallback font's metrics until the actual JetBrains Mono webfont
+        // finishes downloading (a separate, slower fetch than the
+        // stylesheet itself), which can reflow the content to a different
+        // line count/height. main.js already waits on this same signal
+        // before measuring the tree for the same reason.
+        await document.fonts.ready;
+        popupEl.classList.add('visible');
+        // Always bottom-anchored — no spinner-adjacent parking spot or
+        // descend-into-place animation, the popup simply lives at its
+        // resting position from the very first frame, sized to THIS note's
+        // real height. Same math as applyRestPosition() in notes-popup.js
+        // (including the "only cap max-height when actually needed"
+        // rounding-safety note there), duplicated here since that module
+        // isn't imported this early (see the note above on why).
+        const naturalHeight = popupEl.offsetHeight;
+        const available = window.innerHeight - NOTES.bottomGap - NOTES.topGap;
+        if (naturalHeight > available) {
+          popupEl.style.top = NOTES.topGap + 'px';
+          popupEl.style.maxHeight = available + 'px';
+        } else {
+          popupEl.style.top =
+            window.innerHeight - NOTES.bottomGap - naturalHeight + 'px';
+        }
+        window.__earlyNoteShown = true;
+        window.__earlyNoteIdx = idx;
+      }
+    </script>
 
     <div class="topbar">
       <div class="tb-left">

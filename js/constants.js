@@ -157,6 +157,21 @@ export const COLOUR_KEYS = {
   black: '#282827',
 };
 
+// ── STARTUP NOTES POPUP (notes.js) ──
+export const NOTES = {
+  timer: false, // false = no auto-close countdown, stays until closed manually
+  check: false, // false = hide the "show notes on startup" checkbox
+  bottomGap: 24, // px clearance from the viewport bottom, at rest
+  topGap: 8, // px clearance from the viewport top — kept small so the box can grow to use nearly the full screen height before a long note is capped here and scrolls internally instead of going further
+};
+
+// ── PAGE LOADER ──
+// Simulated minimum loading-screen duration (ms), so the spinner + loader
+// tip (see index.html) stay up long enough to actually read — same trick
+// big-level loading screens in games use, even after the real work is
+// already done. Set to 0 to disable and hide the loader as soon as ready.
+export const MIN_LOADER_MS = 1000;
+
 // ── DOCUMENTATION MODAL ──
 // Tabs and their source files are declared here. Add/remove entries to
 // change what shows up in the modal — tabs, panes, and fetch calls are

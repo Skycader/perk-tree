@@ -71,6 +71,25 @@ export function processHighlightTags(html) {
   return html.replace(/==([^=\n]+?)==/g, '<mark>$1</mark>');
 }
 
+// Replace <note id="chelovecheskaya-dusha">**крохотных**</note> with a
+// clickable purple-highlighted span that opens the matching notes.js entry
+// as a linked popup (see note-link-popup.js). marked already left the tag
+// untouched (raw HTML passthrough, same as <perk> below), inner text
+// included — so it still needs its own explicit parseInline call to render
+// any markdown inside the label.
+export function processNoteTags(html) {
+  return html.replace(
+    /<note\s+id="([^"]+)"\s*>([\s\S]*?)<\/note>/gi,
+    (_, noteId, inner) => {
+      const innerHtml =
+        typeof marked !== 'undefined'
+          ? marked.parseInline(inner.trim())
+          : inner.trim();
+      return `<span class="inline-note-ref" data-note-id="${noteId}">${innerHtml}</span>`;
+    },
+  );
+}
+
 export function processPerkTags(html) {
   // New syntax: <perk name="standVisor">optional label</perk>
   // Old syntax: <perk>standVisor</perk> (still supported for compat)
@@ -134,7 +153,9 @@ export function renderLevelMD(text) {
   } else {
     html = preprocessed.replace(/\n/g, '<br>');
   }
-  return processSvgTags(processPerkTags(processHighlightTags(html)));
+  return processSvgTags(
+    processPerkTags(processNoteTags(processHighlightTags(html))),
+  );
 }
 
 export function renderMD(text) {
@@ -153,5 +174,7 @@ export function renderMD(text) {
   } else {
     html = preprocessed.replace(/\n/g, '<br>');
   }
-  return processSvgTags(processPerkTags(processHighlightTags(html)));
+  return processSvgTags(
+    processPerkTags(processNoteTags(processHighlightTags(html))),
+  );
 }

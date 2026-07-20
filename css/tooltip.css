@@ -138,6 +138,18 @@
   line-height: 1.5;
   word-break: break-word;
 }
+/* ── SPECTRE row: colour share (e.g. 6/55 (10%)) — middle column, no
+   visible border, aligned purely via fixed width + gap ── */
+.sp-share {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1px;
+  min-width: 62px;
+  text-align: center;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
 /* MD elements inside level description rows */
 .tt-text p {
   margin: 0;

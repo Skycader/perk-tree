@@ -4,6 +4,8 @@ import { setSpectreOpen } from './spectre.js';
 import { showChainTip, hideChainTip } from './chain-tip.js';
 import { createWin, destroyWins, resolveWindowCols } from './windows.js';
 import { resolvePerkInline, renderLevelMD, renderMD } from './markdown.js';
+import { openVideoLightbox } from './video-lightbox.js';
+import { hideNoteLinkPopup } from './note-link-popup.js';
 import {
   COLOURS,
   COL_HEX,
@@ -553,19 +555,35 @@ export function showTooltip(name, lvlDesc, iconEl) {
     : perkData?.img
       ? [perkData.img]
       : [];
-  // normalize each entry to {src, title, audio}: plain strings keep title/audio=null,
-  // meaning they fall back to the perk-level perkData.audio flag.
+  // normalize each entry to {src, title, audio, controls}: plain strings keep
+  // title/audio=null, meaning they fall back to the perk-level perkData.audio flag.
   function normalizeImgEntry(entry) {
     if (typeof entry === 'string')
-      return { src: entry, title: null, audio: null, height: null };
+      return {
+        src: entry,
+        title: null,
+        audio: null,
+        height: null,
+        controls: false,
+      };
     if (entry && typeof entry === 'object')
       return {
         src: entry.src || '',
         title: entry.title || null,
         audio: typeof entry.audio === 'boolean' ? entry.audio : null,
         height: entry.height || null, // 'maximum' = fill all available height
+        // adds an "expand" button that opens the video in a large lightbox
+        // with native controls (seek bar, volume, fullscreen) — the small
+        // in-tooltip video itself stays controls-free. See makeMediaEl.
+        controls: entry.controls === true,
       };
-    return { src: '', title: null, audio: null, height: null };
+    return {
+      src: '',
+      title: null,
+      audio: null,
+      height: null,
+      controls: false,
+    };
   }
   const imgSources = imgSourcesRaw.map(normalizeImgEntry);
   const wantsMaximum = imgSources.some((e) => e.height === 'maximum');
@@ -682,7 +700,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
       return Math.min(Math.round(containerW * ratio), maxH);
     }
 
-    function makeMediaEl(src, promises, altText, audioOverride) {
+    function makeMediaEl(src, promises, altText, audioOverride, controlsOverride) {
       const isVideo = /\.mp4($|\?)/i.test(src);
       if (isVideo) {
         const vidEl = document.createElement('video');
@@ -691,6 +709,10 @@ export function showTooltip(name, lvlDesc, iconEl) {
         vidEl.loop = true;
         vidEl.muted = true; // always starts muted; unmuted only via the speaker toggle below
         vidEl.playsInline = true;
+        // native controls (seek bar, volume, fullscreen) only ever show in
+        // the expanded lightbox view — the small in-tooltip video stays
+        // controls-free either way; `controlsOverride` just adds the
+        // "expand" button that opens that lightbox.
         vidEl.controls = false;
         vidEl.disablePictureInPicture = true;
         vidEl.setAttribute(
@@ -734,22 +756,45 @@ export function showTooltip(name, lvlDesc, iconEl) {
             ? audioOverride
             : perkData?.audio === true;
 
-        if (wantsAudio) {
+        if (wantsAudio || controlsOverride) {
           const wrap = document.createElement('div');
           wrap.className = 'media-audio-wrap';
           wrap.appendChild(vidEl);
 
-          const btn = document.createElement('button');
-          btn.className = 'media-audio-btn';
-          btn.title = 'Включить звук';
-          btn.innerHTML = svgSpeakerIcon(true); // muted icon initially
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            vidEl.muted = !vidEl.muted;
-            btn.innerHTML = svgSpeakerIcon(vidEl.muted);
-            btn.title = vidEl.muted ? 'Включить звук' : 'Выключить звук';
-          });
-          wrap.appendChild(btn);
+          if (wantsAudio) {
+            const btn = document.createElement('button');
+            btn.className = 'media-audio-btn';
+            btn.title = 'Включить звук';
+            btn.innerHTML = svgSpeakerIcon(true); // muted icon initially
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              vidEl.muted = !vidEl.muted;
+              btn.innerHTML = svgSpeakerIcon(vidEl.muted);
+              btn.title = vidEl.muted ? 'Включить звук' : 'Выключить звук';
+            });
+            wrap.appendChild(btn);
+          }
+
+          if (controlsOverride) {
+            const expandBtn = document.createElement('button');
+            expandBtn.className = 'media-expand-btn';
+            expandBtn.title = 'Развернуть';
+            expandBtn.innerHTML = svgExpandIcon();
+            expandBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const wasPlaying = !vidEl.paused;
+              vidEl.pause();
+              openVideoLightbox(src, {
+                startTime: vidEl.currentTime,
+                muted: vidEl.muted,
+                onClose: () => {
+                  if (wasPlaying) vidEl.play().catch(() => {});
+                },
+              });
+            });
+            wrap.appendChild(expandBtn);
+          }
+
           return wrap;
         }
 
@@ -784,6 +829,13 @@ export function showTooltip(name, lvlDesc, iconEl) {
            </svg>`;
     }
 
+    // four-corner "expand to large view" glyph
+    function svgExpandIcon() {
+      return `<svg viewBox="0 0 16 16" width="13" height="13">
+             <path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="#c0bdb4" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+           </svg>`;
+    }
+
     const imgLoadPromises = [];
     let _sliderIndex = 0;
 
@@ -801,6 +853,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
         imgLoadPromises,
         entry.title,
         entry.audio,
+        entry.controls,
       );
       withLoadingSpinner(el, imgContent);
       imgHeader.textContent =
@@ -879,6 +932,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
           imgLoadPromises,
           entry0.title,
           entry0.audio,
+          entry0.controls,
         );
         imgContent.innerHTML = '';
         // height:'maximum' → cover so image fills the tall box without letterbox
@@ -907,6 +961,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
           imgLoadPromises,
           _entry.title,
           _entry.audio,
+          _entry.controls,
         );
         _w.content.innerHTML = '';
         withLoadingSpinner(_el, _w.content);
@@ -1829,6 +1884,7 @@ style="animation:dashIn .3s ease forwards"/>`;
 export function hideTooltip() {
   if (!_isVisible) return;
   _isVisible = false;
+  hideNoteLinkPopup(); // the trigger word this popup is linked to is about to disappear
   tooltipEl.style.display = 'none';
   tooltipEl.style.maxHeight = '';
   tooltipEl.style.opacity = '0';
