@@ -18,6 +18,7 @@ import { renderMD, renderLevelMD } from './markdown.js';
 // whatever was already open at that depth and below (its old descendants),
 // while everything ABOVE that depth (its ancestors) is left untouched.
 const GAP = 8; // px gap between the clicked word and the popup, matches chain-tip.js
+const CASCADE_DY = 32; // px each cascade level steps vertically off its parent — a small diagonal stagger, not a clearance distance (the horizontal step is what guarantees no overlap, see showNoteLinkPopup)
 
 // createElementNS is required here — document.createElement('svg')/('g')
 // creates an HTML-namespaced element that never actually renders as vector
@@ -49,6 +50,15 @@ document.body.appendChild(arrowSvg);
 // tooltip content), chain[i>0] was opened by clicking a <note> ref inside
 // chain[i-1].popup.
 let chain = [];
+
+// Which way each new cascade level steps from its parent (+1/-1 per axis),
+// decided once when the root popup opens (see showNoteLinkPopup) from
+// which half of the screen it landed in — so the chain always cascades
+// toward the open side of the screen instead of off the edge the root is
+// already hugging. Root on the left → cascade rightward; root on the
+// right → cascade leftward; same idea for top/bottom.
+let cascadeDirX = 1;
+let cascadeDirY = 1;
 
 function syncArrowSvgSize() {
   const vw = window.innerWidth,
@@ -128,54 +138,42 @@ export function showNoteLinkPopup(triggerEl, noteId) {
   const pw = popup.offsetWidth;
   const ph = popup.offsetHeight;
 
-  let py = r.top - ph / 2 + r.height / 2;
-  if (py < 4) py = 4;
-  if (py + ph > vh - 4) py = vh - ph - 4;
-
-  // rects of every popup already open, gathered before this one is placed —
-  // used below so a new popup avoids covering them when there's room to.
-  const openRects = chain.map((link) => link.popup.getBoundingClientRect());
-  const overlapsAny = (px) => {
-    const rect = { left: px, right: px + pw, top: py, bottom: py + ph };
-    return openRects.some(
-      (o) =>
-        !(
-          rect.right <= o.left ||
-          rect.left >= o.right ||
-          rect.bottom <= o.top ||
-          rect.top >= o.bottom
-        ),
-    );
-  };
-
-  let px = null;
-  if (hostIndex >= 0) {
-    // cascaded off a parent popup — prefer sitting beside it rather than
-    // beside the word alone: positioning off the word (a rule that works
-    // fine for the root case below, where the word sits in the much
-    // narrower tooltip) can otherwise land the new popup right on top of
-    // the much wider popup it came from. Try the parent's right edge
-    // first, then its left edge, taking whichever is both on-screen and
-    // clear of every currently open popup.
-    const parentRect = chain[hostIndex].popup.getBoundingClientRect();
-    const rightCandidate = parentRect.right + GAP;
-    const leftCandidate = parentRect.left - pw - GAP;
-    if (rightCandidate + pw <= vw - 4 && !overlapsAny(rightCandidate)) {
-      px = rightCandidate;
-    } else if (leftCandidate >= 4 && !overlapsAny(leftCandidate)) {
-      px = leftCandidate;
-    }
-  }
-
-  if (px === null) {
-    // root popup, or no clean spot beside the parent — fall back to the
-    // word-relative placement (left of the word, flips right if that'd go
-    // off-screen), same rule as showChainTip() in chain-tip.js. Clamped to
-    // the viewport as a last resort even if that means some overlap —
-    // there's nowhere else left to put it.
+  let px, py;
+  if (hostIndex < 0) {
+    // root popup — positioned off the trigger word itself: left of it by
+    // default, flips right if that'd go off-screen, same rule as
+    // showChainTip() in chain-tip.js.
     px = r.left - pw - GAP;
     if (px < 4) px = r.right + GAP;
     if (px + pw > vw - 4) px = vw - pw - 4;
+
+    py = r.top - ph / 2 + r.height / 2;
+    if (py < 4) py = 4;
+    if (py + ph > vh - 4) py = vh - ph - 4;
+
+    // decide which way later cascade levels step from here: toward
+    // whichever half of the screen this root landed in has more room, so
+    // the chain grows into open space instead of off the edge the root is
+    // already hugging.
+    cascadeDirX = px + pw / 2 < vw / 2 ? 1 : -1;
+    cascadeDirY = py + ph / 2 < vh / 2 ? 1 : -1;
+  } else {
+    // cascaded off a parent popup — steps from the parent's own position
+    // (not the trigger word — the word can be anywhere inside a wide
+    // parent, which isn't a useful anchor for where the NEXT box should
+    // go). The horizontal step is the parent's FULL width + GAP, in the
+    // direction chosen when the root opened — this alone guarantees zero
+    // overlap with the parent, regardless of the vertical step. The
+    // vertical step (CASCADE_DY) stays small and is purely a diagonal
+    // stagger for visual variety — it doesn't need to clear anything on
+    // its own since the horizontal step already does.
+    const parentRect = chain[hostIndex].popup.getBoundingClientRect();
+    px = parentRect.left + cascadeDirX * (parentRect.width + GAP);
+    py = parentRect.top + cascadeDirY * CASCADE_DY;
+    if (px < 4) px = 4;
+    if (px + pw > vw - 4) px = vw - pw - 4;
+    if (py < 4) py = 4;
+    if (py + ph > vh - 4) py = vh - ph - 4;
   }
 
   popup.style.left = px + 'px';
