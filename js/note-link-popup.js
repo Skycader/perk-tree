@@ -18,7 +18,7 @@ import { renderMD, renderLevelMD } from './markdown.js';
 // whatever was already open at that depth and below (its old descendants),
 // while everything ABOVE that depth (its ancestors) is left untouched.
 const GAP = 8; // px gap between the clicked word and the popup, matches chain-tip.js
-const CASCADE_DY = 32; // px each cascade level steps vertically off its parent — a small diagonal stagger, not a clearance distance (the horizontal step is what guarantees no overlap, see showNoteLinkPopup)
+const CASCADE_STEP_X = 160; // px each cascade level steps sideways off its parent — a staircase "tread" width, not a clearance distance (the vertical placement is what guarantees no overlap, see showNoteLinkPopup). Wide enough that the trigger word is usually OUTSIDE the new popup's own horizontal span, which is what lets the connector reach a side edge at header height without crossing the header — see the toX/toY comment below.
 
 // createElementNS is required here — document.createElement('svg')/('g')
 // creates an HTML-namespaced element that never actually renders as vector
@@ -32,18 +32,20 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 // One shared full-viewport overlay for every connector line in the chain —
 // each link gets its own <g> inside it (removed individually when that
 // link, or an ancestor of it, closes).
-// z-index ABOVE .note-link-popup (700 — see notes.css), not below it. A
+// z-index ABOVE .note-link-popup (10001 — see notes.css), not below it. A
 // depth-2+ connector's line necessarily starts inside its own parent popup
 // (that's where the trigger word lives), so if the overlay sat below the
 // popups, each parent would paint over the start of its own child's line —
 // confirmed by pixel-sampling a rendered frame: the line was completely
 // absent exactly where it crossed the parent popup's body. Above every
 // popup, the (thin, pointer-events:none) line simply draws over whatever
-// it crosses, the same way a leader line in a diagram would.
+// it crosses, the same way a leader line in a diagram would. Also above
+// #notes-popup's own 10000 — a <note> ref can live inside the startup
+// notes popup itself, whose z-index otherwise beats everything here.
 const arrowSvg = document.createElementNS(SVG_NS, 'svg');
 arrowSvg.id = 'note-link-arrow-svg';
 arrowSvg.style.cssText =
-  'display:none;position:fixed;left:0;top:0;pointer-events:none;z-index:701;overflow:visible;';
+  'display:none;position:fixed;left:0;top:0;pointer-events:none;z-index:10002;overflow:visible;';
 document.body.appendChild(arrowSvg);
 
 // ordered root→leaf: chain[0] was opened from outside every popup (tree/
@@ -158,18 +160,27 @@ export function showNoteLinkPopup(triggerEl, noteId) {
     cascadeDirX = px + pw / 2 < vw / 2 ? 1 : -1;
     cascadeDirY = py + ph / 2 < vh / 2 ? 1 : -1;
   } else {
-    // cascaded off a parent popup — steps from the parent's own position
-    // (not the trigger word — the word can be anywhere inside a wide
-    // parent, which isn't a useful anchor for where the NEXT box should
-    // go). The horizontal step is the parent's FULL width + GAP, in the
-    // direction chosen when the root opened — this alone guarantees zero
-    // overlap with the parent, regardless of the vertical step. The
-    // vertical step (CASCADE_DY) stays small and is purely a diagonal
-    // stagger for visual variety — it doesn't need to clear anything on
-    // its own since the horizontal step already does.
+    // cascaded off a parent popup — a real staircase: this popup's Y-range
+    // sits immediately adjacent to the parent's, touching with zero gap
+    // (top = parent's bottom when stepping down, or bottom = parent's top
+    // when stepping up), stepped sideways by a small fixed tread width so
+    // it reads as connected stairs rather than a single vertical stack.
+    // Direction (which way is "up the stairs") was decided once when the
+    // root opened. Positioning off the parent's own rect, not the trigger
+    // word — the word can be anywhere inside a wide parent, which isn't a
+    // useful anchor for where the next step should go.
+    //
+    // Because each step only ever touches its immediate parent and every
+    // step in a chain moves further in the same fixed direction, no two
+    // steps anywhere in the chain can overlap — step N+2's Y-range starts
+    // exactly where step N+1's ends, which already starts beyond step N's,
+    // regardless of how much they share in X.
     const parentRect = chain[hostIndex].popup.getBoundingClientRect();
-    px = parentRect.left + cascadeDirX * (parentRect.width + GAP);
-    py = parentRect.top + cascadeDirY * CASCADE_DY;
+    px = parentRect.left + cascadeDirX * CASCADE_STEP_X;
+    py =
+      cascadeDirY > 0
+        ? parentRect.top + parentRect.height // steps down, touching the parent's bottom edge
+        : parentRect.top - ph; // steps up, touching the parent's top edge
     if (px < 4) px = 4;
     if (px + pw > vw - 4) px = vw - pw - 4;
     if (py < 4) py = 4;
@@ -187,14 +198,30 @@ export function showNoteLinkPopup(triggerEl, noteId) {
   // horizontal to whichever side the popup landed on — a Г/L elbow.
   const icX = r.left + r.width / 2;
   const icY = r.top + r.height / 2;
-  // On a narrow viewport the vw-4 clamp above can force the popup to
-  // overlap the word it's linked to horizontally — connecting to whichever
-  // edge is "closer" would then draw the horizontal segment underneath the
-  // popup's own opaque background, making it invisible. Detect that case
-  // and go straight up/down to the word's own X instead (no bend needed,
-  // it's already vertically aligned).
-  const toX = icX < px ? px : icX > px + pw ? px + pw : icX;
-  const toY = py + 20;
+  // Normally: bend to whichever side edge is nearer the word, at roughly
+  // header height (py + 20) — this is the "arrow into the middle of the
+  // header" look every other connector in the app uses, and it's safe
+  // here because the word is beside the popup, so the segment approaches
+  // from outside and only ever touches that one edge.
+  //
+  // But if the word's X falls INSIDE the new popup's own width — which
+  // CASCADE_STEP_X being a small tread width makes possible — bending to
+  // a side edge at header height would instead draw the horizontal
+  // segment straight across the popup's own interior (through its header
+  // text, in the worst case), since this overlay paints above every
+  // popup and the segment's whole path would sit inside that popup's
+  // rect. In that case go straight up/down instead, with NO horizontal
+  // travel: touch the nearest actual Y-boundary directly above/below the
+  // word. Nothing to cross if there's no horizontal segment to cross with.
+  const insideSpanX = icX > px && icX < px + pw;
+  const toX = insideSpanX ? icX : icX < px ? px : px + pw;
+  const toY = insideSpanX
+    ? icY < py
+      ? py
+      : icY > py + ph
+        ? py + ph
+        : py
+    : py + 20;
   const total = Math.abs(icY - toY) + Math.abs(toX - icX);
 
   syncArrowSvgSize();

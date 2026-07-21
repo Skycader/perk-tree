@@ -227,7 +227,11 @@
    already-open note opens ANOTHER one of these cascading off it (see
    note-link-popup.js's chain[] array), so any number can coexist; DOM
    append order (each new one appended after the last) is what makes newer/
-   deeper popups paint over the ones they cascaded from. */
+   deeper popups paint over the ones they cascaded from.
+   z-index ABOVE #notes-popup's 10000 — a <note> ref can live inside the
+   startup notes popup itself, and that popup would otherwise paint over
+   (and hide) both this popup and its connector line wherever they overlap
+   it, since 10000 otherwise beats everything else in this file. */
 .note-link-popup {
   position: fixed;
   width: 420px;
@@ -236,7 +240,7 @@
   background: #0d0e18;
   border: 1px solid #2a3050;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
-  z-index: 700;
+  z-index: 10001;
   display: flex;
   flex-direction: column;
 }
