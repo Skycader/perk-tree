@@ -1,70 +1,126 @@
 import { notes } from '../notes.js';
 import { renderMD, renderLevelMD } from './markdown.js';
 
-// ── LINKED NOTE POPUP ──
-// Opened by clicking an <note id="..."> reference (see processNoteTags in
+// ── LINKED NOTE POPUP — CASCADE CHAIN ──
+// Opened by clicking a <note id="..."> reference (see processNoteTags in
 // markdown.js) — visually the same box as the startup notes popup (reuses
 // its .notes-title-box/.notes-content/.note-author-line classes), but
 // positioned and connected to the clicked word the same way chain-tip.js
 // links its tip to a chain icon: getBoundingClientRect() of the trigger,
 // flips side at the screen edge, elbow polyline connector.
+//
+// A <note> ref clicked INSIDE an already-open popup opens ANOTHER one
+// cascading off it, rather than replacing it — clicking through popup 1's
+// own text can open popup 2, then popup 3 inside THAT, and so on with no
+// hard depth limit (these are cheap static boxes). `chain` holds the
+// currently open sequence root→leaf; each entry knows the trigger element
+// it was opened from, so a NEW <note> ref clicked at some depth replaces
+// whatever was already open at that depth and below (its old descendants),
+// while everything ABOVE that depth (its ancestors) is left untouched.
 const GAP = 8; // px gap between the clicked word and the popup, matches chain-tip.js
 
-const popup = document.createElement('div');
-popup.id = 'note-link-popup';
-popup.innerHTML = `
-  <div class="notes-title-box">
-    <span class="note-link-title"></span>
-    <button class="notes-close" type="button" title="Закрыть">✕</button>
-  </div>
-  <div class="notes-content"></div>
-`;
-document.body.appendChild(popup);
+// createElementNS is required here — document.createElement('svg')/('g')
+// creates an HTML-namespaced element that never actually renders as vector
+// graphics (children assigned via innerHTML silently fail to paint too,
+// even though every computed style looks correct). Every other SVG
+// connector in this codebase sidesteps this by being a static <svg> tag in
+// index.html, which the HTML parser namespaces automatically — this is the
+// only one built dynamically in JS.
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
-const titleEl = popup.querySelector('.note-link-title');
-const contentEl = popup.querySelector('.notes-content');
-const closeBtn = popup.querySelector('.notes-close');
-
-// createElementNS is required here — document.createElement('svg') creates
-// an HTML-namespaced element that never actually renders as vector
-// graphics (its innerHTML-assigned children, circle/polyline, silently
-// fail to paint too, even though every computed style looks correct).
-// Every other SVG connector in this codebase sidesteps this entirely by
-// being a static <svg> tag in index.html, which the HTML parser namespaces
-// automatically — this is the only one built dynamically in JS.
-const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+// One shared full-viewport overlay for every connector line in the chain —
+// each link gets its own <g> inside it (removed individually when that
+// link, or an ancestor of it, closes).
+// z-index ABOVE .note-link-popup (700 — see notes.css), not below it. A
+// depth-2+ connector's line necessarily starts inside its own parent popup
+// (that's where the trigger word lives), so if the overlay sat below the
+// popups, each parent would paint over the start of its own child's line —
+// confirmed by pixel-sampling a rendered frame: the line was completely
+// absent exactly where it crossed the parent popup's body. Above every
+// popup, the (thin, pointer-events:none) line simply draws over whatever
+// it crosses, the same way a leader line in a diagram would.
+const arrowSvg = document.createElementNS(SVG_NS, 'svg');
 arrowSvg.id = 'note-link-arrow-svg';
 arrowSvg.style.cssText =
-  'display:none;position:fixed;left:0;top:0;pointer-events:none;z-index:699;overflow:visible;';
+  'display:none;position:fixed;left:0;top:0;pointer-events:none;z-index:701;overflow:visible;';
 document.body.appendChild(arrowSvg);
 
-let activeTrigger = null;
+// ordered root→leaf: chain[0] was opened from outside every popup (tree/
+// tooltip content), chain[i>0] was opened by clicking a <note> ref inside
+// chain[i-1].popup.
+let chain = [];
+
+function syncArrowSvgSize() {
+  const vw = window.innerWidth,
+    vh = window.innerHeight;
+  arrowSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+  arrowSvg.style.width = vw + 'px';
+  arrowSvg.style.height = vh + 'px';
+}
+
+// removes chain[index..end] — used both for closing a popup (which must
+// also take its descendants with it, since their connector lines point at
+// text that's part of the popup being removed) and for clearing out stale
+// descendants before opening a replacement at that depth.
+function closeFrom(index) {
+  if (index < 0) index = 0;
+  const removed = chain.splice(index);
+  removed.forEach((link) => {
+    link.popup.remove();
+    link.connector.remove();
+  });
+  if (chain.length === 0) arrowSvg.style.display = 'none';
+}
 
 export function hideNoteLinkPopup() {
-  popup.classList.remove('visible');
-  arrowSvg.style.display = 'none';
-  arrowSvg.innerHTML = '';
-  activeTrigger = null;
+  closeFrom(0);
+}
+
+// which open chain link (if any) visually contains el — determines the
+// depth a newly-clicked <note> ref belongs at.
+function hostIndexFor(el) {
+  return chain.findIndex((link) => link.popup.contains(el));
 }
 
 export function showNoteLinkPopup(triggerEl, noteId) {
-  // clicking the same word again toggles the popup closed, matching the
-  // single-instance requirement — there's only ever one of these open, so
-  // opening a different <note> ref while one is open just relocates it.
-  if (activeTrigger === triggerEl && popup.classList.contains('visible')) {
-    hideNoteLinkPopup();
+  const hostIndex = hostIndexFor(triggerEl);
+  const childIndex = hostIndex + 1;
+
+  // re-clicking the exact word that's already open at this depth toggles
+  // it (and everything cascaded under it) closed, instead of reopening.
+  const existingChild = chain[childIndex];
+  if (existingChild && existingChild.triggerEl === triggerEl) {
+    closeFrom(childIndex);
     return;
   }
+
   const note = notes.find((n) => n.id === noteId);
   if (!note) return;
 
-  activeTrigger = triggerEl;
+  // clicking a *different* link at/under this depth replaces whatever was
+  // cascaded from here — ancestors (0..hostIndex) are left alone.
+  closeFrom(childIndex);
+
+  const popup = document.createElement('div');
+  popup.className = 'note-link-popup';
+  popup.innerHTML = `
+    <div class="notes-title-box">
+      <span class="note-link-title"></span>
+      <button class="notes-close" type="button" title="Закрыть">✕</button>
+    </div>
+    <div class="notes-content"></div>
+  `;
+  document.body.appendChild(popup);
+
+  const titleEl = popup.querySelector('.note-link-title');
+  const contentEl = popup.querySelector('.notes-content');
+  const closeBtn = popup.querySelector('.notes-close');
+
   titleEl.textContent = note.title || '';
   const authorLine = note.author
     ? `<div class="note-author-line">${renderLevelMD(note.author)}</div>`
     : '';
   contentEl.innerHTML = renderMD(note.content || '') + authorLine;
-  popup.classList.add('visible');
 
   const r = triggerEl.getBoundingClientRect();
   const vw = window.innerWidth;
@@ -103,29 +159,41 @@ export function showNoteLinkPopup(triggerEl, noteId) {
   const toX = icX < px ? px : icX > px + pw ? px + pw : icX;
   const toY = py + 20;
   const total = Math.abs(icY - toY) + Math.abs(toX - icX);
-  arrowSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
-  arrowSvg.style.width = vw + 'px';
-  arrowSvg.style.height = vh + 'px';
+
+  syncArrowSvgSize();
   arrowSvg.style.display = 'block';
-  arrowSvg.innerHTML = `
+  const connector = document.createElementNS(SVG_NS, 'g');
+  connector.innerHTML = `
     <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
     <polyline points="${icX},${icY} ${icX},${toY} ${toX},${toY}"
       fill="none" stroke="#50556a" stroke-width="1.5"
       stroke-dasharray="${total}" stroke-dashoffset="${total}"
       style="animation:dashIn .3s ease forwards"/>`;
+  arrowSvg.appendChild(connector);
+
+  closeBtn.addEventListener('click', (e) => {
+    // stopPropagation matters here: this removes `popup` from the DOM, and
+    // if this click were left to bubble to the document click-outside
+    // listener below, it would find e.target no longer inside ANY
+    // remaining popup (its own was just removed) and misread that as a
+    // click outside the whole chain, wiping ancestors that should survive.
+    e.stopPropagation();
+    closeFrom(childIndex);
+  });
+
+  chain.push({ popup, connector, triggerEl, noteId });
 }
 
-closeBtn.addEventListener('click', hideNoteLinkPopup);
-
-// click-outside-closes — but not for a click on an <note> ref itself, that's
-// handled by the toggle/relocate logic in showNoteLinkPopup() above.
+// click-outside-closes-everything — but not for a click on a <note> ref
+// itself, that's handled by the toggle/relocate logic in
+// showNoteLinkPopup() above, and not for a click on any popup in the chain.
 document.addEventListener('click', (e) => {
-  if (!popup.classList.contains('visible')) return;
-  if (popup.contains(e.target)) return;
+  if (chain.length === 0) return;
   if (e.target.closest('.inline-note-ref')) return;
+  if (chain.some((link) => link.popup.contains(e.target))) return;
   hideNoteLinkPopup();
 });
 
-// the connector line is anchored to a specific on-screen rect — closing on
-// resize avoids leaving it pointing at a stale position.
+// every connector line is anchored to a specific on-screen rect — closing
+// the whole chain on resize avoids leaving them pointing at stale positions.
 window.addEventListener('resize', hideNoteLinkPopup);
