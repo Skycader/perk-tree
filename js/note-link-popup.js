@@ -128,16 +128,55 @@ export function showNoteLinkPopup(triggerEl, noteId) {
   const pw = popup.offsetWidth;
   const ph = popup.offsetHeight;
 
-  // left of the word by default, flips right if it'd go off-screen — same
-  // rule as showChainTip() in chain-tip.js, so every linked popup in the
-  // app behaves the same way regardless of which mechanism opened it.
-  let px = r.left - pw - GAP;
-  if (px < 4) px = r.right + GAP;
-  if (px + pw > vw - 4) px = vw - pw - 4;
-
   let py = r.top - ph / 2 + r.height / 2;
   if (py < 4) py = 4;
   if (py + ph > vh - 4) py = vh - ph - 4;
+
+  // rects of every popup already open, gathered before this one is placed —
+  // used below so a new popup avoids covering them when there's room to.
+  const openRects = chain.map((link) => link.popup.getBoundingClientRect());
+  const overlapsAny = (px) => {
+    const rect = { left: px, right: px + pw, top: py, bottom: py + ph };
+    return openRects.some(
+      (o) =>
+        !(
+          rect.right <= o.left ||
+          rect.left >= o.right ||
+          rect.bottom <= o.top ||
+          rect.top >= o.bottom
+        ),
+    );
+  };
+
+  let px = null;
+  if (hostIndex >= 0) {
+    // cascaded off a parent popup — prefer sitting beside it rather than
+    // beside the word alone: positioning off the word (a rule that works
+    // fine for the root case below, where the word sits in the much
+    // narrower tooltip) can otherwise land the new popup right on top of
+    // the much wider popup it came from. Try the parent's right edge
+    // first, then its left edge, taking whichever is both on-screen and
+    // clear of every currently open popup.
+    const parentRect = chain[hostIndex].popup.getBoundingClientRect();
+    const rightCandidate = parentRect.right + GAP;
+    const leftCandidate = parentRect.left - pw - GAP;
+    if (rightCandidate + pw <= vw - 4 && !overlapsAny(rightCandidate)) {
+      px = rightCandidate;
+    } else if (leftCandidate >= 4 && !overlapsAny(leftCandidate)) {
+      px = leftCandidate;
+    }
+  }
+
+  if (px === null) {
+    // root popup, or no clean spot beside the parent — fall back to the
+    // word-relative placement (left of the word, flips right if that'd go
+    // off-screen), same rule as showChainTip() in chain-tip.js. Clamped to
+    // the viewport as a last resort even if that means some overlap —
+    // there's nowhere else left to put it.
+    px = r.left - pw - GAP;
+    if (px < 4) px = r.right + GAP;
+    if (px + pw > vw - 4) px = vw - pw - 4;
+  }
 
   popup.style.left = px + 'px';
   popup.style.top = py + 'px';

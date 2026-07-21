@@ -1,5 +1,6 @@
 import { STAND_DATA } from '../config.js';
 import { SVG_ICONS } from './constants.js';
+import { notes } from '../notes.js';
 
 // Resolve a perk id → {name, hex} for inline <perk> tags.
 export function resolvePerkInline(pid) {
@@ -71,21 +72,62 @@ export function processHighlightTags(html) {
   return html.replace(/==([^=\n]+?)==/g, '<mark>$1</mark>');
 }
 
+// Shared by processNoteTags and processWikiLinkTags below — both resolve to
+// the same clickable purple-highlighted span (see note-link-popup.js and
+// .inline-note-ref in base.css), just via different reference syntaxes.
+// `labelSource` is always raw, un-rendered markdown text (neither caller
+// has had marked touch it yet), hence the explicit parseInline call.
+function buildNoteRefSpan(noteId, labelSource) {
+  const innerHtml =
+    typeof marked !== 'undefined'
+      ? marked.parseInline(labelSource.trim())
+      : labelSource.trim();
+  return `<span class="inline-note-ref" data-note-id="${noteId}">${innerHtml}</span>`;
+}
+
 // Replace <note id="chelovecheskaya-dusha">**крохотных**</note> with a
 // clickable purple-highlighted span that opens the matching notes.js entry
-// as a linked popup (see note-link-popup.js). marked already left the tag
-// untouched (raw HTML passthrough, same as <perk> below), inner text
-// included — so it still needs its own explicit parseInline call to render
-// any markdown inside the label.
+// as a linked popup. marked already left the tag untouched (raw HTML
+// passthrough, same as <perk> below), inner text included — so
+// buildNoteRefSpan's own parseInline call is what renders any markdown
+// inside the label.
 export function processNoteTags(html) {
   return html.replace(
     /<note\s+id="([^"]+)"\s*>([\s\S]*?)<\/note>/gi,
-    (_, noteId, inner) => {
-      const innerHtml =
-        typeof marked !== 'undefined'
-          ? marked.parseInline(inner.trim())
-          : inner.trim();
-      return `<span class="inline-note-ref" data-note-id="${noteId}">${innerHtml}</span>`;
+    (_, noteId, inner) => buildNoteRefSpan(noteId, inner),
+  );
+}
+
+// Wiki-link-style alternative to <note>, resolved by title or id:
+//   [[#Some Note Title|displayed label]]  — looked up by note.title
+//   [[id:some-note-id|displayed label]]   — looked up by note.id directly
+// Unlike processNoteTags, this runs BEFORE marked.parse (see renderMD/
+// renderLevelMD) — [[ ]] isn't valid CommonMark syntax marked would pass
+// through untouched the way it does real HTML tags, so it's resolved to the
+// same span markup pre-parse instead, before marked's own link/reference
+// parsing gets a chance to touch the double brackets. Title lookup tries an
+// exact trim() match first, then falls back to a case-insensitive one (note
+// titles carry a leading emoji that's easy to mistype the case of).
+// An unresolved reference degrades to its plain label text rather than
+// breaking the surrounding render.
+export function processWikiLinkTags(text) {
+  return text.replace(
+    /\[\[([^\]|]+)\|([^\]]+)\]\]/g,
+    (_, selector, label) => {
+      selector = selector.trim();
+      let noteId = null;
+      if (selector.startsWith('#')) {
+        const title = selector.slice(1).trim();
+        const match =
+          notes.find((n) => (n.title || '').trim() === title) ||
+          notes.find(
+            (n) => (n.title || '').trim().toLowerCase() === title.toLowerCase(),
+          );
+        noteId = match ? match.id : null;
+      } else if (selector.startsWith('id:')) {
+        noteId = selector.slice(3).trim();
+      }
+      return noteId ? buildNoteRefSpan(noteId, label) : label;
     },
   );
 }
@@ -136,12 +178,14 @@ function dedent(text) {
 // Uses parseInline for simple text, full parse only when block MD detected.
 export function renderLevelMD(text) {
   if (!text) return '';
-  const preprocessed = dedent(text)
-    .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '<br>')
-    .replace(
-      /<empty-line\s*\/?>(<\/empty-line>)?/gi,
-      '<span class="md-blank-line"></span>',
-    );
+  const preprocessed = processWikiLinkTags(
+    dedent(text)
+      .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '<br>')
+      .replace(
+        /<empty-line\s*\/?>(<\/empty-line>)?/gi,
+        '<span class="md-blank-line"></span>',
+      ),
+  );
   const hasBlock = /^\s*(#{1,6} |[*\-+] |\d+\. |>|\|.*\|)/m.test(
     preprocessed,
   );
@@ -161,13 +205,15 @@ export function renderLevelMD(text) {
 export function renderMD(text) {
   if (!text) return '';
   // normalise explicit line-break tags and \n before markdown parsing
-  let preprocessed = dedent(text)
-    .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '  \n') // → MD hard break
-    .replace(
-      /<empty-line\s*\/?>(<\/empty-line>)?/gi,
-      '<span class="md-blank-line"></span>',
-    )
-    .replace(/\\n/g, '  \n'); // literal \n in config strings → MD hard break
+  let preprocessed = processWikiLinkTags(
+    dedent(text)
+      .replace(/<line-break\s*\/?>(<\/line-break>)?/gi, '  \n') // → MD hard break
+      .replace(
+        /<empty-line\s*\/?>(<\/empty-line>)?/gi,
+        '<span class="md-blank-line"></span>',
+      )
+      .replace(/\\n/g, '  \n'), // literal \n in config strings → MD hard break
+  );
   let html;
   if (typeof marked !== 'undefined') {
     html = marked.parse(preprocessed);
