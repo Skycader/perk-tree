@@ -48,7 +48,13 @@ export const STAND_DATA = {
         {
           id: 'standPrecision',
           name: 'Точность движений',
-          img: 'assets/drawing_1024_768.jpg',
+          imgs: [
+            { src: 'assets/drawing_1024_768.jpg' },
+            { src: 'assets/blue-marble_1280_800.jpg' },
+            { src: 'assets/leopard-2a4m-can_1408_704.png' },
+            { src: 'assets/star-destroyer_1248_832.jpg' },
+          ],
+          slider: true,
           description:
             'Определяет координацию моторных функций и пространственную точность манипуляторов Тени. Включает расчет погрешности при баллистическом метании предметов, перехвате малоразмерных высокоскоростных целей и выполнении микроскопических операций вплоть до пикометровых масштабов.',
         },
