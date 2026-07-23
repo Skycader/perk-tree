@@ -110,7 +110,6 @@ D.skills.forEach((ch) => {
     (perkCountByColor[colourName] || 0) + ch.perks.length;
 });
 
-
 // ── BUILD COLUMNS ──
 const colsRow = document.getElementById('cols-row');
 export const colRefs = [];
@@ -121,10 +120,7 @@ columns.forEach((chapters) => {
 
   const connEl = document.createElement('div');
   connEl.className = 'col-connector';
-  const connSvg = document.createElementNS(
-    'http://www.w3.org/2000/svg',
-    'svg',
-  );
+  const connSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   connSvg.setAttribute('aria-hidden', 'true');
   connEl.appendChild(connSvg);
 
@@ -212,8 +208,7 @@ columns.forEach((chapters) => {
                     y: 'y',
                   };
                   rcolor = skill.color
-                    ? COLOR_MAP2[skill.color.toLowerCase()] ||
-                      skill.color[0]
+                    ? COLOR_MAP2[skill.color.toLowerCase()] || skill.color[0]
                     : chapterColour.get(skill);
                   break;
                 }
@@ -284,9 +279,7 @@ columns.forEach((chapters) => {
         }
         chainSvg.addEventListener('mouseenter', showTip);
         chainSvg.addEventListener('mouseleave', hideTipDelayed);
-        tip.addEventListener('mouseenter', () =>
-          clearTimeout(_chainHide),
-        );
+        tip.addEventListener('mouseenter', () => clearTimeout(_chainHide));
         tip.addEventListener('mouseleave', () => {
           tip.style.display = 'none';
           ttArrowSvg.style.display = 'none';
@@ -426,8 +419,7 @@ function makeBadge(badgeStr) {
         if (ch === '🟨') return `<span class="sq sq-y"></span>`;
         if (ch === '🟥') return `<span class="sq sq-r"></span>`;
         if (ch === '🟦') return `<span class="sq sq-b"></span>`;
-        if (ch === '⬛' || ch === '◼')
-          return `<span class="sq sq-k"></span>`;
+        if (ch === '⬛' || ch === '◼') return `<span class="sq sq-k"></span>`;
         return '';
       })
       .join('');
@@ -460,8 +452,7 @@ const ranksHtml = D.ranks
     const cells = RANKS_TABLE.map((col) => {
       if (col === '#')
         return `<td class="r-lvl" style="color:#454a60">${i + 1}</td>`;
-      if (col === 'RANGE')
-        return `<td class="r-lvl">${minLvl}–${maxLvl}</td>`;
+      if (col === 'RANGE') return `<td class="r-lvl">${minLvl}–${maxLvl}</td>`;
       if (col === 'NAME') return `<td class="r-name">${r.name}</td>`;
       if (col === 'LOGO') return `<td>${makeBadge(r.badge)}</td>`;
       return '';
@@ -482,7 +473,7 @@ sb.innerHTML = `
 // ── BOTTOM BAR vulnerabilities — from D.vulns if present ──
 const vulns = D.vulns || [];
 document.getElementById('bottom-bar').innerHTML = vulns.length
-  ? `<div class="bb-hdr">⚜ Уязвимости ${standName}</div>
+  ? `<div class="bb-hdr">⚜ Ограниченность Тени</div>
  <div class="bb-items">${vulns
    .map(
      (v) => `<div class="bb-item">
