@@ -2,6 +2,23 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
+    <!-- Applies the saved UI zoom (js/zoom.js) before any CSS/content loads, so
+         the page never flashes at 100% and then jumps to the saved level.
+         Plain synchronous script, not a module — needs to run before the
+         very first paint, no import overhead to wait on. Scales the root
+         font-size (every font-size in this codebase is `rem`, relative to
+         this — see base.css), not `zoom` — zoom scales the whole rendered
+         page and desyncs from this app's JS-computed tooltip/connector
+         pixel positions, which font-only scaling never touches. -->
+    <script>
+      (function () {
+        var v = localStorage.getItem('uiZoomPercent');
+        var n = v === null ? 100 : parseInt(v, 10);
+        if (!isFinite(n)) n = 100;
+        n = Math.min(200, Math.max(50, n));
+        document.documentElement.style.fontSize = (16 * n) / 100 + 'px';
+      })();
+    </script>
     <!-- force desktop layout (1920x1080-class) on all devices, including phones.
          Mobile users are expected to pinch-zoom the whole page natively
          instead of getting a squeezed "responsive" layout. -->
@@ -167,6 +184,15 @@
       <div class="tb-right">
         <span id="exp-st"></span>
         <span class="tb-app-version" title="Версия программы">0.9</span>
+        <div class="zoom-controls" title="Масштаб интерфейса">
+          <button class="zoom-btn" id="zoom-out" title="Уменьшить масштаб">
+            −
+          </button>
+          <span class="zoom-level" id="zoom-level">100%</span>
+          <button class="zoom-btn" id="zoom-in" title="Увеличить масштаб">
+            +
+          </button>
+        </div>
         <button class="btn" onclick="exportPNG()">⬇ PNG</button>
         <button
           class="btn"

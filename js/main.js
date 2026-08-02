@@ -1,4 +1,5 @@
 import './background.js';
+import './zoom.js';
 import { drawColumn, drawTopBus } from './connectors.js';
 import { hideSpectre } from './spectre.js';
 import { licenseToolbar, licenseOverlay, showLicense, hideLicense } from './license-modal.js';
@@ -18,6 +19,22 @@ window.addEventListener('keydown', (e) => {
     hideNotesPopup();
     hideNoteLinkPopup();
   }
+});
+
+// zoom.js dispatches this instead of importing these directly (it would be
+// circular — tooltip.js/windows.js import scale()/getZoomScale() FROM
+// zoom.js). Any open window already baked the old scale into its
+// hand-computed layout, so just close everything; it reopens fresh.
+window.addEventListener('ui-zoom-changed', () => {
+  hideTooltip();
+  hideSpectre();
+  hideNotesPopup();
+  hideNoteLinkPopup();
+  // the tree's own dependency-line connectors (drawColumn/drawTopBus) are
+  // drawn from measured pixel rects too — a font-size change reflows the
+  // tree's column widths exactly like a window resize does, so they need
+  // the same redraw, not just a resize.
+  requestAnimationFrame(redrawAll);
 });
 
 // ── DRAW ──

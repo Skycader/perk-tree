@@ -6,6 +6,7 @@ import { createWin, destroyWins, resolveWindowCols } from './windows.js';
 import { resolvePerkInline, renderLevelMD, renderMD } from './markdown.js';
 import { openVideoLightbox } from './video-lightbox.js';
 import { hideNoteLinkPopup } from './note-link-popup.js';
+import { scale } from './zoom.js';
 import {
   COLOURS,
   COL_HEX,
@@ -13,10 +14,10 @@ import {
   WINDOW_PRIORITY,
   MAX_TOOLTIP_HEIGHT_PERCENT,
   MAX_TOOLTIP_HEIGHT_PX,
-  MIN_SECONDARY_H,
-  SLOT_COL_W,
-  SLOT_COL_GAP,
-  SLOT_ROW_GAP,
+  MIN_SECONDARY_H as MIN_SECONDARY_H_BASE,
+  SLOT_COL_W as SLOT_COL_W_BASE,
+  SLOT_COL_GAP as SLOT_COL_GAP_BASE,
+  SLOT_ROW_GAP as SLOT_ROW_GAP_BASE,
   SOLO_MAX_H,
   COL_FILL_ORDER,
   LEVELS_SCREEN_COL,
@@ -346,7 +347,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
   tooltipEl.style.opacity = '0'; // measure without flash
   const maxH = Math.min(
     Math.floor(vh * MAX_TOOLTIP_HEIGHT_PERCENT),
-    MAX_TOOLTIP_HEIGHT_PX,
+    scale(MAX_TOOLTIP_HEIGHT_PX),
   );
   tooltipEl.style.maxHeight = maxH + 'px';
   const actualH = Math.min(tooltipEl.scrollHeight, maxH);
@@ -650,11 +651,22 @@ export function showTooltip(name, lvlDesc, iconEl) {
 
     // anchor strictly to the ACTUAL rendered tooltip rect (already clamped to viewport)
     const mainR = tooltipEl.getBoundingClientRect();
+    // Shadows the imported *_BASE constants with their zoom-scaled value for
+    // the rest of this block (through the end of runLayout below) — every
+    // bare SLOT_COL_W/SLOT_COL_GAP/SLOT_ROW_GAP/MIN_SECONDARY_H reference
+    // downstream picks this up automatically, no need to wrap each of the
+    // many individual use sites in scale() by hand. This is hand-rolled JS
+    // pixel arithmetic, not CSS, so `rem` (used everywhere else for the
+    // zoom) has no effect on it — see zoom.js for why.
+    const SLOT_COL_W = scale(SLOT_COL_W_BASE);
+    const SLOT_COL_GAP = scale(SLOT_COL_GAP_BASE);
+    const SLOT_ROW_GAP = scale(SLOT_ROW_GAP_BASE);
+    const MIN_SECONDARY_H = scale(MIN_SECONDARY_H_BASE);
     // pre-compute SOLO_MAX_H here so it's visible to both runLayout and
     // the img load listener (which runs outside runLayout's rAF closure).
-    let SOLO_MAX_H = Math.max(80, mainR.bottom - mainR.top - 40);
-    const colW = 320;
-    const COL_GAP = 36;
+    let SOLO_MAX_H = Math.max(scale(80), mainR.bottom - mainR.top - scale(40));
+    const colW = SLOT_COL_W;
+    const COL_GAP = SLOT_COL_GAP;
     let colX, placedLeft;
     // prefer the same side the tooltip itself is on
     if (goRight) {
@@ -1447,9 +1459,9 @@ export function showTooltip(name, lvlDesc, iconEl) {
                 box.style.top = '';
                 if (natural > MIN_SECONDARY_H) minNeeded = natural;
               } else if (kind === 'IMG') {
-                minNeeded = 120;
+                minNeeded = scale(120);
               } else if (kind === 'AUDIO') {
-                minNeeded = 60;
+                minNeeded = scale(60);
               }
 
               // if not enough room in assigned column → overflow to next
@@ -1499,7 +1511,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
               if (kind === 'IMG' && imgSources.length) {
                 const firstSrc = imgSources[0]?.src || '';
                 const hint = parseSizeHint(firstSrc);
-                const containerW = SLOT_COL_W - 20;
+                const containerW = SLOT_COL_W - scale(20);
                 const hinted = hintedHeight(hint, containerW, cap);
                 if (hinted && !wantsMaximum) {
                   box.style.display = 'flex';

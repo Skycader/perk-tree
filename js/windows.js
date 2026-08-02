@@ -6,6 +6,7 @@ import {
   SLOT_COL_W,
   SLOT_COL_GAP,
 } from './constants.js';
+import { scale } from './zoom.js';
 
 // ── DYNAMIC WINDOW FACTORY ──
 // Creates a secondary window box + connector SVG and appends to body.
@@ -21,7 +22,7 @@ export function createWin(type, extraClasses = '') {
   box.className = `win-${type}${extraClasses ? ' ' + extraClasses : ''}`;
   box.style.cssText =
     WIN_BOX_STYLE +
-    'width:320px;background:#0d0e18;border:1px solid #2a3050;' +
+    `width:${scale(SLOT_COL_W)}px;background:#0d0e18;border:1px solid #2a3050;` +
     'box-shadow:0 8px 40px rgba(0,0,0,0.9);';
 
   const hdr = document.createElement('div');

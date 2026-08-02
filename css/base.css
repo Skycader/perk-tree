@@ -5,6 +5,15 @@
   margin: 0;
   padding: 0;
 }
+/* Explicit 16px baseline for the `rem` UI-zoom scale (js/zoom.js) — every
+   font-size in this codebase is in rem now, relative to THIS, not the
+   browser's own default (which is 16px almost everywhere anyway, but this
+   makes the 100%-zoom baseline a fact of this file, not an assumption).
+   zoom.js scales this value directly; nothing else here needs to change
+   for the whole UI's text to scale together. */
+html {
+  font-size: 16px;
+}
 body {
   background: #080910;
   font-family: 'JetBrains Mono', monospace;
@@ -87,13 +96,13 @@ mark {
 }
 .tb-title {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   color: #e09040;
   letter-spacing: 0.1em;
 }
 .tb-sub {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #454a60;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -104,7 +113,7 @@ mark {
   align-items: center;
 }
 .tb-stat {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: #585e72;
 }
 .tb-stat span {
@@ -117,7 +126,7 @@ mark {
   gap: 8px;
 }
 .btn {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -135,14 +144,54 @@ mark {
 }
 .tb-app-version {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #454a60;
   letter-spacing: 0.04em;
   margin-right: 4px;
 }
 
+/* ── UI ZOOM (js/zoom.js) ── */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  border: 1px solid #2a3050;
+  background: rgba(224, 144, 64, 0.07);
+}
+.zoom-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #e09040;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.zoom-btn:hover {
+  background: rgba(224, 144, 64, 0.16);
+}
+.zoom-btn:disabled {
+  color: #454a60;
+  cursor: default;
+  background: none;
+}
+.zoom-level {
+  min-width: 34px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.625rem;
+  color: #585e72;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
 #exp-st {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #454a60;
   margin-right: 4px;
 }
@@ -170,7 +219,7 @@ mark {
 .title-box {
   position: relative;
   flex-shrink: 0;
-  width: 175px;
+  width: 10.9375rem;
   border: 1px solid rgba(200, 120, 48, 0.5);
   background: linear-gradient(
     135deg,
@@ -180,26 +229,26 @@ mark {
   box-shadow:
     0 4px 20px rgba(200, 120, 48, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  padding: 10px 12px;
+  padding: 0.625rem 0.75rem;
 }
 .title-box-version {
   position: absolute;
   right: 8px;
   bottom: 6px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8px;
+  font-size: 0.5rem;
   color: rgba(224, 144, 64, 0.5);
   letter-spacing: 0.03em;
 }
 .title-box-name {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 1rem;
   color: #e09040;
   letter-spacing: 0.08em;
 }
 .title-box-sub {
-  font-size: 9px;
+  font-size: 0.5625rem;
   color: #585e72;
   letter-spacing: 0.05em;
   margin-top: 3px;
@@ -219,7 +268,7 @@ mark {
   padding: 10px 12px;
 }
 .altnames-label {
-  font-size: 9px;
+  font-size: 0.5625rem;
   color: #585e72;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -234,7 +283,7 @@ mark {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #7a8090;
   background: #0f1018;
   border: 1px solid #1e2235;

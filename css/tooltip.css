@@ -13,8 +13,8 @@
   display: none;
   position: fixed;
   z-index: 500;
-  width: 340px;
-  max-height: 80vh; /* overridden by JS via MAX_TOOLTIP_HEIGHT_PERCENT/PX */
+  width:  21.25rem;
+  max-height:  80vh; /* overridden by JS via MAX_TOOLTIP_HEIGHT_PERCENT/PX */
   background: #0f1018;
   border: 1px solid #2a3050;
   box-shadow:
@@ -30,7 +30,7 @@
 .tt-levels {
   overflow-y: auto;
   flex: 1;
-  min-height: 0;
+  min-height:  0;
 }
 
 @keyframes dashIn {
@@ -50,10 +50,10 @@
   z-index: 499;
 }
 .tt-header {
-  padding: 8px 36px 8px 12px;
+  padding:  0.5rem 2.25rem 0.5rem 0.75rem;
   border-bottom: 1px solid #1c1f2e;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #dedad2;
   position: relative;
@@ -70,8 +70,8 @@
   display: none;
   position: fixed;
   z-index: 520;
-  width: 340px;
-  max-height: 80vh; /* overridden by JS via MAX_TOOLTIP_HEIGHT_PERCENT/PX */
+  width:  21.25rem;
+  max-height:  80vh; /* overridden by JS via MAX_TOOLTIP_HEIGHT_PERCENT/PX */
   background: #0f1018;
   border: 1px solid #2a3050;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.9);
@@ -84,12 +84,12 @@
   top: 50%;
   right: 10px;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width:  1.25rem;
+  height:  1.25rem;
   background: none;
   border: none;
   color: #585e72;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -102,15 +102,15 @@
   color: #c0bdb4;
 }
 .tt-levels {
-  padding: 0;
+  padding:  0;
 }
 .tt-row {
   display: flex;
-  gap: 8px;
+  gap:  0.5rem;
   align-items: flex-start;
-  padding: 5px 12px;
+  padding:  0.3125rem 0.75rem;
   border-bottom: 1px solid rgba(28, 31, 46, 0.4);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .tt-row:last-child {
   border-bottom: none;
@@ -118,11 +118,11 @@
 .tt-lvl {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .tt-row-sub {
   border-top: none !important;
-  padding-top: 2px !important;
+  padding-top:  0.125rem !important;
   opacity: 0.92;
 }
 .tt-lvl-col {
@@ -130,8 +130,8 @@
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
-  min-width: 20px;
-  padding-top: 1px;
+  min-width:  1.25rem;
+  padding-top:  0.0625rem;
 }
 .tt-text {
   color: #7a8090;
@@ -143,20 +143,20 @@
 .sp-share {
   flex-shrink: 0;
   align-self: flex-start;
-  margin-top: 1px;
-  min-width: 62px;
+  margin-top:  0.0625rem;
+  min-width:  3.875rem;
   text-align: center;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-family: 'JetBrains Mono', monospace;
   white-space: nowrap;
 }
 /* MD elements inside level description rows */
 .tt-text p {
-  margin: 0;
-  padding: 0;
+  margin:  0;
+  padding:  0;
 }
 .tt-text p + p {
-  margin-top: 3px;
+  margin-top:  0.1875rem;
 }
 .tt-text strong {
   color: #c0bdb4;
@@ -168,36 +168,36 @@
   font-family: 'JetBrains Mono', monospace;
   background: #0a0b14;
   border: 1px solid #1e2235;
-  padding: 1px 4px;
+  padding:  0.0625rem 0.25rem;
   border-radius: 2px;
-  font-size: 9px;
+  font-size: 0.5625rem;
   color: #7ab0d0;
 }
 .tt-text ul,
 .tt-text ol {
-  padding-left: 16px;
-  margin: 2px 0;
+  padding-left:  1rem;
+  margin:  0.125rem 0;
 }
 .tt-text li {
-  margin: 1px 0;
+  margin:  0.0625rem 0;
 }
 .tt-text table {
   border-collapse: collapse;
-  width: 100%;
-  margin: 4px 0;
-  font-size: 9px;
+  width:  100%;
+  margin:  0.25rem 0;
+  font-size: 0.5625rem;
 }
 .tt-text th {
   background: #0f1020;
   border: 1px solid #1e2235;
-  padding: 2px 6px;
+  padding:  0.125rem 0.375rem;
   color: #8090a0;
   font-weight: 600;
   text-align: left;
 }
 .tt-text td {
   border: 1px solid #1a1d2e;
-  padding: 2px 6px;
+  padding:  0.125rem 0.375rem;
 }
 .tt-text tr:nth-child(even) td {
   background: rgba(255, 255, 255, 0.02);
@@ -205,12 +205,12 @@
 .tt-text hr {
   border: none;
   border-top: 1px solid #1e2235;
-  margin: 4px 0;
+  margin:  0.25rem 0;
 }
 .tt-text blockquote {
   border-left: 2px solid #3a4570;
-  padding: 2px 8px;
-  margin: 2px 0;
+  padding:  0.125rem 0.5rem;
+  margin:  0.125rem 0;
   color: #7a8090;
 }
 /* ── LEVEL NAVIGATION ── */
@@ -221,8 +221,8 @@
   z-index: 10;
 }
 .tt-lvl-nav-btn {
-  width: 22px;
-  height: 22px;
+  width:  1.375rem;
+  height:  1.375rem;
   background: rgba(13,14,24,0.9);
   border: 1px solid #2a3050;
   color: #585e72;
@@ -230,7 +230,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding:  0;
   transition: border-color .15s, color .15s;
   font-family: inherit;
 }
@@ -245,20 +245,20 @@
   bottom: 22px;
   left: 0;
   flex-direction: column-reverse;
-  gap: 4px;
-  padding-bottom: 8px; /* bridge gap to button so hover stays active */
+  gap:  0.25rem;
+  padding-bottom:  0.5rem; /* bridge gap to button so hover stays active */
 }
 .tt-lvl-nav:hover .tt-lvl-nav-popup {
   display: flex;
 }
 .tt-lvl-nav-sq {
-  width: 22px;
-  height: 22px;
+  width:  1.375rem;
+  height:  1.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   cursor: pointer;
   border: 1px solid #2a3050;
