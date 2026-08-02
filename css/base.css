@@ -154,12 +154,13 @@ mark {
 .zoom-controls {
   display: flex;
   align-items: center;
+  height: 26px; /* matches .btn's rendered height (font-size + 5px/14px padding + border) so the two sit flush in .tb-right */
   border: 1px solid #2a3050;
   background: rgba(224, 144, 64, 0.07);
 }
 .zoom-btn {
   width: 22px;
-  height: 22px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
