@@ -126,11 +126,15 @@ mark {
   gap: 8px;
 }
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.5rem; /* pinned instead of padding-derived — a content-driven height rendered inconsistently across browsers/font-metrics; a fixed height guarantees .btn and .zoom-controls match everywhere */
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 5px 14px;
+  padding: 0 14px;
   border: 1px solid #2a3050;
   background: rgba(224, 144, 64, 0.07);
   color: #e09040;
@@ -154,7 +158,7 @@ mark {
 .zoom-controls {
   display: flex;
   align-items: center;
-  height: 26px; /* matches .btn's rendered height (font-size + 5px/14px padding + border) so the two sit flush in .tb-right */
+  height: 1.5rem; /* matches .btn's pinned height exactly — see comment there */
   border: 1px solid #2a3050;
   background: rgba(224, 144, 64, 0.07);
 }
