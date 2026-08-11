@@ -249,7 +249,7 @@ export const notes = [
   {
     id: 'omut',
     title: '📜 Омут',
-    content: `**Омут** — это <note id="vodu-omuta">слой реальности</note>, родной дом для элементалей души.<br><br><img src="assets/slough_1248_832.jpg" />`,
+    content: `**Омут** — это <note id="vodu-omuta">слой реальности</note>, родной дом для элементалей души.`,
     author: '— Заметки неизвестного',
   },
   {
