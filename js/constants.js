@@ -86,12 +86,12 @@ export const WINDOW_ORDER = {
 export const COL_FILL_ORDER_LTR = {
   0: [2, 3],
   1: [1, 3],
-  2: [1, 3],
+  2: [1, 2],
 };
 export const COL_FILL_ORDER_RTL = {
   0: [3, 2],
   1: [3, 1],
-  2: [3, 1],
+  2: [2, 1],
 };
 // build COL_FILL_ORDER from WINDOW_ORDER (convert 1-based keys to 0-based)
 export const COL_FILL_ORDER = {
@@ -106,8 +106,17 @@ export const COL_FILL_ORDER = {
     : COL_FILL_ORDER_LTR)[2],
 };
 
-// which screen column (1/2/3) the levels tooltip occupies
-export const LEVELS_SCREEN_COL = { 0: 1, 1: 2, 2: 2 };
+// which screen column (1/2/3) the levels tooltip occupies.
+// Row 2 (rightmost tree column) is 3, not 2: showTooltip() forces its
+// tooltip to open mirrored-left of the icon for this row (isLastCol check,
+// see tooltip.js), so — unlike row 1 — it does NOT have open canvas on
+// both sides. Its "right" side is the icon/tree itself. Marking it 3
+// (levels flush against the right edge, matching row 0's mirror-image
+// "flush against the left edge" = 1) routes both fill columns to the
+// left via colScreenX's third branch, instead of the middle-row branch
+// that put col 3 back at mainR.right — which lands on/near the icon and
+// overlapped the tree's own right column.
+export const LEVELS_SCREEN_COL = { 0: 1, 1: 2, 2: 3 };
 
 export const MEDIA_LOADING_SVG = `<svg class="media-loading-svg" viewBox="0 0 24 24">
   <circle cx="12" cy="12" r="9"></circle>
