@@ -93,13 +93,16 @@ export function showTooltip(name, lvlDesc, iconEl) {
     spTooltip.style.display = 'flex';
     spTooltip.style.opacity = '1';
     const sr = _sqSpan.getBoundingClientRect();
-    const tw = 340,
+    // same rem-scaled width as #sp-tooltip in tooltip.css — see the comment
+    // on the main tooltip's `tw` above for why this must go through scale().
+    const tw = scale(340),
       vh2 = window.innerHeight,
       vw2 = window.innerWidth;
     spTooltip.style.maxHeight = Math.floor(vh2 * 0.82) + 'px';
     const sh = Math.min(spTooltip.scrollHeight, Math.floor(vh2 * 0.82));
-    let sx = sr.right + 12;
-    if (sx + tw > vw2 - 4) sx = sr.left - tw - 12;
+    const sGap = scale(12);
+    let sx = sr.right + sGap;
+    if (sx + tw > vw2 - 4) sx = sr.left - tw - sGap;
     if (sx < 4) sx = 4;
     let sy = sr.top - sh / 2;
     if (sy + sh > vh2 - 8) sy = vh2 - sh - 8;
@@ -327,10 +330,15 @@ export function showTooltip(name, lvlDesc, iconEl) {
   const ir = iconEl.getBoundingClientRect();
   const icX = ir.left + ir.width / 2;
   const icY = ir.top + ir.height / 2;
-  const tw = 340,
+  // must track .tooltip's actual CSS width (21.25rem in tooltip.css, i.e.
+  // 340px scaled by root font-size) — this drives goRight/x/toX below, and
+  // an unscaled literal here desyncs from the real (rem-scaled) box the
+  // moment zoom != 100%, letting the tooltip render wider than this code
+  // thinks and overrun the icon/tree it's supposed to sit clear of.
+  const tw = scale(340),
     vh = window.innerHeight,
     vw = window.innerWidth;
-  const GAP = 16;
+  const GAP = scale(16);
 
   // detect if this perk lives in the LAST (rightmost) column —
   // if so, force everything (tooltip + secondary windows) to open LEFTWARD,
