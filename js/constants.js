@@ -1,3 +1,17 @@
+// ── MOBILE/TABLET ADAPTATION TOGGLE ──
+// true  — narrow screens (≤768px) get the mobile tab layout (js/mobile-tabs.js,
+//         css/mobile.css) and a responsive viewport meta tag.
+// false — forced-desktop mode everywhere, even on a phone: the original
+//         width=1920 viewport meta and no tab collapsing, regardless of
+//         actual screen width.
+// MIRRORED in index.html's early inline script (plain `var`, not read from
+// here) — that script must run synchronously before first paint (to pick
+// the right viewport meta / add html.mobile-adapt before anything renders),
+// and an ES module import would defer past that point and flash the wrong
+// layout first, the same reason js/zoom.js's restore is duplicated there
+// too. Keep both in sync by hand if this changes.
+export const MOBILE_ADAPT = false;
+
 // ── COLOUR CYCLE for chapters ──
 export const COLOURS = [
   'o',

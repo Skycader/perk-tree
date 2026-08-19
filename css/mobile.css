@@ -8,107 +8,117 @@
   display: none;
 }
 
+/* Everything below only applies when BOTH the viewport is narrow AND
+   MOBILE_ADAPT is on — html.mobile-adapt is added by index.html's early
+   inline script, mirroring js/constants.js's MOBILE_ADAPT (see the comment
+   there). When MOBILE_ADAPT is false that class is never added, so none of
+   this fires regardless of screen width — forced-desktop mode. */
 @media (max-width: 768px) {
-  /* .topbar (base.css) is a fixed-height single-row flex with tb-left +
-     tb-stats + tb-right — their combined natural width is way past a
-     phone's, and none of it wraps, so the row (and with it the whole
-     page) overflowed horizontally. tb-stats (perk/level counts) is
-     dropped as redundant with the tree itself; tb-left/tb-right are
-     allowed to wrap onto their own lines instead. */
-  .topbar {
-    flex-wrap: wrap;
-    height: auto;
-    min-height: 46px;
-    padding: 0.5rem 0.75rem;
-    row-gap: 0.375rem;
-  }
-  .tb-stats {
-    display: none;
-  }
-  .tb-right {
-    flex-wrap: wrap;
-    row-gap: 0.375rem;
+  html.mobile-adapt {
+    /* .topbar (base.css) is a fixed-height single-row flex with tb-left +
+       tb-stats + tb-right — their combined natural width is way past a
+       phone's, and none of it wraps, so the row (and with it the whole
+       page) overflowed horizontally. tb-stats (perk/level counts) is
+       dropped as redundant with the tree itself; tb-left/tb-right are
+       allowed to wrap onto their own lines instead. */
+    .topbar {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: 46px;
+      padding: 0.5rem 0.75rem;
+      row-gap: 0.375rem;
+    }
+    .tb-stats {
+      display: none;
+    }
+    .tb-right {
+      flex-wrap: wrap;
+      row-gap: 0.375rem;
+    }
+
+    /* .mobile-tabs's sticky offset assumed .topbar's fixed 46px height,
+       which no longer holds now that it can wrap to 2+ lines — stop
+       pinning the tab bar rather than track a variable topbar height. */
+    .mobile-tabs {
+      display: flex;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      overflow-x: auto;
+      border-bottom: 1px solid #1e2235;
+      background: #0a0b13;
+    }
+    .mobile-tab-btn {
+      flex: 1 0 auto;
+      white-space: nowrap;
+      font-family: inherit;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.625rem;
+      border: 1px solid #2a3050;
+      background: rgba(224, 144, 64, 0.05);
+      color: #7a8090;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mobile-tab-btn.active {
+      background: rgba(224, 144, 64, 0.16);
+      border-color: #e09040;
+      color: #e09040;
+    }
+
+    .page {
+      flex-direction: column;
+    }
+    .sidebar {
+      width: 100%;
+    }
+
+    /* .meta-row is title-box (fixed rem width) + altnames-box (flex:1, no
+       max-width on its tag list) side by side — at phone widths that pair
+       doesn't fit, so the row overflows horizontally and, in fighting for
+       space, title-box gets squeezed narrow enough that its name wraps
+       across many lines instead of staying a compact single-line-ish box.
+       Drop altnames-box for now and let title-box take the full row. */
+    .altnames-box {
+      display: none;
+    }
+    .title-box {
+      width: 100%;
+    }
+
+    /* hide every collapsible section, then reveal only the one matching
+       document.body's data-mobile-tab (set by js/mobile-tabs.js) */
+    .col,
+    .sidebar,
+    .bottom-bar {
+      display: none;
+    }
   }
 
-  /* .mobile-tabs's sticky offset assumed .topbar's fixed 46px height,
-     which no longer holds now that it can wrap to 2+ lines — stop
-     pinning the tab bar rather than track a variable topbar height. */
-  .mobile-tabs {
+  html.mobile-adapt body[data-mobile-tab='1'] .col[data-col-idx='1'],
+  html.mobile-adapt body[data-mobile-tab='2'] .col[data-col-idx='2'],
+  html.mobile-adapt body[data-mobile-tab='3'] .col[data-col-idx='3'] {
     display: flex;
-    gap: 0.25rem;
-    padding: 0.5rem;
-    overflow-x: auto;
-    border-bottom: 1px solid #1e2235;
-    background: #0a0b13;
   }
-  .mobile-tab-btn {
-    flex: 1 0 auto;
-    white-space: nowrap;
-    font-family: inherit;
-    font-size: 0.625rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid #2a3050;
-    background: rgba(224, 144, 64, 0.05);
-    color: #7a8090;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .mobile-tab-btn.active {
-    background: rgba(224, 144, 64, 0.16);
-    border-color: #e09040;
-    color: #e09040;
-  }
-
-  .page {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-  }
-
-  /* .meta-row is title-box (fixed rem width) + altnames-box (flex:1, no
-     max-width on its tag list) side by side — at phone widths that pair
-     doesn't fit, so the row overflows horizontally and, in fighting for
-     space, title-box gets squeezed narrow enough that its name wraps
-     across many lines instead of staying a compact single-line-ish box.
-     Drop altnames-box for now and let title-box take the full row. */
-  .altnames-box {
-    display: none;
-  }
-  .title-box {
-    width: 100%;
-  }
-
-  /* hide every collapsible section, then reveal only the one matching
-     document.body's data-mobile-tab (set by js/mobile-tabs.js) */
-  .col,
-  .sidebar,
-  .bottom-bar {
-    display: none;
-  }
-  body[data-mobile-tab='1'] .col[data-col-idx='1'],
-  body[data-mobile-tab='2'] .col[data-col-idx='2'],
-  body[data-mobile-tab='3'] .col[data-col-idx='3'] {
+  html.mobile-adapt body[data-mobile-tab='ranks'] .sidebar {
     display: flex;
   }
-  body[data-mobile-tab='ranks'] .sidebar {
-    display: flex;
-  }
-  body[data-mobile-tab='dangers'] .bottom-bar {
+  html.mobile-adapt body[data-mobile-tab='dangers'] .bottom-bar {
     display: block;
   }
 
-  /* .bb-items is a row of flex:1 cards (sidebar.css) — fine with 3-5 cards
-     at desktop widths, but on a phone width each card shrinks to a sliver
-     and its text truncates. Stack them instead. */
-  .bb-items {
-    flex-direction: column;
-  }
-  .bb-item + .bb-item {
-    border-left: 1px solid #1c1f2e; /* restore (sidebar.css drops it for the row layout) */
-    border-top: 1px solid #1c1f2e; /* divider between stacked cards */
+  html.mobile-adapt {
+    /* .bb-items is a row of flex:1 cards (sidebar.css) — fine with 3-5
+       cards at desktop widths, but on a phone width each card shrinks to
+       a sliver and its text truncates. Stack them instead. */
+    .bb-items {
+      flex-direction: column;
+    }
+    .bb-item + .bb-item {
+      border-left: 1px solid #1c1f2e; /* restore (sidebar.css drops it for the row layout) */
+      border-top: 1px solid #1c1f2e; /* divider between stacked cards */
+    }
   }
 }

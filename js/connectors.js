@@ -147,19 +147,29 @@ export function drawTopBus() {
   }
 
   const tb = off(titleBox);
-  const an = off(anBox2);
+  // css/mobile.css hides altnames-box (display:none) below ~768px — a
+  // hidden element's offsetLeft/offsetWidth are always 0, which without
+  // this check fed a bogus (0,0) source point into the bus line below.
+  const anVisible = getComputedStyle(anBox2).display !== 'none';
+  const an = anVisible ? off(anBox2) : null;
   const sp = off(spacer);
 
   const busY = sp.top + sp.h / 2;
   const src1X = tb.left + tb.w / 2;
   const src1Y = tb.bottom;
-  const src2X = an.left + an.w / 2;
-  const src2Y = an.bottom;
+  const src2X = an ? an.left + an.w / 2 : null;
+  const src2Y = an ? an.bottom : null;
 
   // target Xs: mid of first ch-hdr in each col
   const txs = [],
     hdrTops = [];
   colsRowEl.querySelectorAll('.col').forEach((col) => {
+    // css/mobile.css hides 2 of the 3 .col elements (display:none) below
+    // ~768px — querySelectorAll still finds them, and a hidden element's
+    // offsetLeft/offsetTop are always 0, which fed a bogus (0,0) target
+    // into the bus line below for each hidden column (same class of bug
+    // as the altnames-box fix above, just on the target side this time).
+    if (getComputedStyle(col).display === 'none') return;
     const hdr = col.querySelector('.ch-hdr');
     if (!hdr) return;
     const r = off(hdr);
@@ -186,8 +196,8 @@ export function drawTopBus() {
   };
 
   ln(src1X, src1Y, src1X, busY);
-  ln(src2X, src2Y, src2X, busY);
-  const allXs = [src1X, src2X, ...txs];
+  if (src2X !== null) ln(src2X, src2Y, src2X, busY);
+  const allXs = [src1X, ...(src2X !== null ? [src2X] : []), ...txs];
   ln(Math.min(...allXs), busY, Math.max(...allXs), busY);
   txs.forEach((tx, i) => {
     const hTop = hdrTops[i] ?? busY;

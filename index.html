@@ -19,16 +19,27 @@
         document.documentElement.style.fontSize = (16 * n) / 100 + 'px';
       })();
     </script>
-    <!-- force desktop layout (1920x1080-class) on all devices, including phones.
-         Mobile users are expected to pinch-zoom the whole page natively
-         instead of getting a squeezed "responsive" layout.
-         TEMPORARILY DISABLED — restore the line below (and delete this one)
-         to bring back forced-desktop mode.
-    <meta
-      name="viewport"
-      content="width=1920, user-scalable=yes, initial-scale=0.3"
-    /> -->
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" id="viewport-meta" content="width=1920, user-scalable=yes, initial-scale=0.3" />
+    <!-- MOBILE_ADAPT toggle — mirrors js/constants.js's MOBILE_ADAPT (see the
+         comment there for why this can't just import it). Runs synchronously
+         before any CSS/content, same reasoning as the zoom-restore script
+         below: picks the viewport meta and adds html.mobile-adapt (which
+         css/mobile.css's rules all require) before first paint, so there's
+         no flash of the wrong layout while an ES module would still be
+         loading. When false, the viewport meta above (forced 1920 desktop
+         layout) is simply left as-is and html.mobile-adapt is never added,
+         so css/mobile.css's rules never fire regardless of screen width. -->
+    <script>
+      (function () {
+        var MOBILE_ADAPT = false;
+        if (MOBILE_ADAPT) {
+          document
+            .getElementById('viewport-meta')
+            .setAttribute('content', 'width=device-width, initial-scale=1');
+          document.documentElement.classList.add('mobile-adapt');
+        }
+      })();
+    </script>
     <title>Древо</title>
     <link
       rel="icon"
