@@ -1421,6 +1421,14 @@ export function showTooltip(name, lvlDesc, iconEl) {
             // first window in col2 (primary fill) gets Stylish offset
             // when vertical tree connector crosses that column's entry point
             const firstInCol = {}; // screenCol → bool (has a window been placed yet)
+            // screenCol → placedKey of the most recently PLACED window there —
+            // tracks actual runtime placement, not the static pre-overflow
+            // assignment in winColMap (see the connector-line block below,
+            // which used to re-derive this from winColMap and silently broke
+            // for any window whose runtime screenCol differs from its
+            // originally-assigned one — overflow AND the mirror fallback both
+            // do this).
+            const lastKeyInCol = {};
 
             let _imgBoxIdx = 0; // tracks which imgBoxes[i] to use for IMG kind
 
@@ -1485,6 +1493,39 @@ export function showTooltip(name, lvlDesc, iconEl) {
                 }
               }
               if (!posInfo) continue;
+
+              // ── OVERLAP GUARD ──
+              // Every slot fillOrder offers can still clamp to the same
+              // viewport edge (e.g. a narrow window + a tooltip that already
+              // eats most of the width) — clamping silently stacks this box
+              // on top of whatever else already clamped to that edge instead
+              // of finding it real room. Before clamping, try the OTHER side
+              // of the tooltip instead: there's usually space there, since
+              // normally only one side is under pressure at a time.
+              if (posInfo.x < 4 || posInfo.x + SLOT_COL_W > vwC - 4) {
+                const mirrorSide =
+                  posInfo.side === 'left' ? 'right' : 'left';
+                const mirrorX =
+                  mirrorSide === 'right'
+                    ? mainR.right + SLOT_COL_GAP
+                    : mainR.left - SLOT_COL_GAP - SLOT_COL_W;
+                const mirrorBottom = colBottom.mirror || mainR.top;
+                const mirrorStartY =
+                  mirrorBottom +
+                  (mirrorBottom > mainR.top ? SLOT_ROW_GAP : 0);
+                const mirrorAvailH = vhC - mirrorStartY - 8;
+                const mirrorFits =
+                  mirrorX >= 4 &&
+                  mirrorX + SLOT_COL_W <= vwC - 4 &&
+                  mirrorAvailH >= minNeeded;
+                if (mirrorFits) {
+                  console.warn(
+                    `[Древо] Окну ${kind} не хватило места (${posInfo.side}) — рендерим с противоположной стороны (${mirrorSide}), чтобы не наслаивалось на другие окна`,
+                  );
+                  screenCol = 'mirror';
+                  posInfo = { x: mirrorX, side: mirrorSide };
+                }
+              }
 
               // clamp X to viewport
               let { x, side } = posInfo;
@@ -1557,6 +1598,11 @@ export function showTooltip(name, lvlDesc, iconEl) {
               void box.offsetHeight; // force layout flush
               const rect = box.getBoundingClientRect();
               placedRects[placedKey] = rect;
+              // capture BEFORE overwriting — this is what the stub-connector
+              // code below anchors to (the window placed just before this
+              // one in the same actual screenCol).
+              const _prevKeyInCol = lastKeyInCol[screenCol];
+              lastKeyInCol[screenCol] = placedKey;
               // prefer computed bottom for media (hint-sized), rect for text windows
               colBottom[screenCol] =
                 kind === 'IMG' ? startY + effectiveH : rect.bottom;
@@ -1745,19 +1791,12 @@ export function showTooltip(name, lvlDesc, iconEl) {
                   }
                 }
               } else {
-                // short vertical stub from bottom of previous window to top of this one
-                // find previous window rect in same column using placedKey
-                const _prevAnchorKey = (() => {
-                  const keys = [];
-                  let ci2 = 0;
-                  for (const e of winColMap) {
-                    const k = e.kind === 'IMG' ? `IMG_${ci2}` : e.kind;
-                    if (e.kind === 'IMG') ci2++;
-                    if (k === placedKey) break;
-                    if (e.col === screenCol) keys.push(k);
-                  }
-                  return keys[keys.length - 1];
-                })();
+                // short vertical stub from bottom of previous window to top
+                // of this one, in the same actual screenCol — _prevKeyInCol
+                // was captured at placement time (see above), tracking real
+                // runtime placement rather than winColMap's static
+                // pre-overflow column assignment.
+                const _prevAnchorKey = _prevKeyInCol;
                 const anchorRect =
                   _prevAnchorKey && placedRects[_prevAnchorKey]
                     ? placedRects[_prevAnchorKey]
