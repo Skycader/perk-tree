@@ -21,11 +21,14 @@
     </script>
     <!-- force desktop layout (1920x1080-class) on all devices, including phones.
          Mobile users are expected to pinch-zoom the whole page natively
-         instead of getting a squeezed "responsive" layout. -->
+         instead of getting a squeezed "responsive" layout.
+         TEMPORARILY DISABLED — restore the line below (and delete this one)
+         to bring back forced-desktop mode.
     <meta
       name="viewport"
       content="width=1920, user-scalable=yes, initial-scale=0.3"
-    />
+    /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Древо</title>
     <link
       rel="icon"
@@ -47,6 +50,7 @@
     <link rel="stylesheet" href="css/loader.css" />
     <link rel="stylesheet" href="css/license.css" />
     <link rel="stylesheet" href="css/notes.css" id="notes-css" />
+    <link rel="stylesheet" href="css/mobile.css" />
   </head>
   <body>
     <!-- global page-loading spinner: hidden by the inline script once init finishes -->
@@ -244,6 +248,17 @@
           </svg>
         </button>
       </div>
+    </div>
+
+    <!-- Below ~768px (css/mobile.css) the 3 perk columns + ranks + dangers
+         block collapse into one-at-a-time tabs instead of side-by-side —
+         see js/mobile-tabs.js. Hidden entirely above that breakpoint. -->
+    <div class="mobile-tabs" id="mobile-tabs">
+      <button class="mobile-tab-btn" data-tab="1">1-я</button>
+      <button class="mobile-tab-btn" data-tab="2">2-я</button>
+      <button class="mobile-tab-btn" data-tab="3">3-я</button>
+      <button class="mobile-tab-btn" data-tab="ranks">Ранги</button>
+      <button class="mobile-tab-btn" data-tab="dangers">Опасности</button>
     </div>
 
     <div id="export-root">

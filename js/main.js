@@ -1,5 +1,6 @@
 import './background.js';
 import './zoom.js';
+import './mobile-tabs.js';
 import { drawColumn, drawTopBus } from './connectors.js';
 import { hideSpectre } from './spectre.js';
 import { licenseToolbar, licenseOverlay, showLicense, hideLicense } from './license-modal.js';
@@ -44,6 +45,12 @@ function redrawAll() {
 }
 
 window.addEventListener('resize', () => requestAnimationFrame(redrawAll));
+// mobile-tabs.js reveals a previously display:none column — its connector
+// lines were last computed against a zero-size box, same class of problem
+// as a resize or zoom change.
+window.addEventListener('mobile-tab-changed', () =>
+  requestAnimationFrame(redrawAll),
+);
 document.fonts.ready.then(() =>
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {

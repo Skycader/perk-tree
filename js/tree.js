@@ -114,9 +114,12 @@ D.skills.forEach((ch) => {
 const colsRow = document.getElementById('cols-row');
 export const colRefs = [];
 
-columns.forEach((chapters) => {
+columns.forEach((chapters, colPos) => {
   const col = document.createElement('div');
   col.className = 'col';
+  // consumed by css/mobile.css to show only one column at a time behind
+  // the mobile tab bar (js/mobile-tabs.js) below the ~768px breakpoint.
+  col.dataset.colIdx = colPos + 1;
 
   const connEl = document.createElement('div');
   connEl.className = 'col-connector';
