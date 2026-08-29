@@ -7,9 +7,11 @@
 // two are trivial to tell apart while browsing the data, not just on screen.
 // See dev-wiki/NOTES_SYSTEM.md for how the whole cross-link/popup system works.
 export const tips = [
-  // {
-  //   id: 'example-tip',
-  //   title: '💡 Пример подсказки',
-  //   content: 'Текст пояснения. Поддерживает markdown и вложенные <tip id="...">/<note id="...">/[[...]] ссылки, как и notes.js.',
-  // },
+  {
+    id: 'doppler',
+    title: '📜 Эффект Допплера',
+    content:
+      'Когда источник звука или света движется к вам, его волны сжимаются и частота растет (звук становится выше, а свет уходит в синий спектр). Когда он удаляется — волны растягиваются (звук падает, свет краснеет). Именно поэтому рев пролетающей гоночной машины резко меняет тон, а астрономы по «покраснению» света видят, что Вселенная расширяется.',
+    author: '— Википедия',
+  },
 ];

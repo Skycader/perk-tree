@@ -43,6 +43,21 @@ export const COL_HEX = {
   y: '#907820',
   k: '#303030',
 };
+// Brighter palette matching .perk-icon's own rendered color / the coloured
+// square in a tooltip's header (tooltip.js's showTooltip) — a DIFFERENT,
+// more saturated set of hexes than COL_HEX above (which is for connector
+// lines / tree spine, deliberately muted). This is what "шапка перка" (the
+// perk's own visual identity) means for --perk-accent-color — see
+// tree.js/tooltip.js.
+export const ICON_HEX = {
+  o: '#e09040',
+  r: '#cc3838',
+  b: '#3e80d0',
+  g: '#28a860',
+  p: '#7840c8',
+  y: '#b89030',
+  k: '#505050',
+};
 export const SPINE = '#2e3448';
 export const FOCUS_DIM = 0.75; // затемнение фона при фокусе (0–1)
 

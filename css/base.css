@@ -28,10 +28,18 @@ mark {
   border-radius: 2px;
 }
 
-/* <note id="..."> reference — see processNoteTags in markdown.js and
-   note-link-popup.js */
+/* <note id="..."> / <tip id="..."> reference — see processNoteTags/
+   processTipTags in markdown.js and note-link-popup.js.
+   Default color is CONTEXTUAL: --perk-accent-color is set on <html> by
+   tooltip.js's showTooltip() (the same hex as that perk's header square)
+   and removed by hideTooltip(), so a ref rendered while some perk's
+   tooltip is open picks up THAT perk's color automatically, everywhere
+   (main tooltip, secondary win-* windows, any note/tip popup cascaded from
+   them) — no color threaded through the render pipeline itself. Falls back
+   to the original purple (#9868d8) when no perk tooltip is open (e.g. the
+   startup notes.js popup, sidebar/dangers text). */
 .inline-note-ref {
-  color: #9868d8;
+  color: var(--perk-accent-color, #9868d8);
   /* 🔍 rendered into an inline SVG data URI — cursor has no built-in
      magnifying-glass keyword, only zoom-in/zoom-out (with a +/-), so a
      custom image is the only way to show this exact emoji. 12 12 centers
@@ -41,28 +49,27 @@ mark {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' font-size='20'%3E%3Ctext y='18'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E")
       12 12,
     pointer;
-  border-bottom: 1px dotted rgba(152, 104, 216, 0.55);
+  border-bottom: 1px dotted color-mix(in srgb, var(--perk-accent-color, #9868d8) 55%, transparent);
   transition:
     color 0.15s,
     border-color 0.15s;
 }
 .inline-note-ref:hover {
-  color: #b490f0;
-  border-bottom-color: #b490f0;
+  filter: brightness(1.25);
 }
 
-/* <tip id="..."> reference — same mechanics as .inline-note-ref above (see
-   processTipTags in markdown.js and note-link-popup.js), just teal instead
-   of purple so a lore note and an OOC tip read as different things at a
-   glance. Overrides color/border only — cursor/transition are inherited
-   from .inline-note-ref, since every tip ref also carries that base class. */
-.inline-tip-ref {
-  color: #3fc7b8;
-  border-bottom-color: rgba(63, 199, 184, 0.55);
+/* <tip>/<note> ... color="main"> — explicit escape hatch back to the
+   original fixed purple, ignoring whatever --perk-accent-color is active.
+   Two classes beats the plain .inline-note-ref rule on specificity, so no
+   !important needed. Parsed in markdown.js's buildNoteRefSpan. */
+.inline-ref--main {
+  color: #9868d8;
+  border-bottom-color: rgba(152, 104, 216, 0.55);
 }
-.inline-tip-ref:hover {
-  color: #6fe0d4;
-  border-bottom-color: #6fe0d4;
+.inline-ref--main:hover {
+  color: #b490f0;
+  border-bottom-color: #b490f0;
+  filter: none;
 }
 
 /* ── CUSTOM SCROLLBAR ── */

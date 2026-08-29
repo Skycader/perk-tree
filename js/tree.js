@@ -3,7 +3,7 @@ import { ttArrowSvg } from './dom-refs.js';
 import { renderLevelMD, renderMD } from './markdown.js';
 import { showTooltip, isCurrentBtn } from './tooltip.js';
 import { showSpectre, isSpectreOpen } from './spectre.js';
-import { COLOURS, FOCUS_DIM } from './constants.js';
+import { COLOURS, FOCUS_DIM, ICON_HEX } from './constants.js';
 
 // ── PROCESS CONFIG ──
 const D = STAND_DATA;
@@ -156,6 +156,13 @@ columns.forEach((chapters, colPos) => {
       const pEl = document.createElement('div');
       pEl.className = 'perk';
       pEl.dataset.perkId = p.id;
+      // .inline-note-ref/.inline-tip-ref (base.css) default to
+      // var(--perk-accent-color) — set here so a <tip>/<note> ref rendered
+      // in this perk's OWN tree text (.perk-desc below) is colored even
+      // when no tooltip is open. tooltip.js's showTooltip() sets the same
+      // variable on <html> while a tooltip IS open, covering refs rendered
+      // there instead (tooltip content isn't a DOM descendant of pEl).
+      pEl.style.setProperty('--perk-accent-color', ICON_HEX[c] || '#888');
       pEl.innerHTML = `<div class="perk-icon ic-${c}"></div>
   <div class="perk-body">
     <div class="perk-name-row">

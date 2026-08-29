@@ -259,17 +259,30 @@
   white-space: nowrap;
 }
 
-/* .note-link-popup--tip (js/note-link-popup.js, kind === 'tip') — recolors
-   the shared .notes-title-box accent from gold to teal, matching
-   .inline-tip-ref in base.css, so an open tip popup is distinguishable from
-   a lore-note popup at a glance, not just its trigger word. Only the
-   title-box accent changes; .notes-content stays the shared neutral style. */
-.note-link-popup--tip .notes-title-box {
+/* .note-link-popup's title-box accent defaults to whatever perk tooltip is
+   currently open (--perk-accent-color, set by tooltip.js's showTooltip() —
+   see base.css's .inline-note-ref for the fuller explanation), falling back
+   to the original gold when no perk tooltip is open. Overrides the shared
+   .notes-title-box rule (base.css) which #notes-popup — the unrelated
+   random-tip-on-load startup popup — keeps unchanged, always gold. */
+.note-link-popup .notes-title-box {
   background: linear-gradient(
     120deg,
-    rgba(63, 199, 184, 0.18) 0%,
-    rgba(63, 199, 184, 0.07) 100%
+    color-mix(in srgb, var(--perk-accent-color, #c8a038) 18%, transparent) 0%,
+    color-mix(in srgb, var(--perk-accent-color, #c8a038) 7%, transparent) 100%
   );
-  border-bottom: 1px solid rgba(63, 199, 184, 0.45);
-  color: #3fc7b8;
+  border-bottom: 1px solid color-mix(in srgb, var(--perk-accent-color, #c8a038) 45%, transparent);
+  color: var(--perk-accent-color, #c8a038);
+}
+/* color="main" on the trigger ref (.inline-ref--main, markdown.js) forces
+   the popup back to the fixed purple regardless of the ambient perk color —
+   see openLinkPopup's forceMain in note-link-popup.js. */
+.note-link-popup--main .notes-title-box {
+  background: linear-gradient(
+    120deg,
+    rgba(152, 104, 216, 0.18) 0%,
+    rgba(152, 104, 216, 0.07) 100%
+  );
+  border-bottom: 1px solid rgba(152, 104, 216, 0.45);
+  color: #9868d8;
 }

@@ -75,20 +75,35 @@ export function processHighlightTags(html) {
 
 // Shared by processNoteTags/processTipTags and processWikiLinkTags below —
 // all resolve to the same clickable span (see note-link-popup.js), just via
-// different reference syntaxes/kinds. `kind` picks the color/CSS modifier
-// (see .inline-note-ref/.inline-tip-ref in base.css) and which popup data
-// source note-link-popup.js reads from (notes.js vs tips.js) — a note is
+// different reference syntaxes/kinds. `kind` picks the popup data source
+// note-link-popup.js reads from (notes.js vs tips.js) — a note is
 // in-universe lore, a tip is an out-of-character mechanical clarification.
 // `labelSource` is always raw, un-rendered markdown text (neither caller
 // has had marked touch it yet), hence the explicit parseInline call.
-function buildNoteRefSpan(kind, refId, labelSource) {
+//
+// Default color: no CSS is set here at all — .inline-note-ref (base.css)
+// reads var(--perk-accent-color), which tooltip.js's showTooltip() sets to
+// whatever perk's tooltip is currently open, falling back to the original
+// purple when none is. `colorAttr === 'main'` is the explicit escape hatch
+// back to that fixed purple regardless of context — see .inline-ref--main.
+function buildNoteRefSpan(kind, refId, labelSource, colorAttr) {
   const innerHtml =
     typeof marked !== 'undefined'
       ? marked.parseInline(labelSource.trim())
       : labelSource.trim();
-  const cls = kind === 'tip' ? 'inline-note-ref inline-tip-ref' : 'inline-note-ref';
+  let cls = kind === 'tip' ? 'inline-note-ref inline-tip-ref' : 'inline-note-ref';
+  if (colorAttr === 'main') cls += ' inline-ref--main';
   const dataAttr = kind === 'tip' ? 'data-tip-id' : 'data-note-id';
   return `<span class="${cls}" ${dataAttr}="${refId}">${innerHtml}</span>`;
+}
+
+// Pulls id="..." and an optional color="..." out of a tag's raw attribute
+// string, order-independent (so both <note id="x" color="main"> and
+// <note color="main" id="x"> work).
+function parseRefAttrs(attrs) {
+  const id = attrs.match(/\bid="([^"]+)"/)?.[1] || null;
+  const color = attrs.match(/\bcolor="([^"]+)"/)?.[1] || null;
+  return { id, color };
 }
 
 // Replace <note id="chelovecheskaya-dusha">**крохотных**</note> with a
@@ -99,8 +114,11 @@ function buildNoteRefSpan(kind, refId, labelSource) {
 // inside the label.
 export function processNoteTags(html) {
   return html.replace(
-    /<note\s+id="([^"]+)"\s*>([\s\S]*?)<\/note>/gi,
-    (_, noteId, inner) => buildNoteRefSpan('note', noteId, inner),
+    /<note\s+([^>]*)>([\s\S]*?)<\/note>/gi,
+    (full, attrs, inner) => {
+      const { id, color } = parseRefAttrs(attrs);
+      return id ? buildNoteRefSpan('note', id, inner, color) : full;
+    },
   );
 }
 
@@ -110,8 +128,11 @@ export function processNoteTags(html) {
 // two read as visually/semantically different at the authoring site too.
 export function processTipTags(html) {
   return html.replace(
-    /<tip\s+id="([^"]+)"\s*>([\s\S]*?)<\/tip>/gi,
-    (_, tipId, inner) => buildNoteRefSpan('tip', tipId, inner),
+    /<tip\s+([^>]*)>([\s\S]*?)<\/tip>/gi,
+    (full, attrs, inner) => {
+      const { id, color } = parseRefAttrs(attrs);
+      return id ? buildNoteRefSpan('tip', id, inner, color) : full;
+    },
   );
 }
 
@@ -144,7 +165,7 @@ export function processWikiLinkTags(text) {
       } else if (selector.startsWith('id:')) {
         noteId = selector.slice(3).trim();
       }
-      return noteId ? buildNoteRefSpan(noteId, label) : label;
+      return noteId ? buildNoteRefSpan('note', noteId, label) : label;
     },
   );
 }

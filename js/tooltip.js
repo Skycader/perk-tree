@@ -10,6 +10,7 @@ import { scale } from './zoom.js';
 import {
   COLOURS,
   COL_HEX,
+  ICON_HEX,
   FOCUS_DIM,
   WINDOW_PRIORITY,
   MAX_TOOLTIP_HEIGHT_PERCENT,
@@ -55,22 +56,26 @@ export function showTooltip(name, lvlDesc, iconEl) {
     if (el !== iconEl) el.classList.remove('glowing');
   });
 
-  // coloured square in header
+  // coloured square in header — same ICON_HEX palette tree.js uses to set
+  // --perk-accent-color on each .perk element, so a perk's identity color
+  // is identical whether read from the tree or from an open tooltip.
   const _perkEl2 = _currentBtn?.closest('.perk');
   const _perkIc2 = _perkEl2?.querySelector('.perk-icon');
-  const _icHexMap = {
-    'ic-o': '#e09040',
-    'ic-r': '#cc3838',
-    'ic-b': '#3e80d0',
-    'ic-g': '#28a860',
-    'ic-p': '#7840c8',
-    'ic-y': '#b89030',
-    'ic-k': '#505050',
-  };
-  const _icCls2 = Object.keys(_icHexMap).find((cl) =>
-    _perkIc2?.classList.contains(cl),
+  const _icLetter2 = Object.keys(ICON_HEX).find((c) =>
+    _perkIc2?.classList.contains(`ic-${c}`),
   );
-  const _icHex2 = _icHexMap[_icCls2] || '#888';
+  const _icHex2 = ICON_HEX[_icLetter2] || '#888';
+  // consumed by .inline-note-ref/.inline-tip-ref (base.css) as the default
+  // (no color="..." attribute) color for any <note>/<tip> ref rendered
+  // anywhere while this perk's tooltip is open — main tooltip, secondary
+  // win-* windows, and any note/tip popup cascaded from either. Set on
+  // <html> (not the tooltip element) so it cascades to everything, since
+  // those windows/popups aren't DOM descendants of tooltipEl. Cleared in
+  // hideTooltip().
+  document.documentElement.style.setProperty(
+    '--perk-accent-color',
+    _icHex2,
+  );
   const _sqSpan = document.createElement('span');
   _sqSpan.style.cssText = `display:inline-block;width:10px;height:10px;background:${_icHex2};border-radius:1px;margin-right:8px;vertical-align:middle;cursor:pointer;flex-shrink:0;transition:box-shadow .2s`;
   _sqSpan.addEventListener('mouseenter', () => {
@@ -1943,6 +1948,7 @@ style="animation:dashIn .3s ease forwards"/>`;
 export function hideTooltip() {
   if (!_isVisible) return;
   _isVisible = false;
+  document.documentElement.style.removeProperty('--perk-accent-color'); // see showTooltip()
   hideNoteLinkPopup(); // the trigger word this popup is linked to is about to disappear
   tooltipEl.style.display = 'none';
   tooltipEl.style.maxHeight = '';

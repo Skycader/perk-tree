@@ -120,15 +120,34 @@ function openLinkPopup(triggerEl, kind, refId) {
   }
 
   const entry = SOURCES[kind].find((n) => n.id === refId);
-  if (!entry) return;
+  if (!entry) {
+    // the span still renders as a normal styled/clickable ref (see
+    // buildNoteRefSpan in markdown.js) even when its id doesn't resolve —
+    // there's no way to tell at render time, since notes.js/tips.js are
+    // just plain arrays with no id-existence check. Without this warning a
+    // missing entry looks identical to "nothing happens on click", which
+    // has been mistaken for a real bug before.
+    console.warn(
+      `[Древо] <${kind} id="${refId}"> не найден в ${kind === 'tip' ? 'tips.js' : 'notes.js'} — добавь запись с этим id`,
+    );
+    return;
+  }
 
   // clicking a *different* link at/under this depth replaces whatever was
   // cascaded from here — ancestors (0..hostIndex) are left alone.
   closeFrom(childIndex);
 
+  // .note-link-popup's title-box defaults to var(--perk-accent-color) too
+  // (notes.css), same as the trigger ref itself — matches whatever perk
+  // tooltip is currently open automatically. If the trigger used
+  // color="main" (.inline-ref--main, see markdown.js), force the popup to
+  // the same fixed purple rather than the ambient perk color, so the popup
+  // matches the ref that opened it either way.
+  const forceMain = triggerEl.classList.contains('inline-ref--main');
   const popup = document.createElement('div');
-  popup.className =
-    kind === 'tip' ? 'note-link-popup note-link-popup--tip' : 'note-link-popup';
+  popup.className = forceMain
+    ? 'note-link-popup note-link-popup--main'
+    : 'note-link-popup';
   popup.innerHTML = `
     <div class="notes-title-box">
       <span class="note-link-title"></span>

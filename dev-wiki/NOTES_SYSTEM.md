@@ -59,19 +59,30 @@ raw text
 
 - `<note>` looks like real HTML, so `marked` already leaves it untouched (raw-HTML passthrough, same treatment as `<perk>`) — `processNoteTags` picks it up *after* `marked.parse()`, matching on the still-raw inner text.
 - `[[...]]` is **not** valid CommonMark and isn't guaranteed to survive `marked`'s own link/reference parsing untouched (double brackets can collide with reference-link syntax) — so it's resolved to the same `<span>` markup *before* `marked` ever sees it, while it's still template text.
-- Both funnel through a shared `buildNoteRefSpan(noteId, labelSource)` helper that does the inner `marked.parseInline()` call and produces the `<span>`.
+- Both funnel through a shared `buildNoteRefSpan(kind, refId, labelSource, colorAttr)` helper that does the inner `marked.parseInline()` call and produces the `<span>`.
 
 ### `.inline-note-ref` click wiring
 
-Delegated document-level listener in `main.js` (mirrors the pre-existing `.inline-perk-ref` pattern):
+Delegated document-level listener in `main.js` (mirrors the pre-existing `.inline-perk-ref` pattern), branching on which id attribute the ref carries:
 ```js
 document.addEventListener('click', (e) => {
   const ref = e.target.closest('.inline-note-ref');
   if (!ref) return;
-  showNoteLinkPopup(ref, ref.dataset.noteId);
+  if (ref.dataset.tipId) { showTipPopup(ref, ref.dataset.tipId); return; }
+  const noteId = ref.dataset.noteId;
+  if (!noteId) return;
+  showNoteLinkPopup(ref, noteId);
 });
 ```
-`.inline-note-ref` styling (purple, hover) lives in `css/base.css`.
+
+### Ref color — contextual by default, `color="main"` to force purple
+
+`<note id="...">`/`<tip id="...">` accept an optional `color="..."` attribute, parsed order-independently alongside `id` by `parseRefAttrs` in `markdown.js`. Currently the only recognized value is `"main"`.
+
+- **No `color` attribute (default)**: the ref's color is `var(--perk-accent-color, #9868d8)` (`.inline-note-ref` in `css/base.css`) — `#9868d8` (the original purple) is only a *fallback* for when no perk tooltip is open. `tooltip.js`'s `showTooltip()` sets `--perk-accent-color` on `<html>` to that perk's own header-square hex (the same `_icHex2` already computed there) the instant a tooltip opens, and `hideTooltip()` removes it. Because it's set on `<html>`, it cascades to *everything* rendered while that tooltip is open — the main tooltip, every secondary `win-*` window, and any note/tip popup cascaded from any of them — with zero color threaded through the render pipeline itself. Outside any open perk tooltip (the startup `notes.js` popup, sidebar/dangers text), the var is unset and it falls back to the fixed purple.
+- **`color="main"`**: adds `.inline-ref--main` to the span's class list (two classes beats the plain `.inline-note-ref` rule on specificity, so no `!important` needed), forcing the original fixed purple regardless of any active `--perk-accent-color`. Use this for a ref that should always read the same way no matter which perk's tooltip it's viewed from.
+- **The popup itself follows the same rule**: `.note-link-popup .notes-title-box` also defaults to `var(--perk-accent-color, #c8a038)` (falls back to the *original gold*, not purple, matching what the popup always looked like) — `openLinkPopup` in `note-link-popup.js` checks `triggerEl.classList.contains('inline-ref--main')` and adds a `note-link-popup--main` modifier class if so, which forces the title-box back to purple to match. `#notes-popup` (the startup popup) is a separate, unrelated element and keeps its plain gold `.notes-title-box` unaffected by any of this.
+- **Sandboxed-preview-browser gotcha**: `.inline-note-ref` has `transition: color 0.15s` — in the Claude Code preview browser tool specifically, `document.hidden === true` can leave that transition visually stuck at its *starting* color indefinitely (same root cause as the documented rAF-throttling quirk — see the dev-workflow project memory). `getComputedStyle(el).color` mid-stall reports the stale color even though `getPropertyValue('--perk-accent-color')` on the same element already shows the correct new value. Not a real bug — confirmed by setting `el.style.transition = 'none'` and forcing a reflow, which immediately reveals the correct resolved color. A real user's browser (tab actually visible) transitions normally in 150ms and never exhibits this.
 
 ## Two separate popup UIs — don't conflate them
 
