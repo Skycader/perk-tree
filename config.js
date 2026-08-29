@@ -1201,7 +1201,7 @@ export const STAND_DATA = {
       },
     },
 
-    //1.5 [APPROVED] [!] Лазание?
+    //1.5 [APPROVED]
     standMobility: {
       0:
         'Прыжок до 0.5 м / Перегрузка до 1.5 g / Поверхность без изменений\n' +
