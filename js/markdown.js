@@ -1,6 +1,7 @@
 import { STAND_DATA } from '../config.js';
 import { SVG_ICONS } from './constants.js';
 import { notes } from '../notes.js';
+import { tips } from '../tips.js';
 
 // Resolve a perk id → {name, hex} for inline <perk> tags.
 export function resolvePerkInline(pid) {
@@ -72,17 +73,22 @@ export function processHighlightTags(html) {
   return html.replace(/==([^=\n]+?)==/g, '<mark>$1</mark>');
 }
 
-// Shared by processNoteTags and processWikiLinkTags below — both resolve to
-// the same clickable purple-highlighted span (see note-link-popup.js and
-// .inline-note-ref in base.css), just via different reference syntaxes.
+// Shared by processNoteTags/processTipTags and processWikiLinkTags below —
+// all resolve to the same clickable span (see note-link-popup.js), just via
+// different reference syntaxes/kinds. `kind` picks the color/CSS modifier
+// (see .inline-note-ref/.inline-tip-ref in base.css) and which popup data
+// source note-link-popup.js reads from (notes.js vs tips.js) — a note is
+// in-universe lore, a tip is an out-of-character mechanical clarification.
 // `labelSource` is always raw, un-rendered markdown text (neither caller
 // has had marked touch it yet), hence the explicit parseInline call.
-function buildNoteRefSpan(noteId, labelSource) {
+function buildNoteRefSpan(kind, refId, labelSource) {
   const innerHtml =
     typeof marked !== 'undefined'
       ? marked.parseInline(labelSource.trim())
       : labelSource.trim();
-  return `<span class="inline-note-ref" data-note-id="${noteId}">${innerHtml}</span>`;
+  const cls = kind === 'tip' ? 'inline-note-ref inline-tip-ref' : 'inline-note-ref';
+  const dataAttr = kind === 'tip' ? 'data-tip-id' : 'data-note-id';
+  return `<span class="${cls}" ${dataAttr}="${refId}">${innerHtml}</span>`;
 }
 
 // Replace <note id="chelovecheskaya-dusha">**крохотных**</note> with a
@@ -94,7 +100,18 @@ function buildNoteRefSpan(noteId, labelSource) {
 export function processNoteTags(html) {
   return html.replace(
     /<note\s+id="([^"]+)"\s*>([\s\S]*?)<\/note>/gi,
-    (_, noteId, inner) => buildNoteRefSpan(noteId, inner),
+    (_, noteId, inner) => buildNoteRefSpan('note', noteId, inner),
+  );
+}
+
+// Same as processNoteTags, but for out-of-character mechanical tips
+// (tips.js) instead of in-universe lore — <tip id="...">label</tip>.
+// Kept as a distinct tag (not a `kind` attribute on <note>) purely so the
+// two read as visually/semantically different at the authoring site too.
+export function processTipTags(html) {
+  return html.replace(
+    /<tip\s+id="([^"]+)"\s*>([\s\S]*?)<\/tip>/gi,
+    (_, tipId, inner) => buildNoteRefSpan('tip', tipId, inner),
   );
 }
 
@@ -198,7 +215,9 @@ export function renderLevelMD(text) {
     html = preprocessed.replace(/\n/g, '<br>');
   }
   return processSvgTags(
-    processPerkTags(processNoteTags(processHighlightTags(html))),
+    processPerkTags(
+      processTipTags(processNoteTags(processHighlightTags(html))),
+    ),
   );
 }
 
@@ -221,6 +240,8 @@ export function renderMD(text) {
     html = preprocessed.replace(/\n/g, '<br>');
   }
   return processSvgTags(
-    processPerkTags(processNoteTags(processHighlightTags(html))),
+    processPerkTags(
+      processTipTags(processNoteTags(processHighlightTags(html))),
+    ),
   );
 }

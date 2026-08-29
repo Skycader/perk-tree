@@ -11,7 +11,11 @@ import { colRefs } from './tree.js';
 import { exportPNG } from './export-png.js';
 import { dbl } from './debug.js';
 import { settleNotesPopup, hideNotesPopup } from './notes-popup.js';
-import { showNoteLinkPopup, hideNoteLinkPopup } from './note-link-popup.js';
+import {
+  showNoteLinkPopup,
+  showTipPopup,
+  hideNoteLinkPopup,
+} from './note-link-popup.js';
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -153,11 +157,18 @@ document.addEventListener('click', (e) => {
   }, 500);
 });
 
-// ── GLOBAL inline-note-ref handler ──
-// Same delegated-listener pattern as inline-perk-ref above.
+// ── GLOBAL inline-note-ref/inline-tip-ref handler ──
+// Same delegated-listener pattern as inline-perk-ref above. Both note and
+// tip refs share the .inline-note-ref base class (cursor/underline
+// mechanics) — dataset.tipId vs dataset.noteId is what tells them apart
+// (see buildNoteRefSpan in markdown.js).
 document.addEventListener('click', (e) => {
   const ref = e.target.closest('.inline-note-ref');
   if (!ref) return;
+  if (ref.dataset.tipId) {
+    showTipPopup(ref, ref.dataset.tipId);
+    return;
+  }
   const noteId = ref.dataset.noteId;
   if (!noteId) return;
   showNoteLinkPopup(ref, noteId);

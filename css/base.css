@@ -51,6 +51,20 @@ mark {
   border-bottom-color: #b490f0;
 }
 
+/* <tip id="..."> reference — same mechanics as .inline-note-ref above (see
+   processTipTags in markdown.js and note-link-popup.js), just teal instead
+   of purple so a lore note and an OOC tip read as different things at a
+   glance. Overrides color/border only — cursor/transition are inherited
+   from .inline-note-ref, since every tip ref also carries that base class. */
+.inline-tip-ref {
+  color: #3fc7b8;
+  border-bottom-color: rgba(63, 199, 184, 0.55);
+}
+.inline-tip-ref:hover {
+  color: #6fe0d4;
+  border-bottom-color: #6fe0d4;
+}
+
 /* ── CUSTOM SCROLLBAR ── */
 ::-webkit-scrollbar {
   width: 4px;

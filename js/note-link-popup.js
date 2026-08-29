@@ -1,22 +1,31 @@
 import { notes } from '../notes.js';
+import { tips } from '../tips.js';
 import { renderMD, renderLevelMD } from './markdown.js';
 
-// ── LINKED NOTE POPUP — CASCADE CHAIN ──
-// Opened by clicking a <note id="..."> reference (see processNoteTags in
-// markdown.js) — visually the same box as the startup notes popup (reuses
-// its .notes-title-box/.notes-content/.note-author-line classes), but
-// positioned and connected to the clicked word the same way chain-tip.js
-// links its tip to a chain icon: getBoundingClientRect() of the trigger,
-// flips side at the screen edge, elbow polyline connector.
+// kind → data source, matches processNoteTags/processTipTags in markdown.js
+const SOURCES = { note: notes, tip: tips };
+
+// ── LINKED NOTE/TIP POPUP — CASCADE CHAIN ──
+// Opened by clicking a <note id="..."> or <tip id="..."> reference (see
+// processNoteTags/processTipTags in markdown.js) — visually the same box as
+// the startup notes popup (reuses its .notes-title-box/.notes-content/
+// .note-author-line classes), but positioned and connected to the clicked
+// word the same way chain-tip.js links its tip to a chain icon:
+// getBoundingClientRect() of the trigger, flips side at the screen edge,
+// elbow polyline connector. Notes (in-universe lore, notes.js) and tips
+// (out-of-character clarifications, tips.js) share this exact same engine —
+// see `kind` in openLinkPopup — they only differ in data source and a CSS
+// color modifier (.note-link-popup--tip / .inline-tip-ref).
 //
-// A <note> ref clicked INSIDE an already-open popup opens ANOTHER one
+// A <note>/<tip> ref clicked INSIDE an already-open popup opens ANOTHER one
 // cascading off it, rather than replacing it — clicking through popup 1's
 // own text can open popup 2, then popup 3 inside THAT, and so on with no
-// hard depth limit (these are cheap static boxes). `chain` holds the
-// currently open sequence root→leaf; each entry knows the trigger element
-// it was opened from, so a NEW <note> ref clicked at some depth replaces
-// whatever was already open at that depth and below (its old descendants),
-// while everything ABOVE that depth (its ancestors) is left untouched.
+// hard depth limit (these are cheap static boxes), and a note can cascade
+// into a tip or vice versa freely. `chain` holds the currently open
+// sequence root→leaf; each entry knows the trigger element it was opened
+// from, so a NEW ref clicked at some depth replaces whatever was already
+// open at that depth and below (its old descendants), while everything
+// ABOVE that depth (its ancestors) is left untouched.
 const GAP = 8; // px gap between the clicked word and the popup, matches chain-tip.js
 const CASCADE_STEP_X = 160; // px each cascade level steps sideways off its parent — a staircase "tread" width, not a clearance distance (the vertical placement is what guarantees no overlap, see showNoteLinkPopup). Wide enough that the trigger word is usually OUTSIDE the new popup's own horizontal span, which is what lets the connector reach a side edge at header height without crossing the header — see the toX/toY comment below.
 
@@ -94,7 +103,11 @@ function hostIndexFor(el) {
   return chain.findIndex((link) => link.popup.contains(el));
 }
 
-export function showNoteLinkPopup(triggerEl, noteId) {
+// kind: 'note' | 'tip' — picks the data source (SOURCES above) and a CSS
+// modifier class on the popup itself (.note-link-popup--tip) so a tip's
+// header reads as visually distinct from a note's, same distinction the
+// inline ref span already makes via .inline-tip-ref.
+function openLinkPopup(triggerEl, kind, refId) {
   const hostIndex = hostIndexFor(triggerEl);
   const childIndex = hostIndex + 1;
 
@@ -106,15 +119,16 @@ export function showNoteLinkPopup(triggerEl, noteId) {
     return;
   }
 
-  const note = notes.find((n) => n.id === noteId);
-  if (!note) return;
+  const entry = SOURCES[kind].find((n) => n.id === refId);
+  if (!entry) return;
 
   // clicking a *different* link at/under this depth replaces whatever was
   // cascaded from here — ancestors (0..hostIndex) are left alone.
   closeFrom(childIndex);
 
   const popup = document.createElement('div');
-  popup.className = 'note-link-popup';
+  popup.className =
+    kind === 'tip' ? 'note-link-popup note-link-popup--tip' : 'note-link-popup';
   popup.innerHTML = `
     <div class="notes-title-box">
       <span class="note-link-title"></span>
@@ -128,11 +142,11 @@ export function showNoteLinkPopup(triggerEl, noteId) {
   const contentEl = popup.querySelector('.notes-content');
   const closeBtn = popup.querySelector('.notes-close');
 
-  titleEl.textContent = note.title || '';
-  const authorLine = note.author
-    ? `<div class="note-author-line">${renderLevelMD(note.author)}</div>`
+  titleEl.textContent = entry.title || '';
+  const authorLine = entry.author
+    ? `<div class="note-author-line">${renderLevelMD(entry.author)}</div>`
     : '';
-  contentEl.innerHTML = renderMD(note.content || '') + authorLine;
+  contentEl.innerHTML = renderMD(entry.content || '') + authorLine;
 
   const r = triggerEl.getBoundingClientRect();
   const vw = window.innerWidth;
@@ -245,7 +259,15 @@ export function showNoteLinkPopup(triggerEl, noteId) {
     closeFrom(childIndex);
   });
 
-  chain.push({ popup, connector, triggerEl, noteId });
+  chain.push({ popup, connector, triggerEl, kind, refId });
+}
+
+export function showNoteLinkPopup(triggerEl, noteId) {
+  openLinkPopup(triggerEl, 'note', noteId);
+}
+
+export function showTipPopup(triggerEl, tipId) {
+  openLinkPopup(triggerEl, 'tip', tipId);
 }
 
 // click-outside-closes-everything — but not for a click on a <note> ref

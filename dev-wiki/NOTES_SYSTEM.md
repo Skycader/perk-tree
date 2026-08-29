@@ -2,6 +2,8 @@
 
 How the "заметки" (notes.js) feature works, end to end: the startup tip popup, cross-linking between notes, and the cascading chain of linked popups. Written so a future read of just this file (without re-deriving from the code) is enough to safely change any part of it.
 
+**Tips (`tips.js`) are a second, parallel data source sharing this exact same cross-link/cascade engine** — see the dedicated section near the end. Everything below that talks about "notes" applies to tips too unless noted otherwise; the two only differ in data source, tag name (`<tip id>` vs `<note id>`), and a color modifier.
+
 ## Data source
 
 `notes.js` (project root) exports a flat array:
@@ -13,10 +15,10 @@ export const notes = [
 ];
 ```
 
-- `id` is looked up by both linking syntaxes below (`<note id>` and `[[id:...]]`). **IDs are not currently guaranteed unique** — `notes.find(n => n.id === id)` always resolves to the *first* match, so a duplicate id silently shadows every later entry with that id. Confirmed duplicates exist as of this writing (`ten-dushi`, `oskolok-dushi`, `khroniki-vlastitelya` — 2-3 entries each). Not code-enforced; if a note-link ever opens the "wrong" content, check for a duplicate id first.
+- `id` is looked up by both linking syntaxes below (`<note id>` and `[[id:...]]`). **IDs are not currently guaranteed unique** — `notes.find(n => n.id === id)` always resolves to the *first* match, so a duplicate id silently shadows every later entry with that id. Confirmed duplicates exist as of this writing (`ten-dushi`, `oskolok-dushi`, `khroniki-vlastitelya` — 2-3 entries each). Not code-enforced; if a note-link ever opens the "wrong" content, check for a duplicate id first. (Same caveat applies to `tips.js`, independently — its ids just need to be unique among themselves, not against `notes.js`.)
 - `title` already includes its own leading emoji (e.g. `'📜 Тень Души'`) — don't re-prefix it.
-- `author` already includes its own em-dash prefix — don't re-prefix that either.
-- `content` is markdown, rendered through the shared `renderMD` pipeline (see below) — it can itself contain links to *other* notes, which is what makes the popups cascade.
+- `author` already includes its own em-dash prefix — don't re-prefix that either. (Tips don't currently use `author` at all — it's supported by the data shape but there's no in-fiction "who wrote this" for an OOC clarification.)
+- `content` is markdown, rendered through the shared `renderMD` pipeline (see below) — it can itself contain links to *other* notes or tips, which is what makes the popups cascade (a note can cascade into a tip and vice versa).
 
 ## Two ways to author a cross-link inside note/perk/etc. content
 
@@ -50,6 +52,7 @@ raw text
   → marked.parse() / marked.parseInline()
   → processHighlightTags()  ==text==
   → processNoteTags()       <note id="...">...</note>  resolved AFTER marked
+  → processTipTags()        <tip id="...">...</tip>    same stage, same reason
   → processPerkTags()
   → processSvgTags()
 ```
@@ -113,16 +116,30 @@ Opened by clicking any `.inline-note-ref`. Not a singleton — clicking a link *
 
 `css/notes.css` — `.notes-title-box`, `.notes-content`, `.note-author-line` are plain (non-ID-scoped) classes reused by *both* `#notes-popup` and `.note-link-popup`, which is what gives them identical typography/colors without duplicating rules. `.note-link-popup` and `#note-link-arrow-svg`'s z-indices are documented inline where they're set (see above).
 
+## Tips — `<tip id="...">`, a second data source on the same engine
+
+Added after the note system above was already built and documented. A **tip** is an out-of-character mechanical clarification (e.g. explaining a game-mechanic rule), as opposed to a **note**, which is in-universe lore ("Заметки неизвестного"). They're kept as two separate tag names and two separate data files specifically so the distinction is visible both while authoring and while reading — not a `kind` flag bolted onto `<note>`.
+
+- **Data**: `tips.js` (project root), same shape as `notes.js` — `{id, title, content, author?}[]`. No startup-popup equivalent exists for tips (that's `notes.js`-only, via `notes-popup.js`) — tips are purely inline cross-references.
+- **Tag**: `<tip id="some-id">label</tip>`, parsed by `processTipTags` in `markdown.js` (mirrors `processNoteTags` exactly, same regex shape, wired into `renderMD`/`renderLevelMD` right next to it). There is currently **no** wiki-link (`[[...]]`) syntax for tips — only the `<tip>` tag. `processWikiLinkTags` still only resolves against `notes.js`.
+- **Span markup**: both note and tip refs go through the same `buildNoteRefSpan(kind, refId, labelSource)` helper. A tip ref gets `class="inline-note-ref inline-tip-ref"` and `data-tip-id="..."` (a note ref: just `inline-note-ref` + `data-note-id`) — the extra class is purely a color hook (`.inline-tip-ref` in `base.css`, teal instead of purple), the base `.inline-note-ref` class is what both share for cursor/underline mechanics and for being found by the click listener and the click-outside-closer's exclusion check.
+- **Click wiring**: the same delegated listener in `main.js` that matches `.inline-note-ref` now branches on `ref.dataset.tipId` vs `ref.dataset.noteId` to call `showTipPopup` vs `showNoteLinkPopup`.
+- **Popup engine**: `note-link-popup.js`'s internals were generalized rather than duplicated — `showNoteLinkPopup(triggerEl, noteId)` and the new `showTipPopup(triggerEl, tipId)` are both thin wrappers around one shared `openLinkPopup(triggerEl, kind, refId)`, which looks up `SOURCES[kind]` (`{ note: notes, tip: tips }`) and, for a tip, adds a `note-link-popup--tip` modifier class to the popup element. Everything else — the single `chain` array, staircase layout, connector-line logic, click-outside-closes-everything, `hideNoteLinkPopup()` closing the whole chain regardless of kind — is fully shared and unaware of `kind` beyond that one lookup, so a note popup can cascade into a tip popup and back with no special-casing.
+- **Popup color**: `.note-link-popup--tip .notes-title-box` in `notes.css` overrides the shared gold title-bar accent to the same teal as `.inline-tip-ref`. `.notes-content` stays the shared neutral style for both — only the header/accent differs.
+
+If tips ever need their own wiki-link syntax, their own startup-popup-style feature, or per-id uniqueness enforcement across *both* files, none of that exists yet — this section only covers what's built.
+
 ## Quick file map
 
 | File | Role |
 |---|---|
-| `notes.js` | Data: `{id, title, content, author}[]` |
-| `js/markdown.js` | `processNoteTags`, `processWikiLinkTags`, `buildNoteRefSpan`, wired into `renderMD`/`renderLevelMD` |
-| `js/notes-popup.js` | Startup tip popup — singleton, bottom-anchored, prev/next |
-| `js/note-link-popup.js` | Cascading chain of linked popups opened from `.inline-note-ref` clicks |
-| `js/main.js` | Delegated click listener wiring `.inline-note-ref` → `showNoteLinkPopup` |
-| `js/tooltip.js` | Calls `hideNoteLinkPopup()` from `hideTooltip()` — a ref can live inside a perk tooltip, so closing the tooltip must close any chain it spawned |
-| `css/notes.css` | Shared title-box/content/author styling + both popups' container rules |
-| `css/base.css` | `.inline-note-ref` link styling |
-| `index.html` | Early lightweight startup-note script (no `<note>`/`[[...]]` support — see above) |
+| `notes.js` | Lore data: `{id, title, content, author}[]` |
+| `tips.js` | OOC-tip data, same shape as `notes.js` (no `author` used in practice) |
+| `js/markdown.js` | `processNoteTags`, `processTipTags`, `processWikiLinkTags`, `buildNoteRefSpan`, wired into `renderMD`/`renderLevelMD` |
+| `js/notes-popup.js` | Startup tip popup — singleton, bottom-anchored, prev/next (notes only) |
+| `js/note-link-popup.js` | Cascading chain of linked popups opened from `.inline-note-ref` clicks — `openLinkPopup(triggerEl, kind, refId)` shared by `showNoteLinkPopup`/`showTipPopup` |
+| `js/main.js` | Delegated click listener wiring `.inline-note-ref` → `showNoteLinkPopup`/`showTipPopup` (branches on `dataset.tipId`/`dataset.noteId`) |
+| `js/tooltip.js` | Calls `hideNoteLinkPopup()` from `hideTooltip()` — a ref (note or tip) can live inside a perk tooltip, so closing the tooltip must close any chain it spawned |
+| `css/notes.css` | Shared title-box/content/author styling + both popups' container rules + `.note-link-popup--tip` color modifier |
+| `css/base.css` | `.inline-note-ref` (shared) + `.inline-tip-ref` (teal override) link styling |
+| `index.html` | Early lightweight startup-note script (no `<note>`/`<tip>`/`[[...]]` support — see above) |
