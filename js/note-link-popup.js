@@ -5,6 +5,38 @@ import { renderMD, renderLevelMD } from './markdown.js';
 // kind → data source, matches processNoteTags/processTipTags in markdown.js
 const SOURCES = { note: notes, tip: tips };
 
+// <file src="path/to/thing.md"></file> — lazily fetches an external file's
+// raw text and substitutes it in place of the tag, so long-form content
+// doesn't have to live inline in notes.js/tips.js. `src` is any relative
+// URL the static server can serve — not limited to a particular folder.
+// Resolved HERE (not in markdown.js) specifically because it's async and
+// this is the one render path that can afford to await before building the
+// popup DOM — renderMD/renderLevelMD stay fully synchronous everywhere
+// else in the app (tooltip/tree/sidebar rendering all assume synchronous
+// innerHTML + immediate scrollHeight measurement right after). No caching
+// — refetches every time the popup opens, by design (not preloaded, not
+// memoized). Only resolved when a note/tip popup is actually opened, never
+// eagerly.
+async function resolveFileTags(content) {
+  const FILE_TAG = /<file\s+src="([^"]+)"\s*>\s*<\/file>/gi;
+  const matches = [...content.matchAll(FILE_TAG)];
+  if (!matches.length) return content;
+  const results = await Promise.all(
+    matches.map(async (m) => {
+      const src = m[1];
+      try {
+        const res = await fetch(src);
+        if (!res.ok) throw new Error(String(res.status));
+        return await res.text();
+      } catch (e) {
+        return `⚠ Не удалось загрузить ${src}`;
+      }
+    }),
+  );
+  let i = 0;
+  return content.replace(FILE_TAG, () => results[i++]);
+}
+
 // ── LINKED NOTE/TIP POPUP — CASCADE CHAIN ──
 // Opened by clicking a <note id="..."> or <tip id="..."> reference (see
 // processNoteTags/processTipTags in markdown.js) — visually the same box as
@@ -62,6 +94,16 @@ document.body.appendChild(arrowSvg);
 // chain[i-1].popup.
 let chain = [];
 
+// Bumped by every closeFrom(0) (hideNoteLinkPopup — tooltip closing,
+// click-outside, resize, Escape) and by every openLinkPopup call. A
+// <file src="..."> fetch takes real (if usually brief) wall-clock time —
+// if the popup that requested it gets closed, or a different ref gets
+// clicked, while the fetch is still in flight, the fetch's eventual
+// resolution must NOT go on to build a popup nobody asked for anymore.
+// Each openLinkPopup call captures the generation at entry and re-checks
+// it after the await; a mismatch means it was superseded, and it bails.
+let requestGen = 0;
+
 // Which way each new cascade level steps from its parent (+1/-1 per axis),
 // decided once when the root popup opens (see showNoteLinkPopup) from
 // which half of the screen it landed in — so the chain always cascades
@@ -85,6 +127,7 @@ function syncArrowSvgSize() {
 // descendants before opening a replacement at that depth.
 function closeFrom(index) {
   if (index < 0) index = 0;
+  if (index === 0) requestGen++; // invalidate any in-flight fetch — see requestGen above
   const removed = chain.splice(index);
   removed.forEach((link) => {
     link.popup.remove();
@@ -107,7 +150,8 @@ function hostIndexFor(el) {
 // modifier class on the popup itself (.note-link-popup--tip) so a tip's
 // header reads as visually distinct from a note's, same distinction the
 // inline ref span already makes via .inline-tip-ref.
-function openLinkPopup(triggerEl, kind, refId) {
+async function openLinkPopup(triggerEl, kind, refId) {
+  const myGen = ++requestGen;
   const hostIndex = hostIndexFor(triggerEl);
   const childIndex = hostIndex + 1;
 
@@ -132,6 +176,17 @@ function openLinkPopup(triggerEl, kind, refId) {
     );
     return;
   }
+
+  // resolve any <file src="..."> before touching the DOM at all — the
+  // OLD popup at this depth (if any) stays visible while this awaits,
+  // rather than flashing empty, and a second click on the same trigger
+  // word while a fetch is still in flight will hit the toggle-close
+  // branch above on its own next call, not race this one.
+  const resolvedContent = await resolveFileTags(entry.content || '');
+  // superseded while the fetch was in flight (popup closed, or a
+  // different ref clicked at/under this depth) — don't open a popup for a
+  // request nobody's waiting on anymore.
+  if (myGen !== requestGen) return;
 
   // clicking a *different* link at/under this depth replaces whatever was
   // cascaded from here — ancestors (0..hostIndex) are left alone.
@@ -165,7 +220,7 @@ function openLinkPopup(triggerEl, kind, refId) {
   const authorLine = entry.author
     ? `<div class="note-author-line">${renderLevelMD(entry.author)}</div>`
     : '';
-  contentEl.innerHTML = renderMD(entry.content || '') + authorLine;
+  contentEl.innerHTML = renderMD(resolvedContent) + authorLine;
 
   const r = triggerEl.getBoundingClientRect();
   const vw = window.innerWidth;
