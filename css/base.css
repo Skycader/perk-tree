@@ -49,7 +49,11 @@ mark {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' font-size='20'%3E%3Ctext y='18'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E")
       12 12,
     pointer;
-  border-bottom: 1px dotted color-mix(in srgb, var(--perk-accent-color, #9868d8) 55%, transparent);
+  /* rgba(var(...)), not color-mix() — html2canvas (PNG export, an old
+     unmaintained vendored lib) throws on color-mix() computed values.
+     -r/-g/-b are the same color's channels split out as plain numbers,
+     set alongside --perk-accent-color itself (tree.js/tooltip.js). */
+  border-bottom: 1px dotted rgba(var(--perk-accent-r, 152), var(--perk-accent-g, 104), var(--perk-accent-b, 216), 0.55);
   transition:
     color 0.15s,
     border-color 0.15s;

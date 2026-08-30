@@ -59,6 +59,15 @@ export const ICON_HEX = {
   k: '#505050',
 };
 export const SPINE = '#2e3448';
+
+// '#rrggbb' → {r,g,b} (0-255 each). Used to set --perk-accent-r/g/b
+// alongside --perk-accent-color (tree.js/tooltip.js) — see the comment on
+// those custom properties in base.css/notes.css for why a color needs its
+// channels split out separately rather than alpha-blended with color-mix().
+export function hexToRgb(hex) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
 export const FOCUS_DIM = 0.75; // затемнение фона при фокусе (0–1)
 
 // Дефолтный порядок вторичных окон тултипа. Каждое окно получает

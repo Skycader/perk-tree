@@ -3,7 +3,7 @@ import { ttArrowSvg } from './dom-refs.js';
 import { renderLevelMD, renderMD } from './markdown.js';
 import { showTooltip, isCurrentBtn } from './tooltip.js';
 import { showSpectre, isSpectreOpen } from './spectre.js';
-import { COLOURS, FOCUS_DIM, ICON_HEX } from './constants.js';
+import { COLOURS, FOCUS_DIM, ICON_HEX, hexToRgb } from './constants.js';
 
 // ── PROCESS CONFIG ──
 const D = STAND_DATA;
@@ -160,9 +160,18 @@ columns.forEach((chapters, colPos) => {
       // var(--perk-accent-color) — set here so a <tip>/<note> ref rendered
       // in this perk's OWN tree text (.perk-desc below) is colored even
       // when no tooltip is open. tooltip.js's showTooltip() sets the same
-      // variable on <html> while a tooltip IS open, covering refs rendered
+      // variables on <html> while a tooltip IS open, covering refs rendered
       // there instead (tooltip content isn't a DOM descendant of pEl).
-      pEl.style.setProperty('--perk-accent-color', ICON_HEX[c] || '#888');
+      // -r/-g/-b (separate numeric channels, alongside the hex) exist so
+      // CSS can alpha-blend this color via plain rgba(var(--x-r), ...) —
+      // NOT color-mix(), which html2canvas's PNG export (an old, unmaintained
+      // vendored lib) fails to parse and throws on.
+      const _hex = ICON_HEX[c] || '#888';
+      const _rgb = hexToRgb(_hex);
+      pEl.style.setProperty('--perk-accent-color', _hex);
+      pEl.style.setProperty('--perk-accent-r', _rgb.r);
+      pEl.style.setProperty('--perk-accent-g', _rgb.g);
+      pEl.style.setProperty('--perk-accent-b', _rgb.b);
       pEl.innerHTML = `<div class="perk-icon ic-${c}"></div>
   <div class="perk-body">
     <div class="perk-name-row">

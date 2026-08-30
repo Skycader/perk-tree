@@ -266,12 +266,16 @@
    .notes-title-box rule (base.css) which #notes-popup — the unrelated
    random-tip-on-load startup popup — keeps unchanged, always gold. */
 .note-link-popup .notes-title-box {
+  /* rgba(var(...)), not color-mix() — see the matching comment in
+     base.css's .inline-note-ref; html2canvas's PNG export throws on
+     color-mix() computed values. #c8a038 = rgb(200, 160, 56), the
+     fallback channels below. */
   background: linear-gradient(
     120deg,
-    color-mix(in srgb, var(--perk-accent-color, #c8a038) 18%, transparent) 0%,
-    color-mix(in srgb, var(--perk-accent-color, #c8a038) 7%, transparent) 100%
+    rgba(var(--perk-accent-r, 200), var(--perk-accent-g, 160), var(--perk-accent-b, 56), 0.18) 0%,
+    rgba(var(--perk-accent-r, 200), var(--perk-accent-g, 160), var(--perk-accent-b, 56), 0.07) 100%
   );
-  border-bottom: 1px solid color-mix(in srgb, var(--perk-accent-color, #c8a038) 45%, transparent);
+  border-bottom: 1px solid rgba(var(--perk-accent-r, 200), var(--perk-accent-g, 160), var(--perk-accent-b, 56), 0.45);
   color: var(--perk-accent-color, #c8a038);
 }
 /* color="main" on the trigger ref (.inline-ref--main, markdown.js) forces

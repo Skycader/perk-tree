@@ -11,6 +11,7 @@ import {
   COLOURS,
   COL_HEX,
   ICON_HEX,
+  hexToRgb,
   FOCUS_DIM,
   WINDOW_PRIORITY,
   MAX_TOOLTIP_HEIGHT_PERCENT,
@@ -71,11 +72,15 @@ export function showTooltip(name, lvlDesc, iconEl) {
   // win-* windows, and any note/tip popup cascaded from either. Set on
   // <html> (not the tooltip element) so it cascades to everything, since
   // those windows/popups aren't DOM descendants of tooltipEl. Cleared in
-  // hideTooltip().
-  document.documentElement.style.setProperty(
-    '--perk-accent-color',
-    _icHex2,
-  );
+  // hideTooltip(). -r/-g/-b: see the comment on the matching lines in
+  // tree.js — separate numeric channels so CSS can alpha-blend via
+  // rgba(var(...)) instead of color-mix(), which breaks html2canvas's PNG
+  // export.
+  const _icRgb2 = hexToRgb(_icHex2);
+  document.documentElement.style.setProperty('--perk-accent-color', _icHex2);
+  document.documentElement.style.setProperty('--perk-accent-r', _icRgb2.r);
+  document.documentElement.style.setProperty('--perk-accent-g', _icRgb2.g);
+  document.documentElement.style.setProperty('--perk-accent-b', _icRgb2.b);
   const _sqSpan = document.createElement('span');
   _sqSpan.style.cssText = `display:inline-block;width:10px;height:10px;background:${_icHex2};border-radius:1px;margin-right:8px;vertical-align:middle;cursor:pointer;flex-shrink:0;transition:box-shadow .2s`;
   _sqSpan.addEventListener('mouseenter', () => {
@@ -1948,7 +1953,11 @@ style="animation:dashIn .3s ease forwards"/>`;
 export function hideTooltip() {
   if (!_isVisible) return;
   _isVisible = false;
-  document.documentElement.style.removeProperty('--perk-accent-color'); // see showTooltip()
+  // see showTooltip()
+  document.documentElement.style.removeProperty('--perk-accent-color');
+  document.documentElement.style.removeProperty('--perk-accent-r');
+  document.documentElement.style.removeProperty('--perk-accent-g');
+  document.documentElement.style.removeProperty('--perk-accent-b');
   hideNoteLinkPopup(); // the trigger word this popup is linked to is about to disappear
   tooltipEl.style.display = 'none';
   tooltipEl.style.maxHeight = '';
