@@ -1,4 +1,4 @@
-import { STAND_DATA } from '../config.js';
+import { STAND_DATA } from './load-config.js';
 import { SVG_ICONS } from './constants.js';
 import { notes } from '../notes.js';
 import { tips } from '../tips.js';

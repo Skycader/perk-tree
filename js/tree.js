@@ -1,4 +1,4 @@
-import { STAND_DATA } from '../config.js';
+import { STAND_DATA } from './load-config.js';
 import { ttArrowSvg } from './dom-refs.js';
 import { renderLevelMD, renderMD } from './markdown.js';
 import { showTooltip, isCurrentBtn } from './tooltip.js';

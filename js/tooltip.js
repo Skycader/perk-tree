@@ -1,4 +1,4 @@
-import { STAND_DATA } from '../config.js';
+import { STAND_DATA } from './load-config.js';
 import { ttArrowSvg, spTooltip, spOverlay, spHeader, spLevels } from './dom-refs.js';
 import { setSpectreOpen } from './spectre.js';
 import { showChainTip, hideChainTip } from './chain-tip.js';

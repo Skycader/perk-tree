@@ -1,4 +1,4 @@
-import { STAND_DATA } from '../config.js';
+import { STAND_DATA } from './load-config.js';
 import { COLOUR_KEYS } from './constants.js';
 import { spTooltip, spOverlay, spHeader, spLevels, ttArrowSvg } from './dom-refs.js';
 import { perkCountByColor, totalPerks } from './tree.js';

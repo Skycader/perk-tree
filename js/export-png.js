@@ -1,4 +1,4 @@
-import { STAND_DATA } from '../config.js';
+import { STAND_DATA } from './load-config.js';
 
 // ── PNG EXPORT ──
 export async function exportPNG() {
