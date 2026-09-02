@@ -37,7 +37,7 @@ mark {
    (main tooltip, secondary win-* windows, any note/tip popup cascaded from
    them) — no color threaded through the render pipeline itself. Falls back
    to the original purple (#9868d8) when no perk tooltip is open (e.g. the
-   startup notes.js popup, sidebar/dangers text). */
+   startup default.notes.js popup, sidebar/dangers text). */
 .inline-note-ref {
   color: var(--perk-accent-color, #9868d8);
   /* 🔍 rendered into an inline SVG data URI — cursor has no built-in

@@ -1,4 +1,4 @@
-import { STAND_DATA } from './load-config.js';
+import { CONFIG } from './load-config.js';
 import { ttArrowSvg } from './dom-refs.js';
 import { renderLevelMD, renderMD } from './markdown.js';
 import { showTooltip, isCurrentBtn } from './tooltip.js';
@@ -6,7 +6,7 @@ import { showSpectre, isSpectreOpen } from './spectre.js';
 import { COLOURS, FOCUS_DIM, ICON_HEX, hexToRgb } from './constants.js';
 
 // ── PROCESS CONFIG ──
-const D = STAND_DATA;
+const D = CONFIG;
 export const totalPerks = D.skills.reduce((s, ch) => s + ch.perks.length, 0);
 const nRanks = D.ranks.length;
 const maxLevelPerSkill = D.maxLevelPerSkill || 10;

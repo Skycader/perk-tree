@@ -99,14 +99,15 @@
       </div>
     </div>
     <!-- `async` + placed ahead of js/main.js on purpose: on a slow connection the
-         full app module graph (tooltip.js, tree.js, config.js, …) can take a
-         while to arrive, but this only needs the small notes.js file, so the
-         note shows up long before the spinner would otherwise hide. Renders
-         inline with `marked` (already loaded as a classic script above)
-         instead of importing markdown.js, which would drag in config.js
-         just for this one lightweight use. -->
+         full app module graph (tooltip.js, tree.js, load-config.js, …) can
+         take a while to arrive, but this only needs the small
+         js/load-notes.js + its resolved *.notes.js, so the note shows up
+         long before the spinner would otherwise hide. Renders inline with
+         `marked` (already loaded as a classic script above) instead of
+         importing markdown.js, which would drag in the full config just for
+         this one lightweight use. -->
     <script type="module" async>
-      import { notes } from './notes.js';
+      import { notes } from './js/load-notes.js';
       import { NOTES } from './js/constants.js';
       const STORAGE_KEY = 'showNotesOnStartup';
       const showOnStartup =

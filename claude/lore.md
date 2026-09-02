@@ -3,7 +3,8 @@
 ## Amuons (амюоны) — souls are not a single entity
 
 The soul in this setting is composed of **amuons**, the fundamental
-particles of existence itself. Documented behavior (see `notes.js`):
+particles of existence itself. Documented behavior (see
+`configs/default/default.notes.js`):
 amuons can partially transfer to a victorious Angel without "reheating"
 the soul; a dead body's amuons, lacking their living catalyst, act
 autonomously trying to reconstruct that person's identity from memory —

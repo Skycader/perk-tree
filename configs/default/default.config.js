@@ -1,4 +1,4 @@
-export const STAND_DATA = {
+export const CONFIG = {
   shadowName: 'Властитель',
   desc: 'Могуществено Властителя неоспоримо.', //Ужасающая сила стэнда!
   version: '0.8',

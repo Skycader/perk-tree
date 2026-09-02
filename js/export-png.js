@@ -1,4 +1,4 @@
-import { STAND_DATA } from './load-config.js';
+import { CONFIG } from './load-config.js';
 
 // ── PNG EXPORT ──
 export async function exportPNG() {
@@ -22,7 +22,7 @@ export async function exportPNG() {
     width: root.scrollWidth,
   });
   const a = document.createElement('a');
-  a.download = `${STAND_DATA.tabName}_perks.png`;
+  a.download = `${CONFIG.tabName}_perks.png`;
   a.href = cv.toDataURL('image/png');
   a.click();
   st.textContent = '✓';

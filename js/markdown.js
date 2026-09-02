@@ -1,7 +1,7 @@
-import { STAND_DATA } from './load-config.js';
+import { CONFIG } from './load-config.js';
 import { SVG_ICONS } from './constants.js';
-import { notes } from '../notes.js';
-import { tips } from '../tips.js';
+import { notes } from './load-notes.js';
+import { tips } from '../configs/default/default.tips.js';
 
 // Resolve a perk id → {name, hex} for inline <perk> tags.
 export function resolvePerkInline(pid) {
@@ -21,7 +21,7 @@ export function resolvePerkInline(pid) {
     yellow: '#b89030',
     black: '#303030',
   };
-  for (const skill of STAND_DATA.skills) {
+  for (const skill of CONFIG.skills) {
     const found = skill.perks.find((pp) => pp.id === pid);
     if (found) {
       const hex = COLOR_HEX[(skill.color || '').toLowerCase()] || '#888';

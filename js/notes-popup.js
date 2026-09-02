@@ -1,4 +1,4 @@
-import { notes } from '../notes.js';
+import { notes } from './load-notes.js';
 import { renderMD, renderLevelMD } from './markdown.js';
 import { NOTES } from './constants.js';
 

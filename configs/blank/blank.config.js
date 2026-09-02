@@ -1,9 +1,10 @@
 // ── BLANK CONFIG TEMPLATE ──
-// Minimal, structurally-complete STAND_DATA — every top-level key the app
-// actually reads is present (see config.js for the full reference shape),
-// but content is placeholder/example only. Meant as a clean start for a
-// brand-new perk tree, loaded via ?configName=blank — see js/load-config.js.
-export const STAND_DATA = {
+// Minimal, structurally-complete CONFIG — every top-level key the app
+// actually reads is present (see configs/default/default.config.js for the
+// full reference shape), but content is placeholder/example only. Meant as
+// a clean start for a brand-new perk tree, loaded via ?configName=blank —
+// see js/load-config.js.
+export const CONFIG = {
   shadowName: 'Новый Стэнд',
   desc: 'Описание нового стэнда.',
   version: '0.1',

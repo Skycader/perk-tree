@@ -1,4 +1,4 @@
-import { STAND_DATA } from './load-config.js';
+import { CONFIG } from './load-config.js';
 import { ttArrowSvg, spTooltip, spOverlay, spHeader, spLevels } from './dom-refs.js';
 import { setSpectreOpen } from './spectre.js';
 import { showChainTip, hideChainTip } from './chain-tip.js';
@@ -29,7 +29,7 @@ import {
   debugLines,
 } from './constants.js';
 
-const D = STAND_DATA;
+const D = CONFIG;
 
 const tooltipEl = document.getElementById('tooltip');
 const ttHeader = document.getElementById('tt-header');

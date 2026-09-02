@@ -1,9 +1,9 @@
-import { STAND_DATA } from './load-config.js';
+import { CONFIG } from './load-config.js';
 import { COLOUR_KEYS } from './constants.js';
 import { spTooltip, spOverlay, spHeader, spLevels, ttArrowSvg } from './dom-refs.js';
 import { perkCountByColor, totalPerks } from './tree.js';
 
-const D = STAND_DATA;
+const D = CONFIG;
 
 // ── SPECTRE TOOLTIP ──
 let _spectreOpen = false;

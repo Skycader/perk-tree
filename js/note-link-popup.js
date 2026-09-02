@@ -1,5 +1,5 @@
-import { notes } from '../notes.js';
-import { tips } from '../tips.js';
+import { notes } from './load-notes.js';
+import { tips } from '../configs/default/default.tips.js';
 import { renderMD, renderLevelMD } from './markdown.js';
 
 // kind → data source, matches processNoteTags/processTipTags in markdown.js
