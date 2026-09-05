@@ -46,10 +46,23 @@ export function isCurrentBtn(icon) {
   return _currentBtn === icon;
 }
 
+// sessionStorage (not localStorage — this is "what was open THIS visit",
+// not a persistent setting like zoom/notes-on-startup) key used to reopen
+// the tooltip after an F5 reload — see the F5-restore listener in main.js.
+export const OPEN_TOOLTIP_STORAGE_KEY = 'openTooltipPerkId';
+
 export function showTooltip(name, lvlDesc, iconEl) {
   _currentBtn = iconEl;
   _isVisible = true;
   _comboPerkId = iconEl.closest('.perk')?.dataset?.perkId || null;
+  try {
+    if (_comboPerkId)
+      sessionStorage.setItem(OPEN_TOOLTIP_STORAGE_KEY, _comboPerkId);
+  } catch (e) {
+    // sessionStorage can throw in a locked-down context (private mode,
+    // sandboxed iframe) — F5-restore is a nicety, never worth breaking the
+    // tooltip itself over.
+  }
   document.body.style.overflow = 'hidden';
 
   // keep glow on clicked icon, remove from others
@@ -508,6 +521,22 @@ export function showTooltip(name, lvlDesc, iconEl) {
     }
   }
 
+  // Re-checks a .win-img-content's real overflow (used both right after
+  // runLayout places the box and again once its media finishes loading,
+  // since a media element's rendered size before/after load can differ
+  // enough to change whether an img entry's `desc` — see withLoadingSpinner
+  // — genuinely overflows the box). Unlike pinContentHeight above (never
+  // called for IMG kind — see the `kind !== 'IMG'` guard around its call
+  // site in runLayout), .win-img sizes its box directly from the filename
+  // size hint, so this is IMG's equivalent overflow check.
+  function refreshImgScroll(content) {
+    if (!content) return;
+    content.classList.toggle(
+      'needs-scroll',
+      content.scrollHeight > content.clientHeight + 1,
+    );
+  }
+
   function drawLine(svg, fromRect, toRect, vertical) {
     // strict 90deg L-shape: one horizontal + one vertical segment
     // ALL coordinates rounded to whole pixels — sub-pixel positions get
@@ -574,13 +603,16 @@ export function showTooltip(name, lvlDesc, iconEl) {
     : perkData?.img
       ? [perkData.img]
       : [];
-  // normalize each entry to {src, title, audio, controls}: plain strings keep
-  // title/audio=null, meaning they fall back to the perk-level perkData.audio flag.
+  // normalize each entry to {src, title, desc, audio, controls}: plain
+  // strings keep title/desc/audio=null, meaning they fall back to the
+  // perk-level perkData.audio flag (desc has no perk-level equivalent — a
+  // plain string entry just has no description).
   function normalizeImgEntry(entry) {
     if (typeof entry === 'string')
       return {
         src: entry,
         title: null,
+        desc: null,
         audio: null,
         height: null,
         controls: false,
@@ -589,6 +621,8 @@ export function showTooltip(name, lvlDesc, iconEl) {
       return {
         src: entry.src || '',
         title: entry.title || null,
+        // markdown, rendered via renderMD below the media — see appendImgDesc.
+        desc: entry.desc || null,
         audio: typeof entry.audio === 'boolean' ? entry.audio : null,
         height: entry.height || null, // 'maximum' = fill all available height
         // adds an "expand" button that opens the video in a large lightbox
@@ -599,6 +633,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
     return {
       src: '',
       title: null,
+      desc: null,
       audio: null,
       height: null,
       controls: false,
@@ -764,13 +799,17 @@ export function showTooltip(name, lvlDesc, iconEl) {
             const box = vidEl.closest('.win-img, .win-extra');
             if (!box) return;
             const sel = '.win-img-content';
-            // all .win-img windows: just clear scroll state
+            // all .win-img windows: reset any explicit sizing, then
+            // re-check overflow now that the video's real dimensions are
+            // known — an img entry's `desc` (see withLoadingSpinner) can
+            // combine with the video's real (not hinted) size to overflow
+            // even when the initial placement-time check didn't.
             if (box.classList.contains('win-img')) {
               const cont = box.querySelector(sel);
               if (cont) {
-                cont.classList.remove('needs-scroll');
                 cont.style.height = '';
                 cont.style.maxHeight = '';
+                refreshImgScroll(cont);
               }
             } else {
               pinContentHeight(box, sel);
@@ -885,7 +924,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
         entry.audio,
         entry.controls,
       );
-      withLoadingSpinner(el, imgContent);
+      withLoadingSpinner(el, imgContent, entry.desc);
       imgHeader.textContent =
         entry.title || perkData.name || 'Иллюстрация';
       imgDots
@@ -898,7 +937,10 @@ export function showTooltip(name, lvlDesc, iconEl) {
     // removes itself. The spinner and the media element coexist in the
     // DOM the whole time — nothing overwrites innerHTML after this point,
     // so the spinner isn't wiped out before the browser gets to paint it.
-    function withLoadingSpinner(mediaEl, container) {
+    // `desc` (optional): markdown text rendered below the media — see
+    // .win-img-desc in windows.css and the overflow handling in
+    // pinContentHeight() below, which accounts for the extra height.
+    function withLoadingSpinner(mediaEl, container, desc) {
       // sizeHint: {w, h} natural pixel dimensions of the media (from filename or known).
       // We insert an invisible placeholder div sized to the media's proportions so
       // the container immediately occupies the correct height — no layout jump after load.
@@ -908,8 +950,27 @@ export function showTooltip(name, lvlDesc, iconEl) {
 
       container.appendChild(spinnerWrap);
       container.appendChild(mediaEl);
+      if (desc) {
+        // reuses .win-extra-content's markdown typography (p/h1-h3/strong/
+        // em/code/pre/ul/ol/li/blockquote/hr/table) instead of duplicating
+        // those rules — .win-img-desc in windows.css only overrides the
+        // handful of properties that assumed being the window's SOLE
+        // content (flex sizing, zero padding/overflow).
+        const descEl = document.createElement('div');
+        descEl.className = 'win-img-desc win-extra-content';
+        descEl.innerHTML = renderMD(desc);
+        container.appendChild(descEl);
+      }
 
-      const removeSpinner = () => spinnerWrap.remove();
+      // Once the media's real size is known, re-check overflow — the
+      // filename-hint hidden the box's height BEFORE the media actually
+      // loaded (see runLayout's IMG sizing above), so a `desc` block's
+      // combined height with the media's real (not hinted) size can still
+      // turn out to need scrolling here even when the earlier check didn't.
+      const removeSpinner = () => {
+        spinnerWrap.remove();
+        refreshImgScroll(container);
+      };
       const tag = mediaEl.tagName;
       if (tag === 'IMG') {
         mediaEl.addEventListener('load', removeSpinner, { once: true });
@@ -971,7 +1032,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
             el.tagName === 'IMG' ? el : el.querySelector('img,video');
           if (mediaEl2) mediaEl2.classList.add('fit-cover');
         }
-        withLoadingSpinner(el, imgContent);
+        withLoadingSpinner(el, imgContent, entry0.desc);
       }
     }
 
@@ -994,7 +1055,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
           _entry.controls,
         );
         _w.content.innerHTML = '';
-        withLoadingSpinner(_el, _w.content);
+        withLoadingSpinner(_el, _w.content, _entry.desc);
       }
     }
     // set header for first img box too
@@ -1578,13 +1639,24 @@ export function showTooltip(name, lvlDesc, iconEl) {
                   const hdrH = hdr
                     ? hdr.getBoundingClientRect().height
                     : 36;
+                  // an img entry's `desc` (markdown, rendered below the
+                  // media by withLoadingSpinner) adds its own height on top
+                  // of the media — unlike the media itself (still loading
+                  // at this point, hence the filename-hint estimate above),
+                  // the desc's HTML is already in the DOM synchronously, so
+                  // its real height can just be measured directly.
+                  const descEl = box.querySelector('.win-img-desc');
+                  const descH = descEl
+                    ? descEl.getBoundingClientRect().height
+                    : 0;
                   box.style.display = '';
-                  effectiveH = Math.min(hinted + hdrH + 20, cap);
+                  effectiveH = Math.min(hinted + descH + hdrH + 20, cap);
                   console.log('[IMG SIZE]', {
                     src: firstSrc,
                     hint,
                     containerW,
                     hinted,
+                    descH,
                     hdrH,
                     cap,
                     effectiveH,
@@ -1601,8 +1673,16 @@ export function showTooltip(name, lvlDesc, iconEl) {
               if (contentSel && kind !== 'IMG')
                 pinContentHeight(box, contentSel);
               if (kind === 'IMG' && contentSel) {
-                const cont = box.querySelector(contentSel);
-                if (cont) cont.classList.remove('needs-scroll');
+                // Safety net beyond the hint-based effectiveH above: if the
+                // real rendered content (media once loaded + desc) still
+                // ends up taller than what effectiveH allocated — no
+                // filename hint matched (e.g. an undimensioned video, or
+                // height:'maximum'), or the hint underestimated — scroll
+                // instead of silently clipping the description. Re-checked
+                // again once the media finishes loading (see makeMediaEl's
+                // load/loadeddata handlers) since its rendered size can
+                // still change after this point.
+                refreshImgScroll(box.querySelector(contentSel));
               }
 
               void box.offsetHeight; // force layout flush
@@ -1953,6 +2033,9 @@ style="animation:dashIn .3s ease forwards"/>`;
 export function hideTooltip() {
   if (!_isVisible) return;
   _isVisible = false;
+  try {
+    sessionStorage.removeItem(OPEN_TOOLTIP_STORAGE_KEY);
+  } catch (e) {}
   // see showTooltip()
   document.documentElement.style.removeProperty('--perk-accent-color');
   document.documentElement.style.removeProperty('--perk-accent-r');

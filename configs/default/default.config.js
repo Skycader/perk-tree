@@ -49,7 +49,7 @@ export const CONFIG = {
           id: 'shadowPrecision',
           name: 'Точность движений',
           imgs: [
-            { src: 'assets/drawing_1024_768.jpg' },
+            { src: 'assets/drawing_1024_768.jpg', desc: '**TEST DESC** short' },
             { src: 'assets/blue-marble_1280_800.jpg' },
             { src: 'assets/leopard-2a4m-can_1408_704.png' },
             { src: 'assets/star-destroyer_1248_832.jpg' },
@@ -593,7 +593,12 @@ export const CONFIG = {
         {
           id: 'shadowTachyonCatcher',
           name: 'Улавливатель Тахионов',
-          imgs: [{ src: 'assets/gradient_381_56.png' }],
+          imgs: [
+            {
+              src: 'assets/gradient_1024_56.png',
+              desc: '<svg name="tip"></svg> Система дальнего предупреждения \n\n<square color="#FF0000"></square> Высокая чёткость образов, горизонт событий 1-2 суток\n\n<square color="#730808"></square> Слабая чёткость событий, высокая обощенность, горизонт событий 1-2 года',
+            },
+          ],
           description:
             'Определяет способность Тени улавливать тахионные сигналы из будущего, показывая вероятностные образы грядущих событий. Включает длительность видения, точность образов и коэффициент вероятности сбыта.',
         },

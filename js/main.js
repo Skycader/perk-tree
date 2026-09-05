@@ -4,7 +4,7 @@ import './mobile-tabs.js';
 import { drawColumn, drawTopBus } from './connectors.js';
 import { hideSpectre } from './spectre.js';
 import { licenseToolbar, licenseOverlay, showLicense, hideLicense } from './license-modal.js';
-import { hideTooltip } from './tooltip.js';
+import { hideTooltip, OPEN_TOOLTIP_STORAGE_KEY } from './tooltip.js';
 import { resolvePerkInline } from './markdown.js';
 import { IPR_GLOW_BLUR, IPR_GLOW_SPREAD, FOCUS_DIM, MIN_LOADER_MS } from './constants.js';
 import { colRefs } from './tree.js';
@@ -48,6 +48,34 @@ function redrawAll() {
   drawTopBus();
 }
 
+// ── F5 RESTORE: reopen whatever perk tooltip was open before reload ──
+// tooltip.js's showTooltip()/hideTooltip() keep OPEN_TOOLTIP_STORAGE_KEY in
+// sessionStorage in sync with whatever tooltip is currently open. On load,
+// if one was left open, scroll to that perk and re-click its icon — reusing
+// the exact same click listener tree.js already wired up (see tree.js's
+// `icon.addEventListener('click', () => showTooltip(...))`) rather than
+// duplicating showTooltip's calling contract here.
+function restoreOpenTooltip() {
+  let pid;
+  try {
+    pid = sessionStorage.getItem(OPEN_TOOLTIP_STORAGE_KEY);
+  } catch (e) {
+    return;
+  }
+  if (!pid) return;
+  const perkEl = [...document.querySelectorAll('.perk')].find(
+    (pe) => pe.dataset.perkId === pid,
+  );
+  const icon = perkEl?.querySelector('.perk-icon');
+  if (!icon) return;
+  // 'auto' (instant), not 'smooth' — scrollIntoView with 'auto' updates the
+  // scroll position synchronously, so the immediately-following click sees
+  // the icon at its FINAL position for tooltip.js's runLayout to measure.
+  // A smooth scroll would still be mid-animation when the click fires.
+  perkEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+  icon.click();
+}
+
 window.addEventListener('resize', () => requestAnimationFrame(redrawAll));
 // mobile-tabs.js reveals a previously display:none column — its connector
 // lines were last computed against a zero-size box, same class of problem
@@ -59,6 +87,7 @@ document.fonts.ready.then(() =>
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       redrawAll();
+      restoreOpenTooltip();
       // the tree itself is ready now — the loading screen (spinner + tip)
       // stays up until MIN_LOADER_MS has elapsed since navigation started,
       // simulating a big-level load even on a fast connection.

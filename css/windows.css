@@ -13,8 +13,10 @@
 }
 .win-img-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   padding:  0.625rem;
   overflow-y: hidden;
   overflow-x: hidden;
@@ -22,9 +24,34 @@
   min-height:  0;
   position: relative;
 }
+/* description text (an img entry's `desc`, markdown) below the media —
+   reuses .win-extra-content's markdown typography (p/h1-h3/strong/em/code/
+   pre/ul/ol/li/blockquote/hr/table, declared further down this file)
+   instead of duplicating those rules; this selector's higher specificity
+   only overrides the handful of properties there that assumed being the
+   window's SOLE content (flex:1 sizing, zero padding/overflow) rather than
+   a block sitting below an image. */
+.win-img-content .win-img-desc {
+  flex: 0 0 auto;
+  overflow-y: visible;
+  min-height: auto;
+  width: 100%;
+  padding-top: 0.5rem;
+  border-top: 1px solid #1e2235;
+}
+.win-img-content .win-img-desc p:first-child {
+  padding-top: 0;
+}
 /* only enable scroll when pinContentHeight explicitly decides media overflows */
 .win-img-content.needs-scroll {
   overflow-y: auto;
+  /* the default `center` (above) would center the OVERFLOWING content as a
+     whole, pushing its top — i.e. the image itself — above the visible
+     area and out of reach on load (scrollTop starts at 0, and this
+     container never auto-scrolls upward to reveal it). Top-align instead
+     so the image is always the first thing visible, with only the
+     overflowing `desc` requiring a scroll to read the rest of. */
+  justify-content: flex-start;
 }
 /* loading spinner shown in img-content/img2-content while media is fetching */
 .media-loading-wrap {
@@ -61,6 +88,11 @@
   height:  auto;
   object-fit: contain;
   border-radius: 2px;
+  /* never let flexbox shrink the image to make room for a `desc` block
+     below it — the image must always render at its full intended size
+     (still bounded by max-width/max-height above); an oversized `desc` is
+     what scrolls (see .needs-scroll), not the image shrinking to compensate. */
+  flex-shrink: 0;
 }
 /* applied via JS when natural content height exceeds the available space:
    drop the max-height cap so the image renders at its real (width-limited)

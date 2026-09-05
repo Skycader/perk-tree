@@ -170,6 +170,21 @@ export function processWikiLinkTags(text) {
   );
 }
 
+// Replace <square color="#hex"></square> with an inline colored square —
+// same visual convention as the perk-header/chain-dep squares used
+// throughout the app (10x10, 1px radius, vertically centered with text),
+// but for any arbitrary hex color a content author wants to call out
+// inline, not just the fixed perk color palette. marked leaves this
+// untouched (raw-HTML passthrough, same as <perk>/<note>/<svg>), so this
+// runs after marked.parse() alongside those.
+export function processSquareTags(html) {
+  return html.replace(
+    /<square\s+color="([^"]+)"\s*>\s*<\/square>/gi,
+    (_, color) =>
+      `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:1px;vertical-align:middle;flex-shrink:0"></span>`,
+  );
+}
+
 export function processPerkTags(html) {
   // New syntax: <perk name="standVisor">optional label</perk>
   // Old syntax: <perk>standVisor</perk> (still supported for compat)
@@ -236,8 +251,10 @@ export function renderLevelMD(text) {
     html = preprocessed.replace(/\n/g, '<br>');
   }
   return processSvgTags(
-    processPerkTags(
-      processTipTags(processNoteTags(processHighlightTags(html))),
+    processSquareTags(
+      processPerkTags(
+        processTipTags(processNoteTags(processHighlightTags(html))),
+      ),
     ),
   );
 }
@@ -261,8 +278,10 @@ export function renderMD(text) {
     html = preprocessed.replace(/\n/g, '<br>');
   }
   return processSvgTags(
-    processPerkTags(
-      processTipTags(processNoteTags(processHighlightTags(html))),
+    processSquareTags(
+      processPerkTags(
+        processTipTags(processNoteTags(processHighlightTags(html))),
+      ),
     ),
   );
 }
