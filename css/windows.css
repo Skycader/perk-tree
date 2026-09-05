@@ -94,6 +94,16 @@
      what scrolls (see .needs-scroll), not the image shrinking to compensate. */
   flex-shrink: 0;
 }
+/* a snippet's embedded .html page — no natural aspect ratio like img/video,
+   so it just fills whatever height runLayout's sizing (see parseSnippetSize
+   in tooltip.js) gave the box, same idea as height:'maximum' on an image. */
+.win-img-content iframe {
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 2px;
+}
 /* applied via JS when natural content height exceeds the available space:
    drop the max-height cap so the image renders at its real (width-limited)
    size, letting the container's overflow-y:auto actually scroll the excess

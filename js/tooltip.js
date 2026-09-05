@@ -642,6 +642,33 @@ export function showTooltip(name, lvlDesc, iconEl) {
   const imgSources = imgSourcesRaw.map(normalizeImgEntry);
   const wantsMaximum = imgSources.some((e) => e.height === 'maximum');
 
+  // ── SNIPPETS: standalone .html pages (with their own JS), each in its own
+  // window — perkData.snippets: [{ title?, src, size?: 'WIDTHxHEIGHT', desc? }].
+  // No slider mode (unlike imgs[]) — every entry always gets its own window.
+  // Sized/rendered exactly like a .win-img window (same DOM classes, same
+  // measure-and-size code in runLayout below) since there's no filename-hint
+  // convention that makes sense for an arbitrary page — `size` plays the
+  // same role for a snippet that the `name_WIDTH_HEIGHT.ext` filename hint
+  // plays for an image, see parseSnippetSize.
+  const snippetsList = Array.isArray(perkData?.snippets)
+    ? perkData.snippets.filter(Boolean)
+    : [];
+  const hasSnippet = snippetsList.length > 0;
+  function normalizeSnippetEntry(entry) {
+    if (typeof entry === 'string')
+      return { src: entry, title: null, desc: null, size: null };
+    if (entry && typeof entry === 'object')
+      return {
+        src: entry.src || '',
+        title: entry.title || null,
+        desc: entry.desc || null,
+        size: entry.size || null,
+      };
+    return { src: '', title: null, desc: null, size: null };
+  }
+  const snippetSources = snippetsList.map(normalizeSnippetEntry);
+  const snippetBoxes = [];
+
   // Create one .win-img window per imgSources entry (no slider mode)
   // or one window for slider mode. imgBoxes[i] mirrors imgSources[i].
   if (hasImg) {
@@ -664,9 +691,18 @@ export function showTooltip(name, lvlDesc, iconEl) {
     imgArwSvg = imgBoxes[0]?.svg;
   }
 
+  // One .win-img-classed window per snippet entry — literally `createWin('img')`
+  // (not 'snippet') so it inherits ALL of .win-img/.win-img-content's CSS and
+  // runLayout sizing for free, with zero duplicated rules; 'is-snippet' is a
+  // purely cosmetic marker class for anyone inspecting the DOM, not styled.
+  snippetSources.forEach(() => {
+    snippetBoxes.push(createWin('img', 'is-snippet'));
+  });
+
   // ordered list of which secondary window "slots" are present, per WINDOW_PRIORITY
   const hasFlags = {
     IMG: hasImg,
+    SNIPPET: hasSnippet,
     AUDIO: hasAudio,
     EXTRA: hasExtra,
     TIP: hasTip,
@@ -691,12 +727,15 @@ export function showTooltip(name, lvlDesc, iconEl) {
     if (k === 'IMG') {
       // one entry per imgBoxes entry
       imgBoxes.forEach(() => activeKinds.push('IMG'));
+    } else if (k === 'SNIPPET') {
+      // one entry per snippetBoxes entry — see hasSnippet/snippetSources above
+      snippetBoxes.forEach(() => activeKinds.push('SNIPPET'));
     } else {
       activeKinds.push(k);
     }
   }
 
-  if (hasExtra || hasImg || hasCombo) {
+  if (hasExtra || hasImg || hasSnippet || hasCombo) {
     const TOP_MARGIN = 8,
       BOTTOM_MARGIN = 8,
       ROW_GAP = 12;
@@ -749,6 +788,20 @@ export function showTooltip(name, lvlDesc, iconEl) {
     // Returns null if no size hint found.
     function parseSizeHint(src) {
       const m = src.match(/_(\d{2,5})_(\d{2,5})(?:\.[^.]+)?(?:\?.*)?$/);
+      if (!m) return null;
+      const w = parseInt(m[1], 10),
+        h = parseInt(m[2], 10);
+      if (!w || !h) return null;
+      return { w, h };
+    }
+
+    // Parse a snippet's explicit `size: "WIDTHxHEIGHT"` field into the same
+    // {w,h} shape parseSizeHint returns from a filename — an arbitrary
+    // .html page has no filename convention to embed dimensions in the way
+    // an image/video does, so this is spelled out in the config instead.
+    function parseSnippetSize(size) {
+      if (typeof size !== 'string') return null;
+      const m = size.match(/^\s*(\d+)\s*[x×]\s*(\d+)\s*$/i);
       if (!m) return null;
       const w = parseInt(m[1], 10),
         h = parseInt(m[2], 10);
@@ -981,6 +1034,11 @@ export function showTooltip(name, lvlDesc, iconEl) {
           once: true,
         });
         mediaEl.addEventListener('error', removeSpinner, { once: true });
+      } else if (tag === 'IFRAME') {
+        // a snippet's page — no natural-size concept to wait on, just its
+        // own load/error like any other embedded document.
+        mediaEl.addEventListener('load', removeSpinner, { once: true });
+        mediaEl.addEventListener('error', removeSpinner, { once: true });
       } else {
         // audio:true wraps the <video> in a .media-audio-wrap div
         const inner = mediaEl.querySelector('video');
@@ -1065,6 +1123,20 @@ export function showTooltip(name, lvlDesc, iconEl) {
           imgSources[_i].title || perkData.name || 'Иллюстрация';
       }
     });
+
+    // populate every snippet window — no slider mode, each entry always
+    // gets its own window (see snippetBoxes above).
+    snippetSources.forEach((entry, i) => {
+      const w = snippetBoxes[i];
+      if (!w || !entry.src) return;
+      w.hdr.textContent = entry.title || perkData.name || 'Сниппет';
+      const iframe = document.createElement('iframe');
+      iframe.src = entry.src;
+      iframe.className = 'win-snippet-iframe';
+      w.content.innerHTML = '';
+      withLoadingSpinner(iframe, w.content, entry.desc);
+    });
+
     if (hasExtra) {
       extraContent.innerHTML = renderMD(perkData.extra);
     }
@@ -1445,6 +1517,9 @@ export function showTooltip(name, lvlDesc, iconEl) {
             };
             const CONTENT_SEL = {
               IMG: '.win-img-content',
+              // snippet windows are literally createWin('img') (see
+              // snippetBoxes above) — same content class, same selector.
+              SNIPPET: '.win-img-content',
               AUDIO: '.win-audio-content',
               EXTRA: '.win-extra-content',
               TIP: '.win-tip-content',
@@ -1502,21 +1577,36 @@ export function showTooltip(name, lvlDesc, iconEl) {
             const lastKeyInCol = {};
 
             let _imgBoxIdx = 0; // tracks which imgBoxes[i] to use for IMG kind
+            let _snippetBoxIdx = 0; // tracks which snippetBoxes[i] to use for SNIPPET kind
 
             for (const { kind, col: assignedCol } of winColMap) {
               if (imgOnly && kind !== 'IMG') continue;
               const _imgInstIdx = kind === 'IMG' ? _imgBoxIdx : -1;
+              // captured BEFORE the increment below — unlike IMG's hint
+              // sizing (which always reads imgSources[0], regardless of
+              // instance), each SNIPPET window has its OWN `size`, so the
+              // hint block later needs to know exactly which entry this is.
+              const _snippetInstIdx = kind === 'SNIPPET' ? _snippetBoxIdx : -1;
               const box =
                 kind === 'IMG'
                   ? imgBoxes[_imgBoxIdx]?.box
-                  : BOX_STATIC[kind];
+                  : kind === 'SNIPPET'
+                    ? snippetBoxes[_snippetBoxIdx]?.box
+                    : BOX_STATIC[kind];
               const svg =
                 kind === 'IMG'
                   ? imgBoxes[_imgBoxIdx]?.svg
-                  : SVG_STATIC[kind];
+                  : kind === 'SNIPPET'
+                    ? snippetBoxes[_snippetBoxIdx]?.svg
+                    : SVG_STATIC[kind];
               const placedKey =
-                kind === 'IMG' ? `IMG_${_imgBoxIdx}` : kind;
+                kind === 'IMG'
+                  ? `IMG_${_imgBoxIdx}`
+                  : kind === 'SNIPPET'
+                    ? `SNIPPET_${_snippetBoxIdx}`
+                    : kind;
               if (kind === 'IMG' && box) _imgBoxIdx++;
+              if (kind === 'SNIPPET' && box) _snippetBoxIdx++;
               const contentSel = CONTENT_SEL[kind];
               if (!box) continue;
 
@@ -1534,7 +1624,12 @@ export function showTooltip(name, lvlDesc, iconEl) {
               // measure real content height for non-media windows
               // (content is filled before runLayout, so scrollHeight is accurate)
               let minNeeded = MIN_SECONDARY_H;
-              if (box && kind !== 'IMG' && kind !== 'AUDIO') {
+              if (
+                box &&
+                kind !== 'IMG' &&
+                kind !== 'SNIPPET' &&
+                kind !== 'AUDIO'
+              ) {
                 box.style.display = 'flex';
                 box.style.maxHeight = 'none';
                 box.style.width = SLOT_COL_W + 'px';
@@ -1545,7 +1640,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
                 box.style.maxHeight = '';
                 box.style.top = '';
                 if (natural > MIN_SECONDARY_H) minNeeded = natural;
-              } else if (kind === 'IMG') {
+              } else if (kind === 'IMG' || kind === 'SNIPPET') {
                 minNeeded = scale(120);
               } else if (kind === 'AUDIO') {
                 minNeeded = scale(60);
@@ -1621,50 +1716,65 @@ export function showTooltip(name, lvlDesc, iconEl) {
               box.style.top = startY + 'px';
               box.style.width = SLOT_COL_W + 'px';
 
-              const isMediaKind = kind === 'IMG';
+              const isMediaKind = kind === 'IMG' || kind === 'SNIPPET';
               const isSolo =
                 winColMap.filter((e) => e.col === screenCol).length === 1;
               const cap = Math.min(SOLO_MAX_H, availH);
               let effectiveH = cap;
 
-              // IMG: size from filename hint
+              // IMG/SNIPPET: size from a hint — a filename convention for
+              // IMG (parseSizeHint), the explicit `size:"WIDTHxHEIGHT"`
+              // field for SNIPPET (parseSnippetSize) since an arbitrary
+              // .html page has no filename convention that would make
+              // sense. Both feed the same measure-the-real-box technique
+              // below — width is always the fixed SLOT_COL_W column width
+              // either way, only the resulting HEIGHT differs.
+              let sizeHint = null,
+                hintSrc = null;
               if (kind === 'IMG' && imgSources.length) {
-                const firstSrc = imgSources[0]?.src || '';
-                const hint = parseSizeHint(firstSrc);
-                const containerW = SLOT_COL_W - scale(20);
-                const hinted = hintedHeight(hint, containerW, cap);
-                if (hinted && !wantsMaximum) {
-                  // Measure the box's REAL total natural height (header +
-                  // padding + the flex `gap` + an img entry's `desc`, if
-                  // any) instead of hand-summing those — same off-screen
-                  // "temporarily show it, read scrollHeight, hide again"
-                  // technique already used for non-IMG kinds a few lines
-                  // above, just seeded with the hint height first since the
-                  // media itself is still loading and would otherwise
-                  // measure as ~0. A hand-summed estimate here previously
-                  // missed the container's flex `gap`, letting `desc`
-                  // trigger a spurious scrollbar even when the box had
-                  // genuinely enough room for both.
-                  const mediaEl = box.querySelector('img, video');
-                  const prevMediaH = mediaEl ? mediaEl.style.height : null;
-                  if (mediaEl) mediaEl.style.height = hinted + 'px';
-                  box.style.display = 'flex';
-                  box.style.maxHeight = 'none';
-                  const natural = box.scrollHeight;
-                  box.style.display = 'none';
-                  box.style.maxHeight = '';
-                  if (mediaEl) mediaEl.style.height = prevMediaH || '';
-                  effectiveH = Math.min(natural, cap);
-                  console.log('[IMG SIZE]', {
-                    src: firstSrc,
-                    hint,
-                    containerW,
-                    hinted,
-                    natural,
-                    cap,
-                    effectiveH,
-                  });
-                }
+                hintSrc = imgSources[0]?.src || '';
+                sizeHint = parseSizeHint(hintSrc);
+              } else if (kind === 'SNIPPET') {
+                hintSrc = snippetSources[_snippetInstIdx]?.size || null;
+                sizeHint = parseSnippetSize(hintSrc);
+              }
+              const containerW = SLOT_COL_W - scale(20);
+              const hinted = sizeHint
+                ? hintedHeight(sizeHint, containerW, cap)
+                : null;
+              if (hinted && !(kind === 'IMG' && wantsMaximum)) {
+                // Measure the box's REAL total natural height (header +
+                // padding + the flex `gap` + an entry's `desc`, if any)
+                // instead of hand-summing those — same off-screen
+                // "temporarily show it, read scrollHeight, hide again"
+                // technique already used for non-media kinds above, just
+                // seeded with the hint height first since the media itself
+                // (image not yet loaded, or a snippet's iframe has no
+                // natural size at all) would otherwise measure as ~0. A
+                // hand-summed estimate here previously missed the
+                // container's flex `gap`, letting `desc` trigger a spurious
+                // scrollbar even when the box had genuinely enough room for
+                // both.
+                const mediaEl = box.querySelector('img, video, iframe');
+                const prevMediaH = mediaEl ? mediaEl.style.height : null;
+                if (mediaEl) mediaEl.style.height = hinted + 'px';
+                box.style.display = 'flex';
+                box.style.maxHeight = 'none';
+                const natural = box.scrollHeight;
+                box.style.display = 'none';
+                box.style.maxHeight = '';
+                if (mediaEl) mediaEl.style.height = prevMediaH || '';
+                effectiveH = Math.min(natural, cap);
+                console.log('[MEDIA SIZE]', {
+                  kind,
+                  hintSrc,
+                  sizeHint,
+                  containerW,
+                  hinted,
+                  natural,
+                  cap,
+                  effectiveH,
+                });
               }
 
               box.style.maxHeight = effectiveH + 'px';
@@ -1672,18 +1782,18 @@ export function showTooltip(name, lvlDesc, iconEl) {
               box.style.minHeight = '';
               box.style.display = 'flex';
 
-              if (contentSel && kind !== 'IMG')
+              if (contentSel && !isMediaKind)
                 pinContentHeight(box, contentSel);
-              if (kind === 'IMG' && contentSel) {
+              if (isMediaKind && contentSel) {
                 // Safety net beyond the hint-based effectiveH above: if the
                 // real rendered content (media once loaded + desc) still
-                // ends up taller than what effectiveH allocated — no
-                // filename hint matched (e.g. an undimensioned video, or
-                // height:'maximum'), or the hint underestimated — scroll
-                // instead of silently clipping the description. Re-checked
-                // again once the media finishes loading (see makeMediaEl's
-                // load/loadeddata handlers) since its rendered size can
-                // still change after this point.
+                // ends up taller than what effectiveH allocated — no hint
+                // matched (e.g. an undimensioned video, height:'maximum',
+                // or a snippet with no `size`), or the hint underestimated
+                // — scroll instead of silently clipping the description.
+                // Re-checked again once the media finishes loading (see
+                // makeMediaEl's/withLoadingSpinner's load handlers) since
+                // its rendered size can still change after this point.
                 refreshImgScroll(box.querySelector(contentSel));
               }
 
@@ -1697,7 +1807,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
               lastKeyInCol[screenCol] = placedKey;
               // prefer computed bottom for media (hint-sized), rect for text windows
               colBottom[screenCol] =
-                kind === 'IMG' ? startY + effectiveH : rect.bottom;
+                isMediaKind ? startY + effectiveH : rect.bottom;
 
               // ── STYLISH OFFSET ──
               // First window in a column that sits beside the vertical tree connector
@@ -1723,11 +1833,11 @@ export function showTooltip(name, lvlDesc, iconEl) {
 
               if (STYLISH_OFFSET) {
                 box.style.top = startY + STYLISH_OFFSET + 'px';
-                if (kind !== 'IMG') {
+                if (!isMediaKind) {
                   box.style.maxHeight =
                     Math.max(80, effectiveH - STYLISH_OFFSET) + 'px';
                 }
-                if (contentSel && kind !== 'IMG')
+                if (contentSel && !isMediaKind)
                   pinContentHeight(box, contentSel);
                 const r2 = box.getBoundingClientRect();
                 placedRects[placedKey] = r2;

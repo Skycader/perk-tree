@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Биомеханический симулятор</title>
+<style>
+  @font-face{
+    font-family:'JetBrains Mono';
+    font-style:normal;
+    font-weight:400 800;
+    font-display:swap;
+    src:url('fonts/JetBrainsMono-latin.woff2') format('woff2');
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2122,U+2191,U+2193,U+2212,U+2215;
+  }
+  @font-face{
+    font-family:'JetBrains Mono';
+    font-style:normal;
+    font-weight:400 800;
+    font-display:swap;
+    src:url('fonts/JetBrainsMono-cyrillic.woff2') format('woff2');
+    unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+  }
+  :root{
+    --bg-deep:#03060c;
+    --bg-panel:#070f1c;
+    --bg-panel2:#0a1526;
+    --cyan:#2ee6d6;
+    --cyan-dim:#12776e;
+    --orange:#ff8a2b;
+    --orange-dim:#a3560f;
+    --red:#ff2e4d;
+    --green:#39ff8a;
+    --grey-line:#3a4a5c;
+    --text-dim:#7f97ab;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    width:100%;height:100%;
+    overflow:hidden;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(46,230,214,0.06), transparent 60%),
+      radial-gradient(ellipse at 90% 100%, rgba(255,138,43,0.05), transparent 55%),
+      var(--bg-deep);
+    color:#cfe7ea;
+    font-family:'JetBrains Mono','Consolas','Courier New',monospace;
+  }
+  .scanlines{
+    pointer-events:none;
+    position:fixed;inset:0;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px,
+      transparent 2px, transparent 4px);
+    z-index:999;
+  }
+
+  #scene{
+    position:fixed;inset:0;
+    width:100vw;height:100vh;
+    display:block;
+    background:linear-gradient(180deg, #050b14 0%, #030509 100%);
+  }
+
+  .icon{display:block;flex-shrink:0;}
+
+  .figure-fill{fill:#5a6b7a;stroke:#333e48;stroke-width:1.5;}
+  .figure-fill-b{fill:#465563;stroke:#262e37;stroke-width:1.5;}
+  .ground-line{stroke:var(--cyan-dim);stroke-width:2;}
+  .arm-shape{fill:url(#armGradient);stroke:#3a4550;stroke-width:1.5;}
+  .arm-highlight{fill:none;stroke:rgba(255,255,255,0.14);stroke-width:1.5;stroke-linecap:butt;}
+  .arm-joint-ring{fill:none;stroke:rgba(255,255,255,0.22);stroke-width:1;}
+  .pivot-dot{fill:var(--orange);filter:drop-shadow(0 0 6px rgba(255,138,43,0.8));}
+  .hud-text{font-family:'JetBrains Mono','Consolas',monospace;fill:#cfe7ea;}
+  .hud-box{fill:rgba(4,10,18,0.85);stroke:var(--grey-line);stroke-width:1;}
+  .feet-ok{fill:var(--green);}
+  .feet-off{fill:var(--red);}
+
+  .resize-handle{cursor:ns-resize;}
+  .resize-handle-hit{fill:transparent;cursor:ns-resize;}
+
+  .context-hit{fill:transparent;cursor:context-menu;}
+
+  .ctxmenu{
+    position:fixed;
+    z-index:1000;
+    background:linear-gradient(180deg, var(--bg-panel), var(--bg-panel2));
+    border:1px solid var(--cyan-dim);
+    border-radius:0;
+    box-shadow:0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(46,230,214,0.15);
+    padding:12px;
+    min-width:220px;
+    display:none;
+  }
+  .ctxmenu.open{display:block;}
+  .ctxmenu .ctx-title{
+    font-size:11px;letter-spacing:1.5px;color:var(--orange);
+    text-transform:uppercase;margin-bottom:9px;
+  }
+  .ctxmenu .ctx-row{display:flex;align-items:center;gap:8px;}
+  .ctxmenu .ctx-btn{
+    width:32px;height:32px;border-radius:0;border:1px solid var(--grey-line);
+    background:rgba(0,0,0,0.3);color:var(--cyan);font-size:18px;line-height:1;
+    cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;
+  }
+  .ctxmenu .ctx-btn:hover{border-color:var(--cyan);}
+  .ctxmenu .ctx-input{
+    flex:1;background:#0d1b2a;border:1px solid var(--grey-line);border-radius:0;
+    color:var(--cyan);font-family:inherit;font-size:17px;font-weight:bold;text-align:center;
+    padding:6px 2px;width:100%;
+  }
+  .ctxmenu .ctx-unit{font-size:11px;color:var(--text-dim);margin-left:2px;}
+
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<svg id="scene" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+
+<div class="ctxmenu" id="ctxMenu">
+  <div class="ctx-title" id="ctxTitle">МАССА</div>
+  <div class="ctx-row">
+    <div class="ctx-btn" id="ctxMinus"><svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt"><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+    <input type="number" class="ctx-input" id="ctxInput" value="60">
+    <div class="ctx-btn" id="ctxPlus"><svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="butt"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+    <span class="ctx-unit">кг</span>
+  </div>
+</div>
+
+<script>
+const L = 0.75;              // длина руки, м
+const DELTOID_ARM = 0.05;    // плечо дельтовидной мышцы от сустава, м
+const LIMIT_MOMENT = 150;    // предел момента для плечевого СУСТАВА (связки/лабрум), Н·м
+// Отдельный порог для самой дельтовидной МЫШЦЫ — 100% здесь и есть тот самый разумный
+// максимум, который способен выжать среднестатический нетренированный человек в этой
+// геометрии рычага; сустав и мышца — разные ткани с разным пределом, поэтому пороги разные
+// (и не обязаны совпадать, хотя оба линейно зависят от deltaForceN).
+const MUSCLE_MAX_FORCE_N = 4000;
+const G = 9.81;
+const ARM_MASS_KG = 3.5;     // масса собственной руки поднимающего (~5% массы тела взрослого ≈70 кг), кг
+
+// --- Фактор динамической нестабильности удержания живого веса ---
+const WOBBLE_DEG = 2.5;      // амплитуда видимых микроколебаний угла, ° (визуальная анимация)
+const WOBBLE_SPEED = 1.3;    // скорость колебаний, рад/с
+
+// Минимально НЕИЗБЕЖНОЕ отклонение линии действия веса от идеальной вертикали.
+// При соотношении плеч L/DELTOID_ARM = 15:1 даже пара градусов даёт огромное
+// усиление силы на дельту — поэтому "пол" считается не произвольным процентом,
+// а той же формулой рычага при этом минимальном угле (человек физически не
+// удержит живой, балансирующий груз строго по нулевому углу).
+const STAB_MIN_ANGLE_DEG = 3;
+
+// Диапазон "приседа" (сгибания ног Б), на протяжении которого при включённой
+// плавной передаче вес переходит с пола на руку — 0% в начале диапазона,
+// 100% ровно в точке отрыва ног от пола (граница остаётся той же самой).
+const TRANSFER_RAMP_M = 0.35;
+
+let wobbleEnabled = false;
+let wobblePhase = 0;
+function currentWobbleDeg(){
+  return wobbleEnabled ? WOBBLE_DEG * Math.sin(wobblePhase) : 0;
+}
+
+// --- Состояние, которым раньше управляли слайдеры — теперь через drag/ПКМ/пилюли ---
+let massKg = 60;    // вес поднимаемого (Б)
+let massAKg = 80;   // масса поднимающего (А)
+let angleDeg = 45;  // угол подъёма руки
+
+let grip = 'underarm'; // 'underarm' (под мышки) | 'neck' (за шею) — выбирается кликом по маркеру на теле Б
+let gradualTransferEnabled = true;
+
+
+// SVG scene refs
+const svgNS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById('scene');
+
+function el(tag, attrs){
+  const e = document.createElementNS(svgNS, tag);
+  for(const k in attrs) if(attrs[k]!==undefined) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+// Скрыть HUD-панели (узел A / узел B / медицинский статус) — временно, "геймплей"
+// (сама интерактивная сцена) должен занимать всю площадь без телеметрии поверх.
+const SHOW_HUD = false;
+
+// Антропометрические доли (от полного роста), используются и для А, и для Б:
+const HEAD_R_FRAC = 0.072;   // радиус головы, доля роста (было 0.11 — голова смотрелась непропорционально огромной)
+const NECK_LEN_MULT = 0.62;  // длина видимой шеи как множитель радиуса головы (зазор ПОСЛЕ низа головы)
+const SHOULDER_RATIO = 1 - HEAD_R_FRAC*(2+NECK_LEN_MULT); // высота плеча, доля роста от пола
+const HOLD_POINT_RATIO = 0.73;    // точка хвата (подмышки) ≈ 73% роста от пола = 27% от макушки
+const B_TOP_TO_HOLD_RATIO = 1 - HOLD_POINT_RATIO; // 0.27 от макушки до хвата
+const B_HOLD_TO_FEET_RATIO = HOLD_POINT_RATIO;    // 0.73 от хвата до стоп
+// точка хвата "за шею" — середина видимой шеи, вычислена из тех же констант головы/шеи,
+// чтобы всегда физически совпадать с нарисованной шеей (как и точка плеча выше)
+const NECK_HOLD_RATIO = 1 - HEAD_R_FRAC*(2 + NECK_LEN_MULT*0.5);
+const B_TOP_TO_NECK_RATIO = 1 - NECK_HOLD_RATIO;
+const B_NECK_TO_FEET_RATIO = NECK_HOLD_RATIO;
+function topToHoldRatio(g){ return g==='neck' ? B_TOP_TO_NECK_RATIO : B_TOP_TO_HOLD_RATIO; }
+function holdToFeetRatio(g){ return g==='neck' ? B_NECK_TO_FEET_RATIO : B_HOLD_TO_FEET_RATIO; }
+const COM_RATIO = 0.55; // центр масс человека ≈ 55% роста от стоп (стандартная антропометрическая оценка)
+
+// --- Нагрузка на шею/позвоночник при хвате "за шею" (условная модель, не мед. норматив) ---
+// Перелом шейных позвонков от чистого растяжения весом наступает в реальности при
+// ориентировочно 150-300 кг (не 15 — здоровая шея спокойно держит статически 15-30 кг,
+// тренированная — 50-80 кг). 100%-й порог ниже — это порог АСФИКСИИ (пережатие трахеи/
+// сонных артерий рукой/предплечьем при хвате), а не порог перелома — это два разных
+// механизма травмы с очень разными пределами, и раньше они были ошибочно объединены.
+const NECK_FRACTURE_KG = 200;  // предел на разрыв/перелом шейного отдела, кг (нижняя граница реального диапазона 150-300)
+const NECK_LIMIT_KG = NECK_FRACTURE_KG; // 100% на шкале — порог перелома
+const NECK_SAFE_KG = 5;        // ниже — практически без риска для дыхания/сосудов (это порог начала асфиксии, не перелома)
+const NECK_ASPHYXIA_MIN_SEC = 4;   // минимальное время до потери сознания при огромной нагрузке
+const NECK_ASPHYXIA_MAX_SEC = 60;  // время при нагрузке чуть выше безопасной
+
+const HEIGHT_MIN_M = 1.5, HEIGHT_MAX_M = 2.0; // диапазон роста, регулируемый драгом
+
+// геометрия сцены — высота фиксирована в условных единицах, ширина подгоняется
+// под соотношение сторон окна, чтобы сцена всегда заполняла весь экран без полей.
+// SCALE подобран так, чтобы самая высокая фигура (2.0м) с рукой, поднятой строго
+// вверх (макс. вертикальный охват), занимала всю доступную высоту сцены за вычетом
+// небольших отступов сверху/снизу — без HUD-панелей место эффективно уходит на сам "геймплей".
+let VB_W = 640;
+const VB_H = 500;
+const TOP_MARGIN = 55, BOTTOM_MARGIN = 34;
+const REACH_MAX_M = SHOULDER_RATIO*HEIGHT_MAX_M + L; // высота плеча + рука вверх, м
+const SCALE = (VB_H - TOP_MARGIN - BOTTOM_MARGIN) / REACH_MAX_M; // px per meter
+const GROUND_Y = VB_H - BOTTOM_MARGIN;
+let SHOULDER_X = VB_W * 0.40; // пересчитывается в computeViewBox() под текущую ширину сцены
+
+function computeViewBox(){
+  // ширина viewBox всегда точно равна соотношению сторон окна — иначе
+  // preserveAspectRatio="meet" оставляет пустые поля сверху/снизу или по бокам
+  // вместо того, чтобы сцена заполняла всю площадь.
+  const aspect = window.innerWidth / Math.max(window.innerHeight, 1);
+  VB_W = Math.max(240, Math.round(VB_H * aspect));
+  SHOULDER_X = VB_W * 0.40;
+}
+
+// текущий рост (м), обновляется в update() из слайдеров
+let heightA_m = 1.75;
+let heightB_m = 1.75;
+let SHOULDER_Y = GROUND_Y - SHOULDER_RATIO*heightA_m*SCALE; // мутируется в update()
+
+// последняя посчитанная поза Б (обновляется в update()) — нужна, чтобы при клике по
+// маркеру хвата мгновенно навести кисть точно на него, без "протяжки" через тело
+let lastBTop = 0, lastBHeightPx = 0;
+// угол руки (0..180°), при котором кисть окажется ровно в targetY — обратная задача к positionHand
+function angleForHandY(targetY){
+  const ratio = Math.max(-1, Math.min(1, (targetY - SHOULDER_Y) / (L*SCALE)));
+  return Math.acos(ratio) * 180 / Math.PI;
+}
+
+// рисует пропорциональный силуэт человека внутри группы g,
+// top — координата верхушки головы, height — рост фигуры в пикселях
+// armSides: какие руки рисовать статично — [-1,1] (обе), [-1] (только левая, если правую
+// ведёт интерактивная деталь руки А) или [] (без рук)
+// Фигура развёрнута боком (профиль): одна нога (без стопы — строго вертикальная), одна рука.
+// facing: +1 — лицом вправо, -1 — лицом влево (фигуры стоят лицом друг к другу).
+// showArm=false — для фигуры А, чью руку рисует отдельная интерактивная деталь.
+function drawHumanoid(g, top, height, widthScale, cls, showArm, facing){
+  const headR = height*HEAD_R_FRAC;
+  const headCX = facing*height*0.015;      // лёгкий наклон в сторону взгляда — читается как профиль
+  const headCY = top + headR;
+  const headBottomY = top + 2*headR;       // низ круга головы
+  const neckW = headR*0.42;                // шея — узкая, не "подушка"
+  const torsoY = headBottomY + headR*NECK_LEN_MULT; // торс начинается СТРОГО ниже головы, с зазором на шею
+  const torsoH = height*0.36;
+  const torsoW = headR*2.7*widthScale;     // толщина груди-спины в профиль
+  const hipY = torsoY + torsoH;
+  const legH = height - (torsoY - top) - torsoH;
+  const legW = torsoW*0.6;
+
+  g.appendChild(el('circle',{cx:headCX,cy:headCY,r:headR,class:cls}));
+  // шея — узкий короткий цилиндр, явно уже и головы, и плеч
+  g.appendChild(el('rect',{x:headCX-neckW/2,y:headBottomY,width:neckW,height:Math.max(torsoY-headBottomY,1),rx:neckW*0.18,class:cls}));
+  // торс — единый скруглённый блок (толщина груди-спины видна сбоку)
+  g.appendChild(el('rect',{x:-torsoW/2,y:torsoY,width:torsoW,height:torsoH,rx:torsoW*0.3,class:cls}));
+  // нога — одна, строго вертикальная, без стопы
+  g.appendChild(el('rect',{x:-legW/2,y:hipY-height*0.015,width:legW,height:Math.max(legH,4),rx:legW*0.35,class:cls}));
+
+  // рука — точно как нога: прямой скруглённый прямоугольник, тот же серый цвет (cls)
+  if(showArm){
+    const shoulderY = torsoY + height*0.015;
+    const armLen = torsoH*0.8;
+    const armW = legW*0.7;
+    const sx = 0; // по центру тела, как и нога — не сбоку
+    g.appendChild(el('rect',{x:sx-armW/2,y:shoulderY,width:armW,height:armLen,rx:armW*0.35,class:cls}));
+  }
+}
+
+// --- Утилиты для HUD-панелей: моноширинный шрифт → перенос строк по числу символов ---
+const CHAR_W = 0.62; // отношение ширины символа JetBrains Mono к его font-size
+function charsPerWidth(widthUnits, fontSize){
+  return Math.max(4, Math.floor(widthUnits / (fontSize*CHAR_W)));
+}
+function wrapMonoText(str, maxChars){
+  const words = str.split(' ');
+  const lines = [];
+  let cur = '';
+  for(const w of words){
+    const test = cur ? cur+' '+w : w;
+    if(test.length > maxChars && cur){
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = test;
+    }
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+// добавляет одну строку текста в HUD-блок и продвигает курсор Y; возвращает созданный узел
+function hudLine(container, x, cursor, text, opts={}){
+  const size = opts.size || 14;
+  cursor.y += size;
+  const t = el('text', {x, y:cursor.y, id:opts.id});
+  t.setAttribute('class', 'hud-text' + (opts.cls ? (' '+opts.cls) : ''));
+  t.style.fontSize = size+'px';
+  if(opts.weight) t.style.fontWeight = opts.weight;
+  if(opts.color) t.style.fill = opts.color;
+  t.textContent = text;
+  container.appendChild(t);
+  cursor.y += (opts.leading!==undefined ? opts.leading : size*0.55);
+  return t;
+}
+
+// запас по Y под плавающий тулбар (реальные px тулбара переменны, здесь — консервативный отступ в условных единицах)
+const TOOLBAR_CLEARANCE = 70;
+let NODEA_X, NODEA_Y, NODEA_W, NODEA_H, NODEA_BAR_W;
+let NODEB_X, NODEB_Y, NODEB_W, NODEB_H;
+let STATUS_X, STATUS_Y, STATUS_W;
+
+function buildStaticScene(){
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox', `0 0 ${VB_W} ${VB_H}`);
+
+  if(SHOW_HUD){
+    NODEA_X = 16;
+    NODEA_Y = TOOLBAR_CLEARANCE;
+    NODEA_W = Math.max(250, Math.min(320, VB_W*0.32));
+
+    STATUS_W = Math.max(230, Math.min(340, VB_W*0.30));
+    STATUS_X = VB_W - STATUS_W - 16;
+    STATUS_Y = TOOLBAR_CLEARANCE;
+
+    NODEB_W = Math.max(260, Math.min(320, VB_W*0.30));
+    NODEB_X = VB_W - NODEB_W - 16;
+    NODEB_H = 136;
+    NODEB_Y = VB_H - NODEB_H - 16;
+  }
+
+  // фон-сетка
+  const grid = el('g', {opacity:0.07});
+  for(let x=0;x<=VB_W;x+=40){
+    grid.appendChild(el('line',{x1:x,y1:0,x2:x,y2:VB_H,stroke:'#2ee6d6','stroke-width':1}));
+  }
+  for(let y=0;y<=VB_H;y+=40){
+    grid.appendChild(el('line',{x1:0,y1:y,x2:VB_W,y2:y,stroke:'#2ee6d6','stroke-width':1}));
+  }
+  svg.appendChild(grid);
+
+  // пол
+  svg.appendChild(el('line',{x1:20,y1:GROUND_Y,x2:VB_W-20,y2:GROUND_Y,class:'ground-line'}));
+
+  // === Мерная шкала роста (вертикальная линейка слева) — совпадает с диапазоном роста ===
+  const rulerX = 62;
+  const rulerMaxCm = HEIGHT_MAX_M*100;
+  const ruler = el('g',{id:'ruler'});
+  ruler.appendChild(el('line',{x1:rulerX,y1:GROUND_Y,x2:rulerX,y2:GROUND_Y-HEIGHT_MAX_M*SCALE,stroke:'#3a5a63','stroke-width':1.5}));
+  for(let cm=0; cm<=rulerMaxCm; cm+=10){
+    const y = GROUND_Y - (cm/100)*SCALE;
+    const major = (cm%50===0);
+    ruler.appendChild(el('line',{x1:rulerX-(major?8:4),y1:y,x2:rulerX,y2:y,stroke:'#3a5a63','stroke-width':major?1.5:1}));
+    if(major){
+      // подпись "0.0м" стоит ровно на линии пола — сдвигаем её строго над линией,
+      // чтобы глиф не пересекался с линией пола (для остальных отметок пересекать нечего)
+      const labelY = (cm===0) ? y-7 : y+4;
+      const t = el('text',{x:rulerX-12,y:labelY,class:'hud-text',style:'fill:#3a5a63;font-size:11px;text-anchor:end;'});
+      t.textContent = (cm/100).toFixed(1)+'м';
+      ruler.appendChild(t);
+    }
+  }
+  svg.appendChild(ruler);
+
+  // фигура А (перерисовывается в update(), т.к. рост регулируется драгом)
+  const aGroup = el('g',{id:'figureA'});
+  svg.appendChild(aGroup);
+  svg.appendChild(el('rect',{id:'ctxHitA',class:'context-hit'}));
+
+  svg.appendChild(el('line',{id:'heightMarkerA',stroke:'#2ee6d6','stroke-width':1,'stroke-dasharray':'2,3',opacity:0.6}));
+  svg.appendChild((()=>{const t=el('text',{id:'heightLabelA',class:'hud-text',style:'font-size:11px;fill:#2ee6d6;text-anchor:end;'});return t;})());
+  svg.appendChild(el('circle',{r:9,class:'resize-handle-hit',id:'heightHandleHitA'}));
+  const heightArrowA = el('g',{id:'heightArrowA',class:'resize-handle',style:'pointer-events:none;'});
+  heightArrowA.appendChild(el('path',{d:'M -5 -4 L 0 -9 L 5 -4 M -5 4 L 0 9 L 5 4',stroke:'#2ee6d6','stroke-width':1.6,fill:'none','stroke-linecap':'butt','stroke-linejoin':'miter'}));
+  svg.appendChild(heightArrowA);
+
+  const platA = el('g',{id:'platformA'});
+  platA.appendChild(el('rect',{x:-38,y:GROUND_Y+3,width:76,height:9,fill:'#0d1b2a',stroke:'#2ee6d6','stroke-width':1.2}));
+  const platATxt = el('text',{x:-44,y:GROUND_Y+13,class:'hud-text',id:'platformATxt',style:'font-size:12px;fill:#2ee6d6;text-anchor:end;'});
+  platATxt.textContent='0 Н';
+  platA.appendChild(platATxt);
+  svg.appendChild(platA);
+
+  const defs = el('defs',{});
+  const armGrad = el('linearGradient',{id:'armGradient',x1:'0%',y1:'0%',x2:'100%',y2:'0%'});
+  armGrad.appendChild(el('stop',{offset:'0%','stop-color':'#3f4954'}));
+  armGrad.appendChild(el('stop',{offset:'45%','stop-color':'#6a7b8a'}));
+  armGrad.appendChild(el('stop',{offset:'100%','stop-color':'#3f4954'}));
+  defs.appendChild(armGrad);
+  svg.appendChild(defs);
+
+  svg.appendChild(el('path',{class:'arm-shape',id:'armShape'}));
+  svg.appendChild(el('path',{class:'arm-highlight',id:'armHighlight'}));
+  svg.appendChild(el('circle',{r:15,class:'arm-joint-ring',id:'shoulderRing'}));
+  svg.appendChild(el('circle',{r:8,class:'arm-joint-ring',id:'wristRing'}));
+  svg.appendChild(el('circle',{r:6,class:'pivot-dot',id:'pivotDot'}));
+
+  const bGroup = el('g',{id:'figureB'});
+  svg.appendChild(bGroup);
+  svg.appendChild(el('rect',{id:'ctxHitB',class:'context-hit'}));
+
+  svg.appendChild(el('line',{id:'heightMarkerB',stroke:'#ff8a2b','stroke-width':1,'stroke-dasharray':'2,3',opacity:0.6}));
+  svg.appendChild((()=>{const t=el('text',{id:'heightLabelB',class:'hud-text',style:'font-size:11px;fill:#ff8a2b;'});return t;})());
+  svg.appendChild(el('circle',{r:9,class:'resize-handle-hit',id:'heightHandleHitB'}));
+  const heightArrowB = el('g',{id:'heightArrowB',class:'resize-handle',style:'pointer-events:none;'});
+  heightArrowB.appendChild(el('path',{d:'M -5 -4 L 0 -9 L 5 -4 M -5 4 L 0 9 L 5 4',stroke:'#ff8a2b','stroke-width':1.6,fill:'none','stroke-linecap':'butt','stroke-linejoin':'miter'}));
+  svg.appendChild(heightArrowB);
+
+  const platB = el('g',{id:'platformB'});
+  platB.appendChild(el('rect',{x:-38,y:GROUND_Y+3,width:76,height:9,fill:'#0d1b2a',stroke:'#ff8a2b','stroke-width':1.2}));
+  const platBTxt = el('text',{x:44,y:GROUND_Y+13,class:'hud-text',id:'platformBTxt',style:'font-size:12px;fill:#ff8a2b;text-anchor:start;'});
+  platBTxt.textContent='0 Н';
+  platB.appendChild(platBTxt);
+  svg.appendChild(platB);
+
+  svg.appendChild(el('line',{id:'holdConnector',stroke:'#ff8a2b','stroke-width':3,'stroke-dasharray':'2,4',opacity:0}));
+
+  // === Выбор хвата — два кликабельных маркера на теле Б: подмышки / шея ===
+  svg.appendChild(el('circle',{r:13,fill:'none',stroke:'#ff8a2b','stroke-width':1.6,'stroke-dasharray':'3,3',id:'gripRingUnderarm',opacity:0}));
+  svg.appendChild(el('circle',{r:8,class:'pivot-dot',id:'gripDotUnderarm',style:'cursor:pointer;'}));
+  svg.appendChild(el('circle',{r:13,fill:'none',stroke:'#ffe066','stroke-width':1.6,'stroke-dasharray':'3,3',id:'gripRingNeck',opacity:0}));
+  svg.appendChild(el('circle',{r:8,fill:'#ffe066',id:'gripDotNeck',style:'cursor:pointer;filter:drop-shadow(0 0 6px rgba(255,224,102,0.8));'}));
+
+  const comGroup = el('g',{id:'comMarker'});
+  comGroup.appendChild(el('line',{x1:-10,y1:0,x2:10,y2:0,stroke:'#ff2ee6','stroke-width':2}));
+  comGroup.appendChild(el('line',{x1:0,y1:-10,x2:0,y2:10,stroke:'#ff2ee6','stroke-width':2}));
+  comGroup.appendChild(el('circle',{r:12,fill:'none',stroke:'#ff2ee6','stroke-width':1.2,'stroke-dasharray':'3,3',opacity:0.7}));
+  svg.appendChild(comGroup);
+  const comLabel = el('text',{id:'comLabel',class:'hud-text',style:'font-size:12px;fill:#ff2ee6;font-weight:bold;'});
+  svg.appendChild(comLabel);
+
+  if(SHOW_HUD){
+    // === HUD узла A (плечевой сустав) — компактная колонка слева, под тулбаром ===
+    const labelA = el('g',{id:'nodeABox'});
+    const boxARect = el('rect',{x:NODEA_X,y:NODEA_Y,width:NODEA_W,class:'hud-box',id:'nodeABoxRect'});
+    labelA.appendChild(boxARect);
+    const padA = 14;
+    const cyA = {y:NODEA_Y+padA};
+    hudLine(labelA, NODEA_X+padA, cyA, 'УЗЕЛ A · ПЛЕЧЕВОЙ СУСТАВ', {size:11, color:'#7f97ab'});
+    hudLine(labelA, NODEA_X+padA, cyA, '', {size:13, id:'momentSceneTxt', color:'#2ee6d6', weight:'bold', leading:8});
+    hudLine(labelA, NODEA_X+padA, cyA, '', {size:13, id:'deltaSceneTxt', color:'#ff8a2b', weight:'bold', leading:8});
+    hudLine(labelA, NODEA_X+padA, cyA, '', {size:13, id:'compressSceneTxt', color:'#ff8a2b', weight:'bold', leading:10});
+    cyA.y += 8;
+    const barW = NODEA_W - padA*2 - 68;
+    NODEA_BAR_W = barW;
+    labelA.appendChild(el('rect',{x:NODEA_X+padA,y:cyA.y-10,width:barW,height:12,fill:'#0d1b2a',stroke:'#3a4a5c','stroke-width':1}));
+    const limitFillScene = el('rect',{x:NODEA_X+padA+1,y:cyA.y-9,width:0,height:10,id:'limitBarScene',fill:'#39ff8a'});
+    labelA.appendChild(limitFillScene);
+    const limitPctScene = el('text',{x:NODEA_X+padA+barW+10,y:cyA.y+1,class:'hud-text',id:'limitPctScene',style:'font-size:13px;font-weight:bold;'});
+    limitPctScene.textContent='0%';
+    labelA.appendChild(limitPctScene);
+    cyA.y += 16;
+    NODEA_H = cyA.y - NODEA_Y + 12;
+    boxARect.setAttribute('height', NODEA_H);
+    svg.appendChild(labelA);
+
+    // === HUD узла B (кисть/хват) — снизу справа ===
+    const labelB = el('g',{id:'nodeBBox'});
+    const boxBRect = el('rect',{x:NODEB_X,y:NODEB_Y,width:NODEB_W,height:NODEB_H,class:'hud-box',id:'nodeBBoxRect'});
+    labelB.appendChild(boxBRect);
+    const padB = 14;
+    const cyB = {y:NODEB_Y+padB};
+    hudLine(labelB, NODEB_X+padB, cyB, 'УЗЕЛ B · КИСТЬ / ХВАТ', {size:11, color:'#7f97ab'});
+    hudLine(labelB, NODEB_X+padB, cyB, '', {size:13, id:'gripSceneTxt', leading:8});
+    hudLine(labelB, NODEB_X+padB, cyB, '', {size:13, id:'forceLeffSceneTxt', color:'#2ee6d6', weight:'bold', leading:8});
+    hudLine(labelB, NODEB_X+padB, cyB, '', {size:13, id:'feetSceneTxt', weight:'bold', leading:8});
+    hudLine(labelB, NODEB_X+padB, cyB, '', {size:11, id:'noteSceneTxt', color:'#7f97ab', leading:0});
+    svg.appendChild(labelB);
+
+    // === HUD статуса (аналогичный узлу A блок; заменяет прежнюю отдельную панель) ===
+    svg.appendChild(el('g',{id:'statusHud'}));
+  }
+
+  // === HUD нагрузки на шею/позвоночник — независим от SHOW_HUD, появляется только
+  // при выбранном хвате "за шею" (см. updateNeckPanel в update()) ===
+  svg.appendChild(el('g',{id:'neckHud'}));
+
+  // === HUD нагрузки на руку/плечо поднимающего — виден всегда, следует за плечом А ===
+  svg.appendChild(el('g',{id:'armHud'}));
+
+  // === Шуточный HUD ощущений поднимаемого при хвате "под мышки" — следует за подмышкой Б ===
+  svg.appendChild(el('g',{id:'underarmHud'}));
+}
+
+// строит suженный "капсульный" контур конечности между двумя точками
+// с разным радиусом на концах (толще у плеча, уже у кисти), с круглыми торцами
+function buildLimbPath(x1, y1, x2, y2, r1, r2){
+  const dx = x2-x1, dy = y2-y1;
+  const len = Math.max(Math.hypot(dx,dy), 0.0001);
+  const ux = dx/len, uy = dy/len;
+  const px = -uy, py = ux; // перпендикуляр
+  const p1a = {x:x1+px*r1, y:y1+py*r1};
+  const p1b = {x:x1-px*r1, y:y1-py*r1};
+  const p2a = {x:x2+px*r2, y:y2+py*r2};
+  const p2b = {x:x2-px*r2, y:y2-py*r2};
+  // скруглённые торцы (дуги, sweep=0 — иначе торцы получаются вогнутыми "катушкой")
+  return `M ${p1a.x.toFixed(1)} ${p1a.y.toFixed(1)} `+
+         `L ${p2a.x.toFixed(1)} ${p2a.y.toFixed(1)} `+
+         `A ${r2} ${r2} 0 0 0 ${p2b.x.toFixed(1)} ${p2b.y.toFixed(1)} `+
+         `L ${p1b.x.toFixed(1)} ${p1b.y.toFixed(1)} `+
+         `A ${r1} ${r1} 0 0 0 ${p1a.x.toFixed(1)} ${p1a.y.toFixed(1)} Z`;
+}
+
+function positionHand(alphaDeg, shoulderY){
+  const a = alphaDeg * Math.PI/180;
+  const hx = SHOULDER_X + Math.sin(a)*L*SCALE;
+  const hy = shoulderY + Math.cos(a)*L*SCALE;
+  return {hx, hy};
+}
+
+// --- Перетаскивание кружка кисти для управления углом (0..180°) ---
+function getSvgPoint(evt){
+  const pt = svg.createSVGPoint();
+  const src = (evt.touches && evt.touches[0]) ? evt.touches[0] : evt;
+  pt.x = src.clientX;
+  pt.y = src.clientY;
+  const ctm = svg.getScreenCTM();
+  if(!ctm) return {x:0,y:0};
+  const loc = pt.matrixTransform(ctm.inverse());
+  return {x:loc.x, y:loc.y};
+}
+
+function angleFromSvgPoint(x, y){
+  let dx = x - SHOULDER_X;
+  let dy = y - SHOULDER_Y;
+  if(dx < 0) dx = 0; // рука не заходит в левую полуплоскость (тыльная сторона тела А)
+  let deg = Math.atan2(dx, dy) * 180 / Math.PI;
+  if(deg < 0) deg = 0;
+  if(deg > 180) deg = 180;
+  return deg;
+}
+
+let isDraggingHand = false;
+
+function onHandDragStart(evt){
+  evt.preventDefault();
+  isDraggingHand = true;
+  svg.style.cursor = 'grabbing';
+  const halo = document.getElementById('handHalo');
+  if(halo) halo.setAttribute('stroke', '#ff2e4d');
+  window.addEventListener('mousemove', onHandDragMove);
+  window.addEventListener('mouseup', onHandDragEnd);
+  window.addEventListener('touchmove', onHandDragMove, {passive:false});
+  window.addEventListener('touchend', onHandDragEnd);
+}
+
+function onHandDragMove(evt){
+  if(!isDraggingHand) return;
+  evt.preventDefault();
+  const p = getSvgPoint(evt);
+  const deg = angleFromSvgPoint(p.x, p.y);
+  angleDeg = Math.round(deg);
+  update();
+}
+
+function onHandDragEnd(){
+  isDraggingHand = false;
+  svg.style.cursor = '';
+  const halo = document.getElementById('handHalo');
+  if(halo) halo.setAttribute('stroke', '#ff8a2b');
+  window.removeEventListener('mousemove', onHandDragMove);
+  window.removeEventListener('mouseup', onHandDragEnd);
+  window.removeEventListener('touchmove', onHandDragMove);
+  window.removeEventListener('touchend', onHandDragEnd);
+}
+
+function attachDrag(node){
+  node.addEventListener('mousedown', onHandDragStart);
+  node.addEventListener('touchstart', onHandDragStart, {passive:false});
+}
+
+// --- Изменение роста перетаскиванием (нативный cursor:ns-resize) ---
+const HEIGHT_PX_PER_CM = 1.05; // чувствительность драга
+
+let heightDragTarget = null; // 'A' | 'B' | null
+let heightDragStartY = 0;
+let heightDragStartCm = 0;
+
+function onHeightDragStart(target){
+  return function(evt){
+    evt.preventDefault();
+    heightDragTarget = target;
+    const src = (evt.touches && evt.touches[0]) ? evt.touches[0] : evt;
+    heightDragStartY = src.clientY;
+    heightDragStartCm = (target==='A' ? heightA_m : heightB_m) * 100;
+    document.body.style.cursor = 'ns-resize';
+    svg.style.cursor = 'ns-resize';
+    window.addEventListener('mousemove', onHeightDragMove);
+    window.addEventListener('mouseup', onHeightDragEnd);
+    window.addEventListener('touchmove', onHeightDragMove, {passive:false});
+    window.addEventListener('touchend', onHeightDragEnd);
+  };
+}
+
+function onHeightDragMove(evt){
+  if(!heightDragTarget) return;
+  evt.preventDefault();
+  const src = (evt.touches && evt.touches[0]) ? evt.touches[0] : evt;
+  const dyPx = heightDragStartY - src.clientY; // вверх = положительно = выше
+  const dyCm = dyPx / HEIGHT_PX_PER_CM;
+  let newCm = Math.min(HEIGHT_MAX_M*100, Math.max(HEIGHT_MIN_M*100, heightDragStartCm + dyCm));
+  if(heightDragTarget==='A') heightA_m = newCm/100;
+  else heightB_m = newCm/100;
+  update();
+}
+
+function onHeightDragEnd(){
+  heightDragTarget = null;
+  document.body.style.cursor = '';
+  svg.style.cursor = '';
+  window.removeEventListener('mousemove', onHeightDragMove);
+  window.removeEventListener('mouseup', onHeightDragEnd);
+  window.removeEventListener('touchmove', onHeightDragMove);
+  window.removeEventListener('touchend', onHeightDragEnd);
+}
+
+// --- Контекстное меню по ПКМ (масса А / вес Б) ---
+const ctxMenu = document.getElementById('ctxMenu');
+const ctxTitle = document.getElementById('ctxTitle');
+const ctxInput = document.getElementById('ctxInput');
+const ctxMinus = document.getElementById('ctxMinus');
+const ctxPlus = document.getElementById('ctxPlus');
+let ctxTarget = null; // 'A' | 'B'
+
+function openCtxMenu(target, clientX, clientY){
+  ctxTarget = target;
+  ctxTitle.textContent = target==='A' ? 'МАССА ПОДНИМАЮЩЕГО (А)' : 'ВЕС ПОДНИМАЕМОГО (Б)';
+  ctxInput.value = target==='A' ? massAKg : massKg;
+  ctxInput.min = target==='A' ? 50 : 40;
+  ctxInput.max = target==='A' ? 110 : 120;
+  ctxMenu.classList.add('open');
+  const menuW = 230, menuH = 96;
+  ctxMenu.style.left = Math.min(clientX, window.innerWidth-menuW-8) + 'px';
+  ctxMenu.style.top = Math.min(clientY, window.innerHeight-menuH-8) + 'px';
+  setTimeout(()=>ctxInput.focus(), 0);
+}
+function closeCtxMenu(){
+  ctxMenu.classList.remove('open');
+  ctxTarget = null;
+}
+function applyCtxValue(){
+  if(!ctxTarget) return;
+  let v = parseFloat(ctxInput.value);
+  if(isNaN(v)) return;
+  if(ctxTarget==='A'){ v = Math.min(110, Math.max(50, v)); massAKg = v; }
+  else { v = Math.min(120, Math.max(40, v)); massKg = v; }
+  ctxInput.value = v;
+  update();
+}
+
+// Элементы-ручки (высота А/Б, зоны ПКМ) пересоздаются каждый раз при buildStaticScene()
+// (например, при ресайзе окна) — поэтому обработчики на них навешиваются отдельной
+// функцией, вызываемой после каждой перестройки сцены, а не один раз при загрузке.
+function attachSceneHandlers(){
+  const hhA = document.getElementById('heightHandleHitA');
+  hhA.addEventListener('mousedown', onHeightDragStart('A'));
+  hhA.addEventListener('touchstart', onHeightDragStart('A'), {passive:false});
+  const hhB = document.getElementById('heightHandleHitB');
+  hhB.addEventListener('mousedown', onHeightDragStart('B'));
+  hhB.addEventListener('touchstart', onHeightDragStart('B'), {passive:false});
+
+  document.getElementById('ctxHitA').addEventListener('contextmenu', (e)=>{
+    e.preventDefault();
+    openCtxMenu('A', e.clientX, e.clientY);
+  });
+  document.getElementById('ctxHitB').addEventListener('contextmenu', (e)=>{
+    e.preventDefault();
+    openCtxMenu('B', e.clientX, e.clientY);
+  });
+
+  // Клик по маркеру — мгновенное переключение хвата: кисть сразу наводится точно на
+  // выбранную точку (без нагрузки), а не остаётся на месте с растянутым до неё коннектором.
+  document.getElementById('gripDotUnderarm').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const targetY = lastBTop + B_TOP_TO_HOLD_RATIO*lastBHeightPx;
+    angleDeg = Math.round(angleForHandY(targetY));
+    grip = 'underarm';
+    update();
+  });
+  document.getElementById('gripDotNeck').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const targetY = lastBTop + B_TOP_TO_NECK_RATIO*lastBHeightPx;
+    angleDeg = Math.round(angleForHandY(targetY));
+    grip = 'neck';
+    update();
+  });
+}
+
+ctxInput.addEventListener('input', applyCtxValue);
+ctxMinus.addEventListener('click', ()=>{ ctxInput.value = parseFloat(ctxInput.value)-1; applyCtxValue(); });
+ctxPlus.addEventListener('click', ()=>{ ctxInput.value = parseFloat(ctxInput.value)+1; applyCtxValue(); });
+document.addEventListener('click', (e)=>{
+  if(ctxMenu.classList.contains('open') && !ctxMenu.contains(e.target)){
+    closeCtxMenu();
+  }
+});
+document.addEventListener('contextmenu', (e)=>{
+  if(e.target.id!=='ctxHitA' && e.target.id!=='ctxHitB'){
+    closeCtxMenu();
+  }
+});
+svg.addEventListener('contextmenu', (e)=>{
+  if(e.target.id!=='ctxHitA' && e.target.id!=='ctxHitB') e.preventDefault();
+});
+
+function update(){
+  const mass = massKg;
+  const massA = massAKg;
+  const alphaBaseDeg = angleDeg;
+
+  // --- Фактор динамической нестабильности ---
+  const wobble = currentWobbleDeg();
+  const alphaEffDeg = Math.min(180, Math.max(0, alphaBaseDeg + wobble));
+  const alphaRad = alphaEffDeg*Math.PI/180;
+
+  const F = mass * G; // полный вес поднимаемого
+  const F_arm = ARM_MASS_KG * G; // вес собственной руки поднимающего
+  const F_A = massA * G; // собственный вес поднимающего
+
+  // --- геометрия, зависящая от роста ---
+  SHOULDER_Y = GROUND_Y - SHOULDER_RATIO*heightA_m*SCALE;
+  const aHeightPx = heightA_m*SCALE;
+  const aTop = GROUND_Y - aHeightPx;
+
+  const aGroup = document.getElementById('figureA');
+  aGroup.innerHTML = '';
+  aGroup.setAttribute('transform', `translate(${SHOULDER_X},0)`);
+  drawHumanoid(aGroup, aTop, aHeightPx, 1, 'figure-fill', false, 1); // руку рисует интерактивная деталь; лицом вправо, к Б
+
+  document.getElementById('pivotDot').setAttribute('cx', SHOULDER_X);
+  document.getElementById('pivotDot').setAttribute('cy', SHOULDER_Y);
+
+  const hMarkerA = document.getElementById('heightMarkerA');
+  hMarkerA.setAttribute('x1', SHOULDER_X-40); hMarkerA.setAttribute('x2', SHOULDER_X+40);
+  hMarkerA.setAttribute('y1', aTop); hMarkerA.setAttribute('y2', aTop);
+  const hLabelA = document.getElementById('heightLabelA');
+  hLabelA.setAttribute('x', SHOULDER_X-44); hLabelA.setAttribute('y', aTop+4);
+  hLabelA.textContent = heightA_m.toFixed(2)+' м';
+
+  document.getElementById('heightHandleHitA').setAttribute('cx', SHOULDER_X);
+  document.getElementById('heightHandleHitA').setAttribute('cy', aTop-11);
+  document.getElementById('heightArrowA').setAttribute('transform', `translate(${SHOULDER_X},${aTop-11})`);
+
+  const ctxHitA = document.getElementById('ctxHitA');
+  ctxHitA.setAttribute('x', SHOULDER_X-30);
+  ctxHitA.setAttribute('y', aTop);
+  ctxHitA.setAttribute('width', 60);
+  ctxHitA.setAttribute('height', aHeightPx);
+
+  document.getElementById('platformA').setAttribute('transform', `translate(${SHOULDER_X},0)`);
+
+  const {hx, hy} = positionHand(alphaEffDeg, SHOULDER_Y);
+  const armShapeR1 = 15, armShapeR2 = 8;
+  const armShape = document.getElementById('armShape');
+  armShape.setAttribute('d', buildLimbPath(SHOULDER_X, SHOULDER_Y, hx, hy, armShapeR1, armShapeR2));
+  const dxA = hx-SHOULDER_X, dyA = hy-SHOULDER_Y;
+  const lenA = Math.max(Math.hypot(dxA,dyA),0.0001);
+  const pxA = -dyA/lenA, pyA = dxA/lenA;
+  const hlOff = 3.5;
+  document.getElementById('armHighlight').setAttribute('d',
+    `M ${(SHOULDER_X+pxA*hlOff).toFixed(1)} ${(SHOULDER_Y+pyA*hlOff).toFixed(1)} L ${(hx+pxA*hlOff*0.55).toFixed(1)} ${(hy+pyA*hlOff*0.55).toFixed(1)}`);
+  document.getElementById('shoulderRing').setAttribute('cx', SHOULDER_X);
+  document.getElementById('shoulderRing').setAttribute('cy', SHOULDER_Y);
+  document.getElementById('wristRing').setAttribute('cx', hx);
+  document.getElementById('wristRing').setAttribute('cy', hy);
+
+  const bHeightPx = heightB_m*SCALE;
+  const bTopToHoldPx = topToHoldRatio(grip)*bHeightPx;
+  const bHoldToFeetPx = holdToFeetRatio(grip)*bHeightPx;
+
+  const freeFeetY = hy + bHoldToFeetPx;
+  const feetTouching = freeFeetY >= GROUND_Y - 0.5;
+
+  let bTop;
+  if(feetTouching){
+    bTop = GROUND_Y - bHeightPx;
+  } else {
+    bTop = hy - bTopToHoldPx;
+  }
+  const bFeetY = bTop + bHeightPx;
+
+  const bGroup = document.getElementById('figureB');
+  bGroup.innerHTML = '';
+  bGroup.setAttribute('transform', `translate(${hx},0)`);
+  drawHumanoid(bGroup, bTop, bHeightPx, 0.92, 'figure-fill-b', true, -1); // лицом влево, к А
+
+  // === Физика момента/дельты/сжатия ===
+  const slackPx = freeFeetY - GROUND_Y;
+  const transferFraction = gradualTransferEnabled
+    ? Math.min(1, Math.max(0, 1 - slackPx/(TRANSFER_RAMP_M*SCALE)))
+    : 0;
+
+  const F_forMoment = feetTouching ? (F * transferFraction) : F;
+
+  const Leff = L * Math.sin(alphaRad);
+  const M_from_load = F_forMoment * Leff;
+  const Leff_arm = (L/2) * Math.sin(alphaRad);
+  const M_from_arm = F_arm * Leff_arm;
+  const M_raw = M_from_load + M_from_arm;
+
+  const deltaForceFromMoment = M_raw / DELTOID_ARM;
+
+  const stabAngleRad = STAB_MIN_ANGLE_DEG * Math.PI/180;
+  const stabLeff = L * Math.sin(stabAngleRad);
+  const stabMomentFloor = (F_forMoment + F_arm) * stabLeff;
+  const stabFloorForceN = stabMomentFloor / DELTOID_ARM;
+  const deltaForceN = Math.max(deltaForceFromMoment, stabFloorForceN);
+  const deltaKg = deltaForceN / G;
+  const M = deltaForceN * DELTOID_ARM;
+
+  const compressionN = F_forMoment + F_arm;
+  const compressionKg = compressionN / G;
+
+  const hMarkerB = document.getElementById('heightMarkerB');
+  hMarkerB.setAttribute('x1', hx-40); hMarkerB.setAttribute('x2', hx+40);
+  hMarkerB.setAttribute('y1', bTop); hMarkerB.setAttribute('y2', bTop);
+  const hLabelB = document.getElementById('heightLabelB');
+  hLabelB.setAttribute('x', hx+44); hLabelB.setAttribute('y', bTop+4);
+  hLabelB.textContent = heightB_m.toFixed(2)+' м';
+
+  document.getElementById('heightHandleHitB').setAttribute('cx', hx);
+  document.getElementById('heightHandleHitB').setAttribute('cy', bTop-11);
+  document.getElementById('heightArrowB').setAttribute('transform', `translate(${hx},${bTop-11})`);
+
+  const ctxHitB = document.getElementById('ctxHitB');
+  ctxHitB.setAttribute('x', hx-30);
+  ctxHitB.setAttribute('y', bTop);
+  ctxHitB.setAttribute('width', 60);
+  ctxHitB.setAttribute('height', bHeightPx);
+
+  document.getElementById('platformB').setAttribute('transform', `translate(${hx},0)`);
+  document.getElementById('platformB').style.opacity = feetTouching ? 1 : 0.35;
+
+  const holdPointY = bTop + bTopToHoldPx;
+  const connector = document.getElementById('holdConnector');
+  const gap = Math.abs(holdPointY - hy);
+  if(gap > 4){
+    connector.setAttribute('x1', hx);
+    connector.setAttribute('y1', hy);
+    connector.setAttribute('x2', hx);
+    connector.setAttribute('y2', holdPointY);
+    connector.setAttribute('opacity', 0.85);
+  } else {
+    connector.setAttribute('opacity', 0);
+  }
+
+  // === Маркеры выбора хвата на теле Б — клик переключает режим (под мышки / за шею) ===
+  lastBTop = bTop; lastBHeightPx = bHeightPx;
+  const armpitY = bTop + B_TOP_TO_HOLD_RATIO*bHeightPx;
+  const neckMarkerY = bTop + B_TOP_TO_NECK_RATIO*bHeightPx;
+  const gripDotUnderarm = document.getElementById('gripDotUnderarm');
+  const gripRingUnderarm = document.getElementById('gripRingUnderarm');
+  const gripDotNeck = document.getElementById('gripDotNeck');
+  const gripRingNeck = document.getElementById('gripRingNeck');
+  gripDotUnderarm.setAttribute('cx', hx); gripDotUnderarm.setAttribute('cy', armpitY);
+  gripRingUnderarm.setAttribute('cx', hx); gripRingUnderarm.setAttribute('cy', armpitY);
+  gripRingUnderarm.setAttribute('opacity', grip==='underarm' ? 0.9 : 0);
+  gripDotNeck.setAttribute('cx', hx); gripDotNeck.setAttribute('cy', neckMarkerY);
+  gripRingNeck.setAttribute('cx', hx); gripRingNeck.setAttribute('cy', neckMarkerY);
+  gripRingNeck.setAttribute('opacity', grip==='neck' ? 0.9 : 0);
+
+  // === Весы: сила давления на пол под каждой фигурой ===
+  const scaleA_N = F_A + compressionN;
+  const scaleB_N = feetTouching ? (F - F_forMoment) : 0;
+  document.getElementById('platformATxt').textContent = scaleA_N.toFixed(0) + ' Н';
+  document.getElementById('platformBTxt').textContent = scaleB_N.toFixed(0) + ' Н';
+
+  // === Общий барицентр системы (А + рука + Б) ===
+  const comA_y = GROUND_Y - COM_RATIO*aHeightPx;
+  const comA_x = SHOULDER_X;
+  const comB_y = bFeetY - COM_RATIO*bHeightPx;
+  const comB_x = hx;
+  const comArm_x = (SHOULDER_X+hx)/2;
+  const comArm_y = (SHOULDER_Y+hy)/2;
+
+  const totalMass = massA + mass + ARM_MASS_KG;
+  const comX = (massA*comA_x + mass*comB_x + ARM_MASS_KG*comArm_x) / totalMass;
+  const comY = (massA*comA_y + mass*comB_y + ARM_MASS_KG*comArm_y) / totalMass;
+
+  const comMarker = document.getElementById('comMarker');
+  comMarker.setAttribute('transform', `translate(${comX},${comY})`);
+  const comLabel = document.getElementById('comLabel');
+  comLabel.setAttribute('x', comX+14);
+  comLabel.setAttribute('y', comY-10);
+  const comHeightM = (GROUND_Y - comY)/SCALE;
+  comLabel.textContent = 'ЦМ системы: ' + comHeightM.toFixed(2) + ' м от пола';
+
+  // маленький маркер кисти — перетаскиваемый (управляет углом напрямую)
+  let handDot = document.getElementById('handDot');
+  if(!handDot){
+    const grabZone = el('circle',{r:18,fill:'transparent',id:'handGrabZone',style:'cursor:grab;touch-action:none;'});
+    svg.appendChild(grabZone);
+    const halo = el('circle',{r:11,fill:'none',stroke:'#ff8a2b','stroke-width':1.5,'stroke-dasharray':'3,3',opacity:0.55,id:'handHalo',style:'pointer-events:none;'});
+    svg.appendChild(halo);
+    handDot = el('circle',{r:7,class:'pivot-dot',id:'handDot',style:'cursor:grab;touch-action:none;'});
+    svg.appendChild(handDot);
+    attachDrag(grabZone);
+    attachDrag(handDot);
+  }
+  const handHalo = document.getElementById('handHalo');
+  const handGrabZone = document.getElementById('handGrabZone');
+  [handDot, handHalo, handGrabZone].forEach(node=>{
+    node.setAttribute('cx', hx);
+    node.setAttribute('cy', hy);
+  });
+
+  if(SHOW_HUD){
+    // обновление фиксированных HUD-меток узла A
+    document.getElementById('momentSceneTxt').textContent = 'M: ' + M.toFixed(1) + ' Н·м  ·  α: ' + Math.round(alphaBaseDeg) + '°';
+    document.getElementById('deltaSceneTxt').textContent = 'Дельта: ' + deltaKg.toFixed(1) + ' кг / ' + deltaForceN.toFixed(0) + ' Н';
+    document.getElementById('compressSceneTxt').textContent = 'Сжатие: ' + compressionKg.toFixed(1) + ' кг / ' + compressionN.toFixed(0) + ' Н';
+
+    const gripLabel = grip==='underarm' ? 'Хват: под мышки' : 'Хват: за шею';
+    document.getElementById('gripSceneTxt').textContent = gripLabel;
+    document.getElementById('forceLeffSceneTxt').textContent = 'F: ' + F.toFixed(0) + ' Н  ·  L_eff: ' + Leff.toFixed(2) + ' м';
+    const feetTxt = document.getElementById('feetSceneTxt');
+    feetTxt.textContent = 'Ноги на полу: ' + (feetTouching ? 'ДА' : 'НЕТ');
+    feetTxt.setAttribute('class', feetTouching ? 'hud-text feet-ok' : 'hud-text feet-off');
+    document.getElementById('noteSceneTxt').textContent = feetTouching ? 'Вес частично на опоре' : 'Весь вес на суставе A';
+
+    // индикатор превышения лимита — прямо в HUD-панели узла A
+    const pct = (M/LIMIT_MOMENT)*100;
+    const pctClamped = Math.min(pct, 100);
+    const limitBarScene = document.getElementById('limitBarScene');
+    const limitPctScene = document.getElementById('limitPctScene');
+    limitBarScene.setAttribute('width', (NODEA_BAR_W*pctClamped/100).toFixed(1));
+    limitPctScene.textContent = 'ЛИМИТ: ' + pct.toFixed(0) + '%';
+    if(M <= LIMIT_MOMENT){
+      limitBarScene.setAttribute('fill', '#39ff8a');
+      limitPctScene.style.fill = '#39ff8a';
+    } else {
+      limitBarScene.setAttribute('fill', '#ff2e4d');
+      limitPctScene.style.fill = '#ff2e4d';
+    }
+
+    // === Статус (мед. оценка) — HUD-панель на сцене, аналогичная узлу A ===
+    let level, title, text;
+    if(M <= 100){
+      level='safe'; title='НОРМА';
+      text='Нагрузка на плечевой сустав и дельтовидную мышцу в пределах физиологической нормы. Удержание устойчиво, риск травмы минимален.';
+    } else if(M <= LIMIT_MOMENT){
+      level='safe'; title='ПОВЫШЕННАЯ НАГРУЗКА';
+      text='Момент приближается к пределу выносливости сустава. Ощутимая усталостная нагрузка на дельтовидную и надостную мышцы, возможен дискомфорт при удержании дольше нескольких секунд.';
+    } else if(M <= 200){
+      level='warn'; title='ПЕРЕГРУЗКА СУСТАВА';
+      text='Момент превышает физиологический лимит предплечья (150 Н·м). Высокий риск растяжения/микроразрыва сухожилия дельтовидной мышцы и импинджмент-синдрома плечевого сустава.';
+    } else if(M <= 280){
+      level='danger'; title='КРИТИЧЕСКАЯ ПЕРЕГРУЗКА';
+      text='Момент существенно превышает предел прочности связочного аппарата плеча. Реалистичный риск подвывиха/вывиха плечевого сустава и частичного разрыва сухожилия дельтовидной мышцы.';
+    } else {
+      level='danger'; title='ПРЕДЕЛ ПРОЧНОСТИ ПРЕВЫШЕН';
+      text='Момент значительно превышает предел прочности сухожильно-связочного аппарата плеча. Удержание в этой позе физически невозможно дольше долей секунды — реалистичен полный разрыв сухожилия и/или вывих сустава.';
+    }
+
+    let sub = '';
+    sub += (sub?' ':'') + (feetTouching
+      ? 'Ступни Б касаются пола — часть веса удерживается опорой.'
+      : 'Б полностью в подвесе — весь вес передаётся через кисть на сустав A.');
+
+    const levelColor = {safe:'#39ff8a', warn:'#ff8a2b', danger:'#ff2e4d'}[level];
+
+    const statusHud = document.getElementById('statusHud');
+    statusHud.innerHTML = '';
+    const sPadX = 14, sPadTop = 14, sPadBottom = 14;
+    const cyS = {y: STATUS_Y + sPadTop};
+    hudLine(statusHud, STATUS_X+sPadX, cyS, 'МЕДИЦИНСКИЙ СТАТУС', {size:11, color:'#7f97ab'});
+
+    // бейдж — цветная плашка с названием уровня риска
+    cyS.y += 6;
+    const badgeFont = 13;
+    const badgeTextW = title.length * badgeFont * CHAR_W;
+    const badgeW = badgeTextW + 20;
+    const badgeH = badgeFont + 14;
+    statusHud.appendChild(el('rect',{x:STATUS_X+sPadX, y:cyS.y, width:badgeW, height:badgeH,
+      fill:'rgba(0,0,0,0.25)', stroke:levelColor, 'stroke-width':1.2}));
+    const badgeTxt = el('text',{x:STATUS_X+sPadX+10, y:cyS.y+badgeH-9, class:'hud-text'});
+    badgeTxt.style.fontSize = badgeFont+'px';
+    badgeTxt.style.fontWeight = 'bold';
+    badgeTxt.style.fill = levelColor;
+    badgeTxt.textContent = title;
+    statusHud.appendChild(badgeTxt);
+    cyS.y += badgeH + 14;
+
+    // основной текст — перенос строк по ширине панели (моноширинный шрифт)
+    const bodyFont = 13;
+    const maxChars = charsPerWidth(STATUS_W - sPadX*2, bodyFont);
+    const textLines = wrapMonoText(text, maxChars);
+    for(const line of textLines){
+      hudLine(statusHud, STATUS_X+sPadX, cyS, line, {size:bodyFont, color:'#c9dce2', leading:5});
+    }
+
+    // подпись — дополнительный контекст (хват/опора)
+    cyS.y += 6;
+    const subFont = 11;
+    const subMaxChars = charsPerWidth(STATUS_W - sPadX*2, subFont);
+    const subLines = wrapMonoText(sub, subMaxChars);
+    for(const line of subLines){
+      hudLine(statusHud, STATUS_X+sPadX, cyS, line, {size:subFont, color:'#7f97ab', leading:4});
+    }
+
+    const statusH = cyS.y - STATUS_Y + sPadBottom - 4;
+    const statusBg = el('rect',{x:STATUS_X, y:STATUS_Y, width:STATUS_W, height:statusH, class:'hud-box'});
+    statusHud.insertBefore(statusBg, statusHud.firstChild);
+  }
+
+  updateNeckPanel(grip==='neck', F_forMoment, hx, neckMarkerY);
+  updateArmPanel(M, deltaForceN, deltaKg, SHOULDER_X, SHOULDER_Y);
+  const underarmLoadPct = mass > 0 ? Math.min(100, (F_forMoment/G)/mass*100) : 0;
+  updateUnderarmPanel(grip==='underarm', underarmLoadPct, hx, armpitY);
+}
+
+// === Нагрузка на шею/позвоночник при хвате "за шею" (условная модель, не мед. норматив) ===
+function computeNeckStatus(forceN){
+  const kg = forceN / G;
+  const pct = (kg / NECK_LIMIT_KG) * 100;
+  let level, title, text;
+  if(kg <= NECK_SAFE_KG){
+    level='safe'; title='НОРМА';
+    text='Нагрузка на шею в пределах безопасной — дыхательные пути и сосуды не пережаты, риск минимален.';
+  } else if(kg <= NECK_FRACTURE_KG){
+    // асфиксия (мягкие ткани — трахея, сонные/ярёмные сосуды) наступает НАМНОГО раньше
+    // перелома позвонков: это разные ткани с разным пределом прочности
+    const excess = kg - NECK_SAFE_KG;
+    const tSec = Math.max(NECK_ASPHYXIA_MIN_SEC, NECK_ASPHYXIA_MAX_SEC*Math.exp(-0.45*excess));
+    if(pct <= 50){
+      level='warn'; title='ПЕРЕЖАТИЕ ДЫХАТЕЛЬНЫХ ПУТЕЙ';
+      text='Хват частично пережимает трахею и сонные артерии. При сохранении нагрузки потеря сознания ориентировочно через '+tSec.toFixed(0)+' с. Позвонки пока целы — предел на разрыв на порядок выше.';
+    } else {
+      level='danger'; title='КРИТИЧЕСКОЕ УДУШЕНИЕ';
+      text='Полное пережатие дыхательных путей и сосудов шеи. Потеря сознания через '+tSec.toFixed(0)+' с; при продолжении удержания — смерть от асфиксии. Перелома позвонков ещё нет.';
+    }
+  } else {
+    level='danger'; title='ПЕРЕЛОМ ШЕЙНОГО ОТДЕЛА';
+    text='Нагрузка превышает предел прочности шейных позвонков на разрыв — реалистичен перелом с мгновенным параличом или смертью, независимо от асфиксии.';
+  }
+  return {kg, pct, level, title, text};
+}
+
+// строит/обновляет HUD-панель нагрузки на шею — видна только пока активен хват "за шею"
+function updateNeckPanel(active, forceN, anchorX, anchorY){
+  const g = document.getElementById('neckHud');
+  g.innerHTML = '';
+  if(!active) return;
+  const st = computeNeckStatus(forceN);
+  const levelColor = {safe:'#39ff8a', warn:'#ff8a2b', danger:'#ff2e4d'}[st.level];
+  // скромный размер и вдвое уменьшенный текст; окно следует за Б (привязано к anchorX/anchorY)
+  const W = Math.max(120, Math.min(190, VB_W*0.18));
+  const X = Math.max(8, Math.min(VB_W - W - 8, anchorX + 22));
+  const Y = Math.max(8, anchorY - 10);
+  const padX = 8, padTop = 8, padBottom = 8;
+  const cy = {y: Y + padTop};
+  hudLine(g, X+padX, cy, 'НАГРУЗКА НА ШЕЮ', {size:5.5, color:'#7f97ab'});
+
+  cy.y += 3;
+  const badgeFont = 6.5;
+  const badgeW = st.title.length*badgeFont*CHAR_W + 12;
+  const badgeH = badgeFont+8;
+  g.appendChild(el('rect',{x:X+padX,y:cy.y,width:badgeW,height:badgeH,
+    fill:'rgba(0,0,0,0.25)', stroke:levelColor, 'stroke-width':0.8}));
+  const badgeTxt = el('text',{x:X+padX+6,y:cy.y+badgeH-5.5,class:'hud-text'});
+  badgeTxt.style.fontSize = badgeFont+'px';
+  badgeTxt.style.fontWeight = 'bold';
+  badgeTxt.style.fill = levelColor;
+  badgeTxt.textContent = st.title;
+  g.appendChild(badgeTxt);
+  cy.y += badgeH + 7;
+
+  hudLine(g, X+padX, cy, 'Предел: ' + Math.min(st.pct,999).toFixed(0) + '%', {size:6.5, color:levelColor, weight:'bold', leading:3});
+  hudLine(g, X+padX, cy, 'Нагрузка: ' + st.kg.toFixed(3) + ' кг', {size:6.5, color:'#c9dce2', weight:'bold', leading:5});
+
+  const bodyFont = 6.5;
+  const maxChars = charsPerWidth(W - padX*2, bodyFont);
+  const lines = wrapMonoText(st.text, maxChars);
+  for(const line of lines){
+    hudLine(g, X+padX, cy, line, {size:bodyFont, color:'#c9dce2', leading:2.5});
+  }
+
+  const H = cy.y - Y + padBottom - 2;
+  const bg = el('rect',{x:X, y:Y, width:W, height:H, class:'hud-box'});
+  g.insertBefore(bg, g.firstChild);
+}
+
+// === Нагрузка на руку/плечо поднимающего (А) — та же дельта/момент, что и раньше
+// в узле A, но теперь как два отдельных порога: мышца (деltoid) и сустав (связки/лабрум) ===
+function computeArmStatus(M, deltaForceN){
+  const musclePct = (deltaForceN / MUSCLE_MAX_FORCE_N) * 100;
+  const jointPct = (M / LIMIT_MOMENT) * 100;
+  let level, title, text;
+  if(M <= 100){
+    level='safe'; title='НОРМА';
+    text='Нагрузка на плечевой сустав и дельтовидную мышцу в пределах физиологической нормы. Удержание устойчиво, риск травмы минимален.';
+  } else if(M <= LIMIT_MOMENT){
+    level='safe'; title='ПОВЫШЕННАЯ НАГРУЗКА';
+    text='Момент приближается к пределу выносливости сустава. Ощутимая усталостная нагрузка на дельтовидную и надостную мышцы, возможен дискомфорт при удержании дольше нескольких секунд.';
+  } else if(M <= 200){
+    level='warn'; title='ПЕРЕГРУЗКА СУСТАВА';
+    text='Момент превышает физиологический лимит предплечья. Высокий риск растяжения/микроразрыва сухожилия дельтовидной мышцы и импинджмент-синдрома плечевого сустава.';
+  } else if(M <= 280){
+    level='danger'; title='КРИТИЧЕСКАЯ ПЕРЕГРУЗКА';
+    text='Момент существенно превышает предел прочности связочного аппарата плеча. Реалистичный риск подвывиха/вывиха плечевого сустава и частичного разрыва сухожилия дельтовидной мышцы.';
+  } else {
+    level='danger'; title='ПРЕДЕЛ ПРОЧНОСТИ ПРЕВЫШЕН';
+    text='Момент значительно превышает предел прочности сухожильно-связочного аппарата плеча. Удержание в этой позе физически невозможно дольше долей секунды — реалистичен полный разрыв сухожилия и/или вывих сустава.';
+  }
+  return {musclePct, jointPct, level, title, text};
+}
+
+// строит/обновляет компактную HUD-панель нагрузки на руку — видна всегда, следует за плечом А
+function updateArmPanel(M, deltaForceN, deltaKg, anchorX, anchorY){
+  const g = document.getElementById('armHud');
+  g.innerHTML = '';
+  const st = computeArmStatus(M, deltaForceN);
+  const levelColor = {safe:'#39ff8a', warn:'#ff8a2b', danger:'#ff2e4d'}[st.level];
+  const W = Math.max(120, Math.min(190, VB_W*0.18));
+  // якорь слева от А (справа — Б и его собственная панель); не залезаем на линейку слева
+  const X = Math.max(78, Math.min(VB_W - W - 8, anchorX - W - 22));
+  const Y = Math.max(8, anchorY - 10);
+  const padX = 8, padTop = 8, padBottom = 8;
+  const cy = {y: Y + padTop};
+  hudLine(g, X+padX, cy, 'НАГРУЗКА НА РУКУ', {size:5.5, color:'#7f97ab'});
+
+  cy.y += 3;
+  const badgeFont = 6.5;
+  const badgeW = st.title.length*badgeFont*CHAR_W + 12;
+  const badgeH = badgeFont+8;
+  g.appendChild(el('rect',{x:X+padX,y:cy.y,width:badgeW,height:badgeH,
+    fill:'rgba(0,0,0,0.25)', stroke:levelColor, 'stroke-width':0.8}));
+  const badgeTxt = el('text',{x:X+padX+6,y:cy.y+badgeH-5.5,class:'hud-text'});
+  badgeTxt.style.fontSize = badgeFont+'px';
+  badgeTxt.style.fontWeight = 'bold';
+  badgeTxt.style.fill = levelColor;
+  badgeTxt.textContent = st.title;
+  g.appendChild(badgeTxt);
+  cy.y += badgeH + 7;
+
+  hudLine(g, X+padX, cy, 'Нагрузка: ' + deltaKg.toFixed(1) + ' кг', {size:6.5, color:'#c9dce2', weight:'bold', leading:5});
+  hudLine(g, X+padX, cy, 'Мышца: ' + Math.min(st.musclePct,999).toFixed(0) + '% от предела', {size:6.5, color:levelColor, weight:'bold', leading:3});
+  hudLine(g, X+padX, cy, 'Сустав: ' + Math.min(st.jointPct,999).toFixed(0) + '% от предела', {size:6.5, color:levelColor, weight:'bold', leading:5});
+
+  const bodyFont = 6.5;
+  const maxChars = charsPerWidth(W - padX*2, bodyFont);
+  const lines = wrapMonoText(st.text, maxChars);
+  for(const line of lines){
+    hudLine(g, X+padX, cy, line, {size:bodyFont, color:'#c9dce2', leading:2.5});
+  }
+
+  const H = cy.y - Y + padBottom - 2;
+  const bg = el('rect',{x:X, y:Y, width:W, height:H, class:'hud-box'});
+  g.insertBefore(bg, g.firstChild);
+}
+
+// === Шуточная панель "ощущения поднимаемого" при хвате под мышки — без травм и смертей,
+// просто бытовой дискомфорт (в отличие от серьёзного шейного HUD). pct — доля веса тела,
+// повисшая на подмышках (0% — стоит на своих ногах, 100% — висит целиком на руках А).
+function computeUnderarmFeel(pct){
+  let level, title, text;
+  if(pct <= 15){
+    level='safe'; title='КАК ДОМА';
+    text='Вес почти весь на своих ногах, руки А только слегка обнимают — не более чем дружеские объятия.';
+  } else if(pct <= 45){
+    level='safe'; title='ТЕРПИМО';
+    text='Подмышки ощутимо сжаты, кожа немного тянется. Слегка неудобно, но вполне можно потерпеть.';
+  } else if(pct <= 75){
+    level='warn'; title='НЕПРИЯТНО';
+    text='Хват сдавливает подмышки будто тисками, руки начинает покалывать — кровоток к кистям явно нарушен.';
+  } else {
+    level='danger'; title='ВСЁ ЗАТЕКЛО';
+    text='Руки онемели, пальцы почти не чувствуются, под мышками к утру будут синяки. Ещё немного — и точно попросится вниз.';
+  }
+  return {level, title, text};
+}
+
+// строит/обновляет шуточную HUD-панель — видна только при хвате "под мышки", следует за подмышкой Б
+function updateUnderarmPanel(active, pct, anchorX, anchorY){
+  const g = document.getElementById('underarmHud');
+  g.innerHTML = '';
+  if(!active) return;
+  const st = computeUnderarmFeel(pct);
+  const levelColor = {safe:'#39ff8a', warn:'#ff8a2b', danger:'#ff2e4d'}[st.level];
+  const W = Math.max(120, Math.min(190, VB_W*0.18));
+  const X = Math.max(8, Math.min(VB_W - W - 8, anchorX + 22));
+  const Y = Math.max(8, anchorY - 10);
+  const padX = 8, padTop = 8, padBottom = 8;
+  const cy = {y: Y + padTop};
+  hudLine(g, X+padX, cy, 'ОЩУЩЕНИЯ ПОДНИМАЕМОГО', {size:5.5, color:'#7f97ab'});
+
+  cy.y += 3;
+  const badgeFont = 6.5;
+  const badgeW = st.title.length*badgeFont*CHAR_W + 12;
+  const badgeH = badgeFont+8;
+  g.appendChild(el('rect',{x:X+padX,y:cy.y,width:badgeW,height:badgeH,
+    fill:'rgba(0,0,0,0.25)', stroke:levelColor, 'stroke-width':0.8}));
+  const badgeTxt = el('text',{x:X+padX+6,y:cy.y+badgeH-5.5,class:'hud-text'});
+  badgeTxt.style.fontSize = badgeFont+'px';
+  badgeTxt.style.fontWeight = 'bold';
+  badgeTxt.style.fill = levelColor;
+  badgeTxt.textContent = st.title;
+  g.appendChild(badgeTxt);
+  cy.y += badgeH + 7;
+
+  hudLine(g, X+padX, cy, 'На подмышках: ' + pct.toFixed(0) + '% веса', {size:6.5, color:levelColor, weight:'bold', leading:5});
+
+  const bodyFont = 6.5;
+  const maxChars = charsPerWidth(W - padX*2, bodyFont);
+  const lines = wrapMonoText(st.text, maxChars);
+  for(const line of lines){
+    hudLine(g, X+padX, cy, line, {size:bodyFont, color:'#c9dce2', leading:2.5});
+  }
+
+  const H = cy.y - Y + padBottom - 2;
+  const bg = el('rect',{x:X, y:Y, width:W, height:H, class:'hud-box'});
+  g.insertBefore(bg, g.firstChild);
+}
+
+computeViewBox();
+buildStaticScene();
+attachSceneHandlers();
+window.addEventListener('resize', ()=>{
+  computeViewBox();
+  buildStaticScene();
+  attachSceneHandlers();
+  update();
+});
+
+// Сцена перерисовывается только по событию (драг, клик, ресайз), а не в вечном цикле —
+// иначе в простое всё пересоздавалось 60 раз в секунду и заметно мерцало без всякой пользы.
+// Непрерывный цикл нужен только для анимации "нестабильности" (wobble) и запускается/
+// останавливается сам по факту включения/выключения wobbleEnabled.
+let lastTs = null;
+function animate(ts){
+  if(lastTs === null) lastTs = ts;
+  const dt = Math.min((ts - lastTs) / 1000, 0.1);
+  lastTs = ts;
+  wobblePhase += dt * WOBBLE_SPEED;
+  update();
+  if(wobbleEnabled) requestAnimationFrame(animate);
+  else lastTs = null;
+}
+
+update(); // первичная отрисовка — без запуска бесконечного цикла
+
+</script>
+</body>
+</html>

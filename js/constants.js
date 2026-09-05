@@ -79,7 +79,7 @@ export const IPR_GLOW_BLUR = 4; // px — glow blur on <perk> square hover
 export const IPR_GLOW_SPREAD = 2; // px — glow spread
 export const debugLines = false; // set true to show red connector anchors
 
-export const WINDOW_PRIORITY = ['IMG', 'AUDIO', 'EXTRA', 'TIP', 'COMBO'];
+export const WINDOW_PRIORITY = ['IMG', 'SNIPPET', 'AUDIO', 'EXTRA', 'TIP', 'COMBO'];
 
 // ── TOOLTIP HEIGHT LIMITS ──
 // maxH = min(vh * PERCENT, PX_CAP) so the tooltip never exceeds either bound.
