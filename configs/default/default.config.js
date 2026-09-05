@@ -596,7 +596,7 @@ export const CONFIG = {
           imgs: [
             {
               src: 'assets/gradient_1024_150.png',
-              desc: '<svg name="tip"></svg> Система дальнего предупреждения \n\n<square color="#FF0000"></square> Высокая чёткость образов\n\n<square color="#730808"></square> Высокая обобщенность событий',
+              desc: '<svg name="tip"></svg> Система дальнего предупреждения \n\n<square color="#FF0000"></square> Высокая чёткость образов\n\n<square color="#730808"></square> Высокая обобщенность событий\n<hr/>\n\n<svg name="warning"></svg> Оператор не способен предсказать собственные действия в будущем.',
             },
           ],
           description:
