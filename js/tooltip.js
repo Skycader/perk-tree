@@ -1634,33 +1634,35 @@ export function showTooltip(name, lvlDesc, iconEl) {
                 const containerW = SLOT_COL_W - scale(20);
                 const hinted = hintedHeight(hint, containerW, cap);
                 if (hinted && !wantsMaximum) {
+                  // Measure the box's REAL total natural height (header +
+                  // padding + the flex `gap` + an img entry's `desc`, if
+                  // any) instead of hand-summing those — same off-screen
+                  // "temporarily show it, read scrollHeight, hide again"
+                  // technique already used for non-IMG kinds a few lines
+                  // above, just seeded with the hint height first since the
+                  // media itself is still loading and would otherwise
+                  // measure as ~0. A hand-summed estimate here previously
+                  // missed the container's flex `gap`, letting `desc`
+                  // trigger a spurious scrollbar even when the box had
+                  // genuinely enough room for both.
+                  const mediaEl = box.querySelector('img, video');
+                  const prevMediaH = mediaEl ? mediaEl.style.height : null;
+                  if (mediaEl) mediaEl.style.height = hinted + 'px';
                   box.style.display = 'flex';
-                  const hdr = box.querySelector('.tt-header');
-                  const hdrH = hdr
-                    ? hdr.getBoundingClientRect().height
-                    : 36;
-                  // an img entry's `desc` (markdown, rendered below the
-                  // media by withLoadingSpinner) adds its own height on top
-                  // of the media — unlike the media itself (still loading
-                  // at this point, hence the filename-hint estimate above),
-                  // the desc's HTML is already in the DOM synchronously, so
-                  // its real height can just be measured directly.
-                  const descEl = box.querySelector('.win-img-desc');
-                  const descH = descEl
-                    ? descEl.getBoundingClientRect().height
-                    : 0;
-                  box.style.display = '';
-                  effectiveH = Math.min(hinted + descH + hdrH + 20, cap);
+                  box.style.maxHeight = 'none';
+                  const natural = box.scrollHeight;
+                  box.style.display = 'none';
+                  box.style.maxHeight = '';
+                  if (mediaEl) mediaEl.style.height = prevMediaH || '';
+                  effectiveH = Math.min(natural, cap);
                   console.log('[IMG SIZE]', {
                     src: firstSrc,
                     hint,
                     containerW,
                     hinted,
-                    descH,
-                    hdrH,
+                    natural,
                     cap,
                     effectiveH,
-                    boxW: box.getBoundingClientRect().width,
                   });
                 }
               }

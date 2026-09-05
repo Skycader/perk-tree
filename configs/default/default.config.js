@@ -49,7 +49,7 @@ export const CONFIG = {
           id: 'shadowPrecision',
           name: 'Точность движений',
           imgs: [
-            { src: 'assets/drawing_1024_768.jpg', desc: '**TEST DESC** short' },
+            { src: 'assets/drawing_1024_768.jpg' },
             { src: 'assets/blue-marble_1280_800.jpg' },
             { src: 'assets/leopard-2a4m-can_1408_704.png' },
             { src: 'assets/star-destroyer_1248_832.jpg' },
@@ -595,8 +595,8 @@ export const CONFIG = {
           name: 'Улавливатель Тахионов',
           imgs: [
             {
-              src: 'assets/gradient_1024_56.png',
-              desc: '<svg name="tip"></svg> Система дальнего предупреждения \n\n<square color="#FF0000"></square> Высокая чёткость образов, горизонт событий 1-2 суток\n\n<square color="#730808"></square> Слабая чёткость событий, высокая обощенность, горизонт событий 1-2 года',
+              src: 'assets/gradient_1024_150.png',
+              desc: '<svg name="tip"></svg> Система дальнего предупреждения \n\n<square color="#FF0000"></square> Высокая чёткость образов\n\n<square color="#730808"></square> Высокая обобщенность событий',
             },
           ],
           description:
