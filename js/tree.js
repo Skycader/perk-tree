@@ -14,7 +14,11 @@ const maxLevel = totalPerks * maxLevelPerSkill;
 const lvlPerRank = Math.ceil(maxLevel / nRanks);
 
 // update topbar stats
-const standName = D.standName || D.tabName || 'Стэнд';
+// `shadowName` is what configs/default and configs/blank actually set;
+// `name` is what configs/vampire uses instead — `standName`/`tabName`
+// (the previous fallback chain here) matched no field in any shipped
+// config, so this always silently fell back to the literal 'Стэнд'.
+const standName = D.shadowName || D.name || 'Стэнд';
 // tb-title is static 'ДРЕВО СПОСОБНОСТЕЙ'
 document.getElementById('title-name').innerHTML =
   '<span style="display:inline-block;width:10px;height:10px;background:#e09040;border-radius:1px;margin-right:7px;vertical-align:middle"></span>' +

@@ -22,7 +22,9 @@ export async function exportPNG() {
     width: root.scrollWidth,
   });
   const a = document.createElement('a');
-  a.download = `${CONFIG.tabName}_perks.png`;
+  // same field-name chain as tree.js's standName — `tabName` matched no
+  // field in any shipped config, silently producing "undefined_perks.png".
+  a.download = `${CONFIG.shadowName || CONFIG.name || 'perks'}_perks.png`;
   a.href = cv.toDataURL('image/png');
   a.click();
   st.textContent = '✓';
