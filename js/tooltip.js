@@ -5,6 +5,7 @@ import { showChainTip, hideChainTip } from './chain-tip.js';
 import { createWin, destroyWins, resolveWindowCols } from './windows.js';
 import { resolvePerkInline, renderLevelMD, renderMD } from './markdown.js';
 import { openVideoLightbox } from './video-lightbox.js';
+import { openSnippetLightbox } from './snippet-lightbox.js';
 import { hideNoteLinkPopup } from './note-link-popup.js';
 import { scale } from './zoom.js';
 import {
@@ -643,28 +644,43 @@ export function showTooltip(name, lvlDesc, iconEl) {
   const wantsMaximum = imgSources.some((e) => e.height === 'maximum');
 
   // ── SNIPPETS: standalone .html pages (with their own JS), each in its own
-  // window — perkData.snippets: [{ title?, src, size?: 'WIDTHxHEIGHT', desc? }].
-  // No slider mode (unlike imgs[]) — every entry always gets its own window.
-  // Sized/rendered exactly like a .win-img window (same DOM classes, same
-  // measure-and-size code in runLayout below) since there's no filename-hint
-  // convention that makes sense for an arbitrary page — `size` plays the
-  // same role for a snippet that the `name_WIDTH_HEIGHT.ext` filename hint
-  // plays for an image, see parseSnippetSize.
+  // window — perkData.snippets: [{ title?, src, size?: 'WIDTHxHEIGHT', desc?,
+  // fullScreen? }]. No slider mode (unlike imgs[]) — every entry always gets
+  // its own window. Sized/rendered exactly like a .win-img window (same DOM
+  // classes, same measure-and-size code in runLayout below) since there's no
+  // filename-hint convention that makes sense for an arbitrary page — `size`
+  // plays the same role for a snippet that the `name_WIDTH_HEIGHT.ext`
+  // filename hint plays for an image, see parseSnippetSize. `fullScreen`
+  // mirrors an img entry's `controls` — adds an "expand" button that opens
+  // the SAME page large in snippet-lightbox.js, mirroring video-lightbox.js.
   const snippetsList = Array.isArray(perkData?.snippets)
     ? perkData.snippets.filter(Boolean)
     : [];
   const hasSnippet = snippetsList.length > 0;
   function normalizeSnippetEntry(entry) {
     if (typeof entry === 'string')
-      return { src: entry, title: null, desc: null, size: null };
+      return {
+        src: entry,
+        title: null,
+        desc: null,
+        size: null,
+        fullScreen: false,
+      };
     if (entry && typeof entry === 'object')
       return {
         src: entry.src || '',
         title: entry.title || null,
         desc: entry.desc || null,
         size: entry.size || null,
+        fullScreen: entry.fullScreen === true,
       };
-    return { src: '', title: null, desc: null, size: null };
+    return {
+      src: '',
+      title: null,
+      desc: null,
+      size: null,
+      fullScreen: false,
+    };
   }
   const snippetSources = snippetsList.map(normalizeSnippetEntry);
   const snippetBoxes = [];
@@ -1135,6 +1151,22 @@ export function showTooltip(name, lvlDesc, iconEl) {
       iframe.className = 'win-snippet-iframe';
       w.content.innerHTML = '';
       withLoadingSpinner(iframe, w.content, entry.desc);
+      if (entry.fullScreen) {
+        // .win-img-content (w.content) is already `position: relative` in
+        // its own CSS rule, so .media-expand-btn (position:absolute) can be
+        // appended straight into it — no extra wrapper div needed, unlike
+        // makeMediaEl's video path (which only wraps when audio OR controls
+        // is requested, since a bare <video> isn't a positioning context).
+        const expandBtn = document.createElement('button');
+        expandBtn.className = 'media-expand-btn';
+        expandBtn.title = 'Развернуть';
+        expandBtn.innerHTML = svgExpandIcon();
+        expandBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openSnippetLightbox(entry.src);
+        });
+        w.content.appendChild(expandBtn);
+      }
     });
 
     if (hasExtra) {

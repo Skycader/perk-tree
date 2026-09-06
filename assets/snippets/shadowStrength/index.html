@@ -210,6 +210,7 @@ const COM_RATIO = 0.55; // центр масс человека ≈ 55% рост
 const NECK_FRACTURE_KG = 200;  // предел на разрыв/перелом шейного отдела, кг (нижняя граница реального диапазона 150-300)
 const NECK_LIMIT_KG = NECK_FRACTURE_KG; // 100% на шкале — порог перелома
 const NECK_SAFE_KG = 5;        // ниже — практически без риска для дыхания/сосудов (это порог начала асфиксии, не перелома)
+const NECK_CRITICAL_KG = 12;   // с этой нагрузки время до потери сознания уже у минимума — это КРИТИЧНО, а не "частично"
 const NECK_ASPHYXIA_MIN_SEC = 4;   // минимальное время до потери сознания при огромной нагрузке
 const NECK_ASPHYXIA_MAX_SEC = 60;  // время при нагрузке чуть выше безопасной
 
@@ -249,6 +250,16 @@ let lastBTop = 0, lastBHeightPx = 0;
 function angleForHandY(targetY){
   const ratio = Math.max(-1, Math.min(1, (targetY - SHOULDER_Y) / (L*SCALE)));
   return Math.acos(ratio) * 180 / Math.PI;
+}
+// При хвате "за шею" у руки есть свободный ход — от полностью безнагруженного касания
+// шеи (Б стоит сам, никакого натяжения) до момента, когда ноги Б вот-вот оторвутся от
+// земли. Это тот же диапазон "приседа", что и плавный перенос веса (TRANSFER_RAMP_M) —
+// дальше него рука вниз не идёт (иначе кисть оказалась бы ниже той точки, за которую
+// держит), а внутри диапазона нагрузка на руку и так уже плавно нарастает от 0 до 100%.
+function minAngleForNeckGrip(){
+  const neckStandingY = GROUND_Y - heightB_m*SCALE*NECK_HOLD_RATIO;
+  const slackFloorY = neckStandingY + TRANSFER_RAMP_M*SCALE;
+  return angleForHandY(slackFloorY);
 }
 
 // рисует пропорциональный силуэт человека внутри группы g,
@@ -436,6 +447,10 @@ function buildStaticScene(){
 
   svg.appendChild(el('line',{id:'holdConnector',stroke:'#ff8a2b','stroke-width':3,'stroke-dasharray':'2,4',opacity:0}));
 
+  // === Высота стоп Б над полом (видна, только когда ноги оторваны от земли) ===
+  svg.appendChild(el('line',{id:'airGapLine',stroke:'#ffe066','stroke-width':1,'stroke-dasharray':'2,3',opacity:0}));
+  svg.appendChild(el('text',{id:'airGapTxt',class:'hud-text',style:'font-size:11px;fill:#ffe066;text-anchor:middle;',opacity:0}));
+
   // === Выбор хвата — два кликабельных маркера на теле Б: подмышки / шея ===
   svg.appendChild(el('circle',{r:13,fill:'none',stroke:'#ff8a2b','stroke-width':1.6,'stroke-dasharray':'3,3',id:'gripRingUnderarm',opacity:0}));
   svg.appendChild(el('circle',{r:8,class:'pivot-dot',id:'gripDotUnderarm',style:'cursor:pointer;'}));
@@ -570,7 +585,9 @@ function onHandDragMove(evt){
   evt.preventDefault();
   const p = getSvgPoint(evt);
   const deg = angleFromSvgPoint(p.x, p.y);
-  angleDeg = Math.round(deg);
+  let clamped = Math.round(deg);
+  if(grip==='neck') clamped = Math.max(clamped, Math.ceil(minAngleForNeckGrip()));
+  angleDeg = clamped;
   update();
 }
 
@@ -865,6 +882,23 @@ function update(){
     connector.setAttribute('opacity', 0);
   }
 
+  // === Высота стоп Б над полом — видна, только когда ноги действительно оторваны от земли ===
+  const airGapM = Math.max(0, (GROUND_Y - bFeetY) / SCALE);
+  const airGapLine = document.getElementById('airGapLine');
+  const airGapTxt = document.getElementById('airGapTxt');
+  if(!feetTouching && airGapM > 0.005){
+    airGapLine.setAttribute('x1', hx); airGapLine.setAttribute('y1', bFeetY);
+    airGapLine.setAttribute('x2', hx); airGapLine.setAttribute('y2', GROUND_Y);
+    airGapLine.setAttribute('opacity', 0.7);
+    airGapTxt.setAttribute('x', hx + 18);
+    airGapTxt.setAttribute('y', (bFeetY + GROUND_Y) / 2 + 4);
+    airGapTxt.setAttribute('opacity', 1);
+    airGapTxt.textContent = airGapM.toFixed(2) + ' м над полом';
+  } else {
+    airGapLine.setAttribute('opacity', 0);
+    airGapTxt.setAttribute('opacity', 0);
+  }
+
   // === Маркеры выбора хвата на теле Б — клик переключает режим (под мышки / за шею) ===
   lastBTop = bTop; lastBHeightPx = bHeightPx;
   const armpitY = bTop + B_TOP_TO_HOLD_RATIO*bHeightPx;
@@ -1039,11 +1073,15 @@ function computeNeckStatus(forceN){
     level='safe'; title='НОРМА';
     text='Нагрузка на шею в пределах безопасной — дыхательные пути и сосуды не пережаты, риск минимален.';
   } else if(kg <= NECK_FRACTURE_KG){
-    // асфиксия (мягкие ткани — трахея, сонные/ярёмные сосуды) наступает НАМНОГО раньше
-    // перелома позвонков: это разные ткани с разным пределом прочности
+    // Асфиксия (мягкие ткани — трахея, сонные/ярёмные сосуды) наступает НАМНОГО раньше
+    // перелома позвонков — это разные ткани с разным пределом прочности, поэтому граница
+    // "тяжело/критично" считается от РЕАЛЬНОЙ тяжести асфиксии (времени до потери сознания),
+    // а НЕ от процента дистанции до перелома — иначе почти любой подвес живым весом (типичные
+    // 50-90 кг — это лишь 25-45% от 200-килограммового предела на разрыв) ошибочно попадал
+    // в "лёгкую" категорию, хотя по факту уже держится на грани нескольких секунд до отключки.
     const excess = kg - NECK_SAFE_KG;
     const tSec = Math.max(NECK_ASPHYXIA_MIN_SEC, NECK_ASPHYXIA_MAX_SEC*Math.exp(-0.45*excess));
-    if(pct <= 50){
+    if(kg <= NECK_CRITICAL_KG){
       level='warn'; title='ПЕРЕЖАТИЕ ДЫХАТЕЛЬНЫХ ПУТЕЙ';
       text='Хват частично пережимает трахею и сонные артерии. При сохранении нагрузки потеря сознания ориентировочно через '+tSec.toFixed(0)+' с. Позвонки пока целы — предел на разрыв на порядок выше.';
     } else {

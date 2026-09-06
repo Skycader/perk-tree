@@ -44,9 +44,10 @@ export const CONFIG = {
           name: 'Физическая сила',
           snippets: [
             {
-              title: 'some title',
+              title: 'Физическая сила',
               src: 'assets/snippets/shadowStrength/index.html',
               size: '800x600',
+              fullScreen: true,
             },
           ],
           description:
