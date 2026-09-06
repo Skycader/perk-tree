@@ -10,7 +10,10 @@ export const CONFIG = {
   version: '0.1',
   user: '',
   range_columns: ['RANGE', 'NAME', 'LOGO'],
-  otherNames: [],
+  tags: {
+    title: 'Альтернативные имена',
+    array: [],
+  },
   spectre: {
     red: '',
     orange: '',

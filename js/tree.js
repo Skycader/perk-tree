@@ -51,11 +51,18 @@ document.getElementById('stat-perks').textContent = totalPerks;
 document.getElementById('stat-lvl-per-rank').textContent = lvlPerRank;
 document.getElementById('stat-max-lvl').textContent = maxLevel;
 
-// alt names as tags
+// tags box — was a flat `otherNames`/`altNames` array with a hardcoded
+// "Альтернативные имена" label; now `tags: { title, array }` so the label
+// itself is config-driven too (e.g. "Известные элементы" for a species-level
+// catalog instead of one entity's alt names — see claude/lore.md).
 const anBox = document.getElementById('altnames-box');
-const names = D.otherNames || D.altNames || [];
-anBox.innerHTML = `<div class="altnames-label">👤 Альтернативные имена</div>
-  <div class="altnames-tags">${names.map((n) => `<span class="an-tag">${n}</span>`).join('')}</div>`;
+const tags = D.tags || {};
+const tagTitle = tags.title || 'Альтернативные имена';
+const tagNames = Array.isArray(tags.array) ? tags.array : [];
+anBox.innerHTML = tagNames.length
+  ? `<div class="altnames-label">👤 ${tagTitle}</div>
+  <div class="altnames-tags">${tagNames.map((n) => `<span class="an-tag">${n}</span>`).join('')}</div>`
+  : '';
 
 // ── DISTRIBUTE chapters into 3 columns (balance by perk count) ──
 function distributeToColumns(skills, nCols) {
