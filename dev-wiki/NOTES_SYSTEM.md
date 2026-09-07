@@ -15,13 +15,13 @@ export const notes = [
 ];
 ```
 
-### Per-config notes, resolved by `?configName`
+### Per-config notes, resolved by `?config`
 
-`js/load-notes.js` mirrors `js/load-config.js`'s `?configName=<name>` resolution: if `configs/<name>/<name>.notes.js` exists, it's used instead of the default; otherwise (including when there's no `configName` at all) it silently falls back to `configs/default/default.notes.js`. Unlike a missing *config* file (which is a real error — the app has nothing to render without one, so `load-config.js` `console.warn`s and falls back), a missing per-name notes file is expected and normal — a stand's own lore notes are optional flavor, not required content — so there's no warning here.
+`js/load-notes.js` mirrors `js/load-config.js`'s `?config=<name>` resolution: if `configs/<name>/<name>.notes.js` exists, it's used instead of the default; otherwise (including when there's no `config` param at all) it silently falls back to `configs/default/default.notes.js`. Unlike a missing *config* file (which is a real error — the app has nothing to render without one, so `load-config.js` `console.warn`s and falls back), a missing per-name notes file is expected and normal — a stand's own lore notes are optional flavor, not required content — so there's no warning here.
 
 Every consumer of `notes` (`js/markdown.js`, `js/note-link-popup.js`, `js/notes-popup.js`, and `index.html`'s early startup script) imports from `js/load-notes.js`, never directly from a `configs/*/*.notes.js` path — same rule as `CONFIG`/`load-config.js`.
 
-**Tips are NOT (yet) resolved per-config** — every consumer still imports `tips` straight from `configs/default/default.tips.js`, regardless of `configName`. If a stand ever needs its own `<tip>` content, `js/load-tips.js` would need to be added, mirroring `load-notes.js` exactly.
+**Tips are NOT (yet) resolved per-config** — every consumer still imports `tips` straight from `configs/default/default.tips.js`, regardless of the `config` param. If a stand ever needs its own `<tip>` content, `js/load-tips.js` would need to be added, mirroring `load-notes.js` exactly.
 
 - `id` is looked up by both linking syntaxes below (`<note id>` and `[[id:...]]`). **IDs are not currently guaranteed unique** — `notes.find(n => n.id === id)` always resolves to the *first* match, so a duplicate id silently shadows every later entry with that id. Confirmed duplicates exist as of this writing (`ten-dushi`, `oskolok-dushi`, `khroniki-vlastitelya` — 2-3 entries each). Not code-enforced; if a note-link ever opens the "wrong" content, check for a duplicate id first. (Same caveat applies to `default.tips.js`, independently — its ids just need to be unique among themselves, not against `default.notes.js`.)
 - `title` already includes its own leading emoji (e.g. `'📜 Тень Души'`) — don't re-prefix it.
@@ -154,7 +154,7 @@ If tips ever need their own wiki-link syntax, their own startup-popup-style feat
 |---|---|
 | `configs/default/default.notes.js` | Lore data: `{id, title, content, author}[]` |
 | `configs/default/default.tips.js` | OOC-tip data, same shape as `default.notes.js` (no `author` used in practice) |
-| `js/load-notes.js` | Resolves `notes` per `?configName` (falls back to `default.notes.js` if `configs/<name>/<name>.notes.js` doesn't exist) — every `notes` consumer imports from here, not from a `configs/*/*.notes.js` path directly |
+| `js/load-notes.js` | Resolves `notes` per `?config` (falls back to `default.notes.js` if `configs/<name>/<name>.notes.js` doesn't exist) — every `notes` consumer imports from here, not from a `configs/*/*.notes.js` path directly |
 | `js/markdown.js` | `processNoteTags`, `processTipTags`, `processWikiLinkTags`, `buildNoteRefSpan`, wired into `renderMD`/`renderLevelMD` |
 | `js/notes-popup.js` | Startup tip popup — singleton, bottom-anchored, prev/next (notes only) |
 | `js/note-link-popup.js` | Cascading chain of linked popups opened from `.inline-note-ref` clicks — `openLinkPopup(triggerEl, kind, refId)` shared by `showNoteLinkPopup`/`showTipPopup` |

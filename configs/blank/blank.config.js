@@ -2,7 +2,7 @@
 // Minimal, structurally-complete CONFIG — every top-level key the app
 // actually reads is present (see configs/default/default.config.js for the
 // full reference shape), but content is placeholder/example only. Meant as
-// a clean start for a brand-new perk tree, loaded via ?configName=blank —
+// a clean start for a brand-new perk tree, loaded via ?config=blank —
 // see js/load-config.js.
 export const CONFIG = {
   shadowName: 'Новый Стэнд',

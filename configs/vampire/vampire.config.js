@@ -38,13 +38,6 @@ export const CONFIG = {
 
   skills: [
     {
-      chapterTitle: '0. Проклятия и уязвимости',
-      color: 'Black',
-      perks: [
-        // пока оставляем пустым — уязвимости вынесены в отдельный массив vulns
-      ],
-    },
-    {
       chapterTitle: '1. Особенности тела',
       color: 'Gray',
       perks: [
@@ -77,4 +70,9 @@ export const CONFIG = {
   skillLevelDescriptions: {
     // Здесь позже появятся описания уровней 0–10
   },
+
+  // placeholder — tree.js's D.ranks.length (nRanks) throws if this is
+  // missing entirely, which is what silently broke ?config=vampire
+  // until now. Replace with real vampire ranks whenever those are written.
+  ranks: [{ lvl: 1, name: 'Ранг 1', badge: '◽️' }],
 };

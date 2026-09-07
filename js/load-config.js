@@ -1,10 +1,10 @@
 // ── CONFIG LOADER ──
-// Which CONFIG loads is picked via ?configName=<name> in the URL, mapping to
-// configs/<name>/<name>.config.js — e.g. ?configName=blank loads
+// Which CONFIG loads is picked via ?config=<name> in the URL, mapping to
+// configs/<name>/<name>.config.js — e.g. ?config=blank loads
 // configs/blank/blank.config.js. No param (or an unrecognized name) falls
 // back to configs/default/default.config.js — this file is the ONLY thing
-// that knows about configName; each config file itself stays a plain data
-// file, imported nowhere else.
+// that knows about the `config` param; each config file itself stays a
+// plain data file, imported nowhere else.
 //
 // Every consumer (tree.js, tooltip.js, markdown.js, spectre.js,
 // export-png.js) imports CONFIG from THIS file instead of directly from a
@@ -13,7 +13,7 @@
 // that imports this one simply waits for the dynamic import below to
 // resolve before its own top-level code runs.
 const params = new URLSearchParams(location.search);
-const raw = params.get('configName');
+const raw = params.get('config');
 const name = raw && /^[a-zA-Z0-9_-]+$/.test(raw) ? raw : null;
 
 let mod;
