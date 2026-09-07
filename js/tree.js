@@ -20,9 +20,15 @@ const lvlPerRank = Math.ceil(maxLevel / nRanks);
 // config, so this always silently fell back to the literal 'Стэнд'.
 const standName = D.shadowName || D.name || 'Стэнд';
 // tb-title is static 'ДРЕВО СПОСОБНОСТЕЙ'
-document.getElementById('title-name').innerHTML =
-  '<span style="display:inline-block;width:10px;height:10px;background:#e09040;border-radius:1px;margin-right:7px;vertical-align:middle"></span>' +
-  standName;
+// `logo` (optional emoji, e.g. '🧛') replaces the default flat orange square
+// as this stand's own identity mark — kept as the SAME <span> either way
+// (not a separate element) since the spectre-click wiring right below
+// selects it via `#title-name span` and needs one to attach to regardless
+// of which variant rendered.
+const titleIconHtml = D.logo
+  ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;font-size:0.75rem;line-height:1;margin-right:7px;vertical-align:middle">${D.logo}</span>`
+  : '<span style="display:inline-block;width:10px;height:10px;background:#e09040;border-radius:1px;margin-right:7px;vertical-align:middle"></span>';
+document.getElementById('title-name').innerHTML = titleIconHtml + standName;
 document.getElementById('title-desc').textContent = D.desc || '';
 
 // config-version badge, bottom-right corner — shows standName / desc / version from the config
