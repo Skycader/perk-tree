@@ -11,6 +11,7 @@ const contentEl = document.getElementById('notes-content');
 const closeBtn = document.getElementById('notes-close');
 const prevBtn = document.getElementById('notes-prev');
 const nextBtn = document.getElementById('notes-next');
+const counterEl = document.getElementById('notes-counter');
 const timerTrack = document.getElementById('notes-timer-track');
 const timerFill = document.getElementById('notes-timer-fill');
 const startupRow = document.getElementById('notes-startup-row');
@@ -39,6 +40,7 @@ function renderNote(idx) {
     ? `<div class="note-author-line">${renderLevelMD(note.author)}</div>`
     : '';
   contentEl.innerHTML = renderMD(note.content || '') + authorLine;
+  counterEl.textContent = `${idx + 1} / ${notes.length}`;
 }
 
 // Sets `top` so the box's bottom edge sits NOTES.bottomGap above the
@@ -98,18 +100,29 @@ export function hideNotesPopup() {
   clearTimeout(closeTimer);
 }
 
-closeBtn.addEventListener('click', hideNotesPopup);
-prevBtn.addEventListener('click', () => {
+function goToPrev() {
   currentIdx = (currentIdx - 1 + notes.length) % notes.length;
   renderNote(currentIdx);
   applyRestPosition();
   restartTimer();
-});
-nextBtn.addEventListener('click', () => {
+}
+function goToNext() {
   currentIdx = (currentIdx + 1) % notes.length;
   renderNote(currentIdx);
   applyRestPosition();
   restartTimer();
+}
+
+closeBtn.addEventListener('click', hideNotesPopup);
+prevBtn.addEventListener('click', goToPrev);
+nextBtn.addEventListener('click', goToNext);
+
+// ← / → switch notes, same as the prev/next buttons — only while the popup
+// is actually open, so arrow keys don't get hijacked elsewhere in the app.
+window.addEventListener('keydown', (e) => {
+  if (!popup.classList.contains('visible')) return;
+  if (e.key === 'ArrowLeft') goToPrev();
+  else if (e.key === 'ArrowRight') goToNext();
 });
 
 startupCheckbox.checked = getShowOnStartup();
@@ -127,6 +140,10 @@ startupCheckbox.addEventListener('change', () => {
 export function settleNotesPopup() {
   if (window.__earlyNoteShown) {
     currentIdx = window.__earlyNoteIdx || 0;
+    // the early script renders title/content itself (see index.html) and
+    // doesn't know about the counter — fill in just that, without touching
+    // the title/content it already rendered.
+    counterEl.textContent = `${currentIdx + 1} / ${notes.length}`;
     applyRestPosition(); // re-affirm in case the viewport was resized while loading
     restartTimer();
   } else if (getShowOnStartup()) {

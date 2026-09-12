@@ -92,6 +92,16 @@
   color: #c8a038;
 }
 
+.notes-counter {
+  color: #585e72;
+  font-size: 0.5625rem;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  padding: 0 0.125rem;
+  user-select: none;
+}
+
 .notes-close {
   width:  1.25rem;
   height:  1.25rem;
