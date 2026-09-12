@@ -14,6 +14,16 @@ relevant file before touching the area it covers.
   must be changed together by hand: `js/constants.js`'s `export const
   MOBILE_ADAPT` and a duplicate plain `var` in `index.html`'s early inline
   script. See `claude/mobile-layout.md`.
+- **Planning/proposing non-trivial changes** — this project uses
+  [OpenSpec](https://github.com/Fission-AI/OpenSpec) (`openspec/` +
+  `.claude/commands/opsx/`). Before implementing anything more than a small
+  fix, prefer `/opsx:propose "<idea>"` (or `/opsx:explore` if the idea isn't
+  fully formed yet) over just diving in — it writes a reviewable
+  proposal/design/tasks set under `openspec/changes/` first. `/opsx:apply`
+  implements an approved change, `/opsx:archive` files it once done.
+  `openspec/config.yaml`'s `context:` block carries the same "read
+  CLAUDE.md/claude/*.md first" grounding for whatever generates these
+  artifacts — keep it in sync if those docs' scope changes.
 
 ## Read before working in these areas
 

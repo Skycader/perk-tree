@@ -1,0 +1,58 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+context: |
+  Древо — interactive perk/lore tree for a fiction project (litRPG/superpower
+  setting), not a generic app. Single author, single active "stand" config
+  loaded via ?config=<name> (default: configs/default/default.config.js,
+  export CONFIG). Also ships configs/blank (template) and configs/vampire
+  (archetype demo, WIP).
+
+  Stack: vanilla JS ES modules, no bundler, no framework, no package.json.
+  Dev server: `python .claude/nocache_server.py 8199` (never file://).
+  Content language: Russian throughout (code comments in English, prose/UI
+  in Russian) — keep that split.
+
+  Read CLAUDE.md first — it points to claude/*.md for the areas that
+  actually need care before touching them: dev-workflow.md (sandboxed
+  browser/rAF quirks and how to actually verify a UI change painted),
+  gotchas.md (SVG namespace, MOBILE_ADAPT dual-location, scale() for raw-px
+  layout constants), zoom-architecture.md, mobile-layout.md,
+  cascade-layout.md (note-link-popup staircase geometry), lore.md (amuons/
+  soul epistemics — perk and lore content must stay consistent with it),
+  collaboration.md (how this user gives feedback and expects iteration).
+
+  Perk/combo/lore content in configs/*/*.config.js is hand-authored prose
+  with real physical units and specific weapon/tech reference points —
+  treat numeric thresholds and cross-perk combo dependencies (`combo`,
+  `requiredPerks`, `skillLevelDescriptions`) as load-bearing data, not
+  placeholder text, when proposing changes to them.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
