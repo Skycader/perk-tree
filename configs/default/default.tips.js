@@ -20,4 +20,10 @@ export const tips = [
     content: '<file src="wiki/tips/water-run.md"></file>',
     author: '— Википедия',
   },
+  {
+    id: 'visible-spectre',
+    title: '📜 Визуальный спектр',
+    content: '<file src="wiki/tips/visible-spectre.md"></file>',
+    author: '— Википедия',
+  },
 ];
