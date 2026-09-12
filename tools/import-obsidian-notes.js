@@ -74,19 +74,40 @@ function slugify(title) {
 }
 
 // ── extract content/author from each block's blockquote body ──
+// A blank `>` line is a PARAGRAPH BREAK in the source, not filler to
+// discard — losing that distinction was the bug: everything got joined
+// with a single space, collapsing 3 paragraphs into 1. Real newlines are
+// used between paragraphs (`\n\n`) here specifically because renderMD()
+// runs the content through marked.parse(), which treats a blank line as a
+// new <p> — no custom <line-break> tag needed for plain paragraph breaks,
+// only for a forced mid-paragraph hard break.
 function extractContentAndAuthor(bodyLines) {
-  const quoted = bodyLines
+  const quotedRaw = bodyLines
     .filter((l) => l.trim().startsWith('>'))
     .map((l) => l.replace(/^\s*>\s?/, ''));
-  const nonEmpty = quoted.filter((l) => l.trim() !== '');
-  let author = null;
-  let contentLines = nonEmpty;
-  const last = nonEmpty[nonEmpty.length - 1];
-  if (last && /^[—-]\s*/.test(last)) {
-    author = last.trim();
-    contentLines = nonEmpty.slice(0, -1);
+
+  const paragraphs = [];
+  let current = [];
+  for (const line of quotedRaw) {
+    if (line.trim() === '') {
+      if (current.length) {
+        paragraphs.push(current.join(' ').trim());
+        current = [];
+      }
+    } else {
+      current.push(line.trim());
+    }
   }
-  return { content: contentLines.join(' ').trim(), author };
+  if (current.length) paragraphs.push(current.join(' ').trim());
+
+  let author = null;
+  let contentParagraphs = paragraphs;
+  const last = paragraphs[paragraphs.length - 1];
+  if (last && /^[—-]\s*/.test(last)) {
+    author = last;
+    contentParagraphs = paragraphs.slice(0, -1);
+  }
+  return { content: contentParagraphs.join('\n\n'), author };
 }
 
 // ── pass 1: build title -> id map ──
@@ -112,7 +133,10 @@ const WIKILINK = /\[\[#([^\]|]+?)(?:\|([^\]]+))?\]\]/g;
 const notes = blocks.map((block) => {
   const { content, author } = extractContentAndAuthor(block.bodyLines);
   const resolvedContent = content.replace(WIKILINK, (full, targetTitle, label) => {
-    const target = targetTitle.trim();
+    // strip the same way the title map's keys were built (Обsidian lets
+    // the link target itself carry **bold**/etc, e.g. [[#📜 **Аксиома**]])
+    // — without this the lookup key never matches the stripped title.
+    const target = stripEmphasis(targetTitle.trim());
     const id = titleToId.get(target);
     if (!id) {
       console.warn(
