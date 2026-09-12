@@ -4,6 +4,7 @@ import { setSpectreOpen } from './spectre.js';
 import { showChainTip, hideChainTip } from './chain-tip.js';
 import { createWin, destroyWins, resolveWindowCols } from './windows.js';
 import { resolvePerkInline, renderLevelMD, renderMD } from './markdown.js';
+import { focusPerkById } from './perk-focus.js';
 import { openVideoLightbox } from './video-lightbox.js';
 import { openSnippetLightbox } from './snippet-lightbox.js';
 import { hideNoteLinkPopup } from './note-link-popup.js';
@@ -2074,76 +2075,8 @@ export function showTooltip(name, lvlDesc, iconEl) {
                 .forEach((sq) => {
                   sq.addEventListener('click', () => {
                     const rid = sq.dataset.rid;
-                    const allPerks = document.querySelectorAll('.perk');
-                    let target = null;
-                    for (const pe of allPerks) {
-                      if (pe.dataset.perkId === rid) {
-                        target = pe;
-                        break;
-                      }
-                    }
-                    if (!target) return;
                     hideTooltip();
-                    target.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'center',
-                    });
-                    setTimeout(() => {
-                      let fo = document.getElementById('focus-overlay');
-                      if (!fo) {
-                        fo = document.createElement('div');
-                        fo.id = 'focus-overlay';
-                        fo.style.cssText =
-                          'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:50;pointer-events:auto;transition:background .35s ease;';
-                        document.body.appendChild(fo);
-                      }
-                      requestAnimationFrame(() => {
-                        fo.style.background = `rgba(0,0,0,${FOCUS_DIM})`;
-                      });
-                      target.style.position = 'relative';
-                      target.style.zIndex = '51';
-                      target.style.transition = 'box-shadow .35s ease';
-                      const _ic = target.querySelector('.perk-icon');
-                      const _cm = {
-                        'ic-o': '#e09040',
-                        'ic-r': '#cc3838',
-                        'ic-b': '#3e80d0',
-                        'ic-g': '#28a860',
-                        'ic-p': '#7840c8',
-                        'ic-y': '#b89030',
-                        'ic-k': '#1a0000',
-                      };
-                      const _hex =
-                        Object.entries(_cm).find(
-                          ([k]) => _ic && _ic.classList.contains(k),
-                        )?.[1] || '#e09040';
-                      target.style.boxShadow = `0 0 0 2px ${_hex},0 0 30px ${_hex}80`;
-                      function clearFocus() {
-                        fo.style.background = 'rgba(0,0,0,0)';
-                        target.style.boxShadow = '';
-                        window.removeEventListener('scroll', clearFocus, {
-                          passive: true,
-                        });
-                        window.removeEventListener('click', clearFocus);
-                        window.removeEventListener('keydown', clearFocus);
-                        setTimeout(() => {
-                          fo.remove();
-                          target.style.position = '';
-                          target.style.zIndex = '';
-                          target.style.transition = '';
-                        }, 350);
-                      }
-                      fo.addEventListener('click', clearFocus);
-                      setTimeout(() => {
-                        window.addEventListener('scroll', clearFocus, {
-                          once: true,
-                          passive: true,
-                        });
-                        window.addEventListener('keydown', clearFocus, {
-                          once: true,
-                        });
-                      }, 400);
-                    }, 500);
+                    focusPerkById(rid);
                   });
                 });
             }
