@@ -11,11 +11,7 @@ export const searchOverlay = document.getElementById('search-overlay');
 const searchModal = document.getElementById('search-modal');
 const searchInput = document.getElementById('search-input');
 const searchResults = document.getElementById('search-results');
-const searchPrev = document.getElementById('search-prev');
-const searchNext = document.getElementById('search-next');
 const searchCounter = document.getElementById('search-counter');
-
-const PAGE_SIZE = 10;
 
 // ── BUILD SEARCH INDEX (once, at module load — see design.md) ──
 
@@ -127,7 +123,6 @@ indexPromise.then((entries) => {
 
 // ── FILTER + RENDER ──
 let _query = '';
-let _page = 0;
 
 function escapeHtml(s) {
   return s
@@ -153,8 +148,10 @@ function matches(entry, ql) {
   );
 }
 
+// empty query = browse everything, unfiltered — lets the user see the full
+// content set without typing anything (see design.md)
 function filteredEntries() {
-  if (!_query) return [];
+  if (!_query) return _entries;
   const ql = _query.toLowerCase();
   return _entries.filter((e) => matches(e, ql));
 }
@@ -186,44 +183,29 @@ function renderCard(entry) {
 
 function renderResults() {
   const results = filteredEntries();
-  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
-  if (_page >= totalPages) _page = totalPages - 1;
-  if (_page < 0) _page = 0;
 
   searchResults.innerHTML = '';
-  if (!_query) {
-    searchResults.innerHTML =
-      '<div class="search-empty">Начните вводить запрос…</div>';
-  } else if (!results.length) {
+  if (!results.length) {
     searchResults.innerHTML =
       '<div class="search-empty">Ничего не найдено</div>';
   } else {
-    const start = _page * PAGE_SIZE;
-    results
-      .slice(start, start + PAGE_SIZE)
-      .forEach((entry) => searchResults.appendChild(renderCard(entry)));
+    results.forEach((entry) => searchResults.appendChild(renderCard(entry)));
   }
 
-  searchCounter.textContent = results.length
-    ? `${_page + 1} / ${totalPages}`
-    : '';
-  searchPrev.disabled = _page <= 0;
-  searchNext.disabled = _page >= totalPages - 1;
+  searchCounter.textContent = `${results.length} результат${pluralSuffix(results.length)}`;
+}
+
+// ru plural forms: 1 результат / 2-4 результата / 0,5-... результатов
+function pluralSuffix(n) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return '';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'а';
+  return 'ов';
 }
 
 searchInput.addEventListener('input', () => {
   _query = searchInput.value.trim();
-  _page = 0;
-  renderResults();
-});
-searchPrev.addEventListener('click', () => {
-  if (_page > 0) {
-    _page--;
-    renderResults();
-  }
-});
-searchNext.addEventListener('click', () => {
-  _page++;
   renderResults();
 });
 
@@ -232,7 +214,6 @@ export function showSearchModal() {
   searchOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
   _query = '';
-  _page = 0;
   searchInput.value = '';
   renderResults();
   searchInput.focus();
