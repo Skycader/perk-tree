@@ -17,6 +17,23 @@ const SOURCES = { note: notes, tip: tips };
 // — refetches every time the popup opens, by design (not preloaded, not
 // memoized). Only resolved when a note/tip popup is actually opened, never
 // eagerly.
+// Obsidian's own image-embed syntax (`![[filename.ext]]`) isn't CommonMark,
+// so renderMD()'s marked.parse() leaves it as literal text. Converting it to
+// a *standard* markdown image (`![](assets/filename)`) — rather than
+// hand-building an <img> tag here — keeps it on the same rendering path
+// every other image in the app already goes through (marked's own
+// escaping/attribute handling), instead of a second, divergent one. `assets/`
+// is the only convention this project has for "where images live" (every
+// img/imgs[] reference already points there), and Obsidian embeds carry no
+// path of their own to preserve. Doesn't handle the `![[file|alt]]`/
+// `![[file|200]]` variants — no fetched content uses them yet.
+function convertObsidianEmbeds(text) {
+  return text.replace(
+    /!\[\[([^\]|]+)\]\]/g,
+    (_, filename) => `![](assets/${filename.trim()})`,
+  );
+}
+
 async function resolveFileTags(content) {
   const FILE_TAG = /<file\s+src="([^"]+)"\s*>\s*<\/file>/gi;
   const matches = [...content.matchAll(FILE_TAG)];
@@ -27,7 +44,7 @@ async function resolveFileTags(content) {
       try {
         const res = await fetch(src);
         if (!res.ok) throw new Error(String(res.status));
-        return await res.text();
+        return convertObsidianEmbeds(await res.text());
       } catch (e) {
         return `⚠ Не удалось загрузить ${src}`;
       }
