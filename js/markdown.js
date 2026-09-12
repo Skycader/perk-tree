@@ -68,9 +68,18 @@ export function processSvgTags(html) {
   return html;
 }
 
-// Replace ==text== with <mark>text</mark> (marked has no native syntax for this).
+// Replace ==text== with <mark>text</mark> (marked has no native syntax for
+// this). Excluding only newlines (not "="): the content can legitimately
+// contain a raw <note id="..">/<tip id="..">/<perk color="..">/<square ..>
+// tag with an attribute (see e.g. `**==<note id="ten-dushi">силой
+// Тени</note>==**` in default.notes.js — a highlighted inline note ref) —
+// those attributes' own "=" would falsely end the match early under a
+// [^=\n]+? content class, leaving the surrounding == markers un-replaced
+// and visible literally. The non-greedy +? already stops at the NEAREST
+// closing ==, so a broader content class doesn't risk over-matching across
+// separate ==..== pairs.
 export function processHighlightTags(html) {
-  return html.replace(/==([^=\n]+?)==/g, '<mark>$1</mark>');
+  return html.replace(/==([^\n]+?)==/g, '<mark>$1</mark>');
 }
 
 // Shared by processNoteTags/processTipTags and processWikiLinkTags below —
