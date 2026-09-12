@@ -79,10 +79,10 @@
 }
 
 /* one result card — ability/combo (has .search-sq) or note/wiki (no square,
-   .search-card-content alone fills the row). Never markdown-rendered (see
-   design.md) — plain escaped text with matched substrings wrapped in
-   <mark>, kept intentionally lighter than the real detail popups this
-   links out to. */
+   .search-card-content alone fills the row). Description/content is
+   rendered through the same markdown pipeline used everywhere else in the
+   app (see renderDesc in js/search-modal.js), then height-capped below —
+   a genuine preview of the real content, not a plain-text summary. */
 .search-card {
   display: flex;
   align-items: flex-start;
@@ -124,15 +124,52 @@
   font-size: 0.625rem;
   color: #8a9098;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  /* fixed height cap instead of -webkit-line-clamp: rendered content can
+     include <p>/<table>/<img> (block elements), which line-clamp doesn't
+     reliably clip across browsers — a plain overflow crop handles any mix
+     of block content the same way. */
+  max-height: 3.75rem;
   overflow: hidden;
 }
 .search-card-desc mark {
   background: rgba(224, 144, 64, 0.32);
   color: #e0c8a8;
   border-radius: 1px;
+}
+.search-card-desc p {
+  margin: 0.1875rem 0 0;
+}
+.search-card-desc p:first-child {
+  margin-top: 0;
+}
+.search-card-desc strong {
+  color: #c0bdb4;
+}
+.search-card-desc em {
+  color: #a8b0c0;
+}
+.search-card-desc code {
+  font-family: 'JetBrains Mono', monospace;
+  background: #0a0b14;
+  border: 1px solid #1e2235;
+  padding: 0 0.1875rem;
+  border-radius: 2px;
+  font-size: 0.5625rem;
+  color: #7ab0d0;
+}
+.search-card-desc img {
+  max-height: 3rem;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+.search-card-desc table {
+  font-size: 0.5625rem;
+  border-collapse: collapse;
+}
+.search-card-desc td,
+.search-card-desc th {
+  border: 1px solid #1e2235;
+  padding: 0.0625rem 0.25rem;
 }
 
 #search-footer {

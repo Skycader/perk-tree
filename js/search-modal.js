@@ -1,7 +1,7 @@
 import { CONFIG } from './load-config.js';
 import { notes } from './load-notes.js';
 import { tips } from '../configs/default/default.tips.js';
-import { resolvePerkInline } from './markdown.js';
+import { resolvePerkInline, renderMD, renderLevelMD } from './markdown.js';
 import { focusPerkById } from './perk-focus.js';
 import { hideTooltip } from './tooltip.js';
 import { showNoteLinkPopup, showTipPopup } from './note-link-popup.js';
@@ -134,11 +134,33 @@ function escapeHtml(s) {
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-function highlight(text, q) {
+// title: plain text, escaped then highlighted
+function highlightPlain(text, q) {
   const esc = escapeHtml(text);
   if (!q) return esc;
   const re = new RegExp(escapeRegExp(escapeHtml(q)), 'gi');
   return esc.replace(re, (mm) => `<mark>${mm}</mark>`);
+}
+// description/content: wrap matches in <mark> in the RAW markdown text
+// first (same trick markdown.js's own ==text==→<mark> conversion relies
+// on — marked leaves inline HTML like <mark> untouched), THEN render
+// through the same renderer this content uses everywhere else in the app,
+// so cards show real formatting instead of literal **/== markers. Escaping
+// of plain-text runs is left to that renderer, exactly as for every other
+// piece of user content in this app — not hand-rolled here.
+function markMatches(text, q) {
+  if (!q) return text;
+  const re = new RegExp(escapeRegExp(q), 'gi');
+  return text.replace(re, (mm) => `<mark>${mm}</mark>`);
+}
+const DESC_RENDERER = {
+  ability: renderLevelMD, // matches tree.js's own perk-desc rendering
+  combo: renderMD, // matches tooltip.js's renderComboRow
+  note: renderMD, // matches note-link-popup.js's popup content
+  tip: renderMD,
+};
+function renderDesc(entry) {
+  return (DESC_RENDERER[entry.type] || renderMD)(markMatches(entry.text, _query));
 }
 
 function matches(entry, ql) {
@@ -158,14 +180,19 @@ function filteredEntries() {
 
 function renderCard(entry) {
   const card = document.createElement('div');
-  card.className = 'search-card';
+  // .note-link-trigger: exempts this card from note-link-popup.js's
+  // "click outside closes everything" listener — see the comment there.
+  // Harmless on ability/combo cards too (that listener only acts when a
+  // note/tip popup is already open), so applied unconditionally rather
+  // than branching on entry.type.
+  card.className = 'search-card note-link-trigger';
   const sqHtml =
     entry.hex != null
       ? `<div class="search-sq" style="background:${entry.hex}"></div>`
       : '';
   card.innerHTML = `${sqHtml}<div class="search-card-content">
-    <div class="search-card-title">${highlight(entry.title, _query)}</div>
-    <div class="search-card-desc">${highlight(entry.text, _query)}</div>
+    <div class="search-card-title">${highlightPlain(entry.title, _query)}</div>
+    <div class="search-card-desc">${renderDesc(entry)}</div>
   </div>`;
   card.addEventListener('click', () => {
     if (entry.type === 'ability' || entry.type === 'combo') {

@@ -363,10 +363,21 @@ export function showTipPopup(triggerEl, tipId) {
 
 // click-outside-closes-everything — but not for a click on a <note> ref
 // itself, that's handled by the toggle/relocate logic in
-// showNoteLinkPopup() above, and not for a click on any popup in the chain.
+// showNoteLinkPopup() above, and not for a click on any popup in the chain,
+// and not for a click on any OTHER trigger that opens one of these popups
+// (.note-link-trigger — see js/search-modal.js) for the same reason: that
+// click is itself in the middle of opening/replacing a popup (openLinkPopup
+// is async, awaiting resolveFileTags), and without this exemption, this
+// same click bubbling here — while a DIFFERENT popup is still open from a
+// previous click — would see chain.length > 0 from that old popup, treat
+// this click as "outside", and hideNoteLinkPopup() here BEFORE the new
+// popup's own in-flight open call resumes; that resumption then finds
+// requestGen bumped past its own myGen and silently bails, closing the old
+// popup and never opening the new one at all.
 document.addEventListener('click', (e) => {
   if (chain.length === 0) return;
-  if (e.target.closest('.inline-note-ref')) return;
+  if (e.target.closest('.inline-note-ref') || e.target.closest('.note-link-trigger'))
+    return;
   if (chain.some((link) => link.popup.contains(e.target))) return;
   hideNoteLinkPopup();
 });
