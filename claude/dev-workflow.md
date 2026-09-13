@@ -31,6 +31,16 @@ timeouts, `UnknownVizError`, or a silently blank capture despite a correct
 live DOM. Don't gate correctness-relevant logic on rAF timing when it's
 easy to avoid (compute positions synchronously instead where possible).
 
+`computer{action:"key"}` dispatches a synthetic `keydown` with `event.code`
+left as `""` (empty) — only `event.key` is populated. A real browser/OS
+always sets both for a physical key press, so testing an `event.code`-based
+shortcut (the correct way to make one layout-independent — see
+`js/search-modal.js`'s `F`-opens-search binding) via this tool will falsely
+look broken. Verify those with a manually constructed event instead:
+`document.dispatchEvent(new KeyboardEvent('keydown', {key: 'f', code:
+'KeyF', bubbles: true}))` (swap `key` for another layout's character, e.g.
+`'а'`, to confirm layout-independence — `code` is what should stay fixed).
+
 ## DOM/computed-style checks are necessary but NOT sufficient proof of paint
 
 A real bug slipped through this exact style of check twice:

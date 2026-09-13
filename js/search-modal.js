@@ -251,3 +251,26 @@ export function hideSearchModal() {
   searchOverlay.classList.remove('active');
   document.body.style.overflow = '';
 }
+
+// F opens search from anywhere — guarded by the currently focused element
+// (not by whether the modal is already open) so typing the letter "f" into
+// any text field, including the search input itself, never re-triggers it.
+// Matched by e.code (physical key position), not e.key (the character the
+// active layout produces) — on a Russian ЙЦУКЕН layout, e.g., this same
+// physical key produces "а", not "f", so an e.key check would never fire
+// for anyone not on a Latin layout.
+// preventDefault matters here even though this fires on a non-input
+// element: showSearchModal() moves focus to searchInput as part of this
+// same keydown, and the browser still delivers this key's default text-
+// insertion action to whatever element ends up focused when the event
+// finishes — without this, the "f" that opened search also lands in the
+// now-focused search box as its first character.
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'KeyF') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const el = document.activeElement;
+  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
+    return;
+  e.preventDefault();
+  showSearchModal();
+});
