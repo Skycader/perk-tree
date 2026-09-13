@@ -120,16 +120,50 @@
   text-overflow: ellipsis;
 }
 .search-card-desc {
-  /* adaptive: sized to its own real content, no artificial cap — matches
-     .notes-content's own "never padded up, never clipped" convention
-     elsewhere in the app (css/notes.css). Safe to leave uncapped now that
-     the two things that used to inflate height unpredictably — embedded
-     images and tables — are replaced with a one-line placeholder instead
-     of actually rendered (see replaceHeavyMedia in js/search-modal.js). */
+  /* adaptive by default: sized to its own real content, no artificial cap
+     — matches .notes-content's own "never padded up, never clipped"
+     convention elsewhere in the app (css/notes.css). Safe to leave
+     uncapped now that the two things that used to inflate height
+     unpredictably — embedded images and tables — are replaced with a
+     one-line placeholder instead of actually rendered (see
+     replaceHeavyMedia in js/search-modal.js). Ability/combo descriptions
+     stay in this uncapped state always; only long note/tip content can
+     earn the .clamped state below (js/search-modal.js measures and adds
+     it — a note/wiki article can run to several thousand characters,
+     unlike anything gameplay-side, and showing all of it inline would
+     make one card dominate the whole results list). */
+  position: relative;
   margin-top: 0.1875rem;
   font-size: 0.625rem;
   color: #8a9098;
   line-height: 1.5;
+}
+.search-card-desc.clamped {
+  max-height: 9.5rem;
+  overflow: hidden;
+  /* room at the bottom for the fade + "…" below so they sit over the last
+     visible line instead of past the clipped edge */
+  padding-bottom: 1rem;
+}
+.search-card-desc.clamped::after {
+  content: '…';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.0625rem;
+  color: #7a8090;
+  font-weight: 700;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 16, 26, 0) 0%,
+    rgba(15, 16, 26, 0.92) 65%
+  );
+  pointer-events: none;
 }
 .search-card-desc mark {
   background: rgba(224, 144, 64, 0.32);

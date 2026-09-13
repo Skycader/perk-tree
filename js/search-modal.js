@@ -168,9 +168,9 @@ const DESC_RENDERER = {
 // table happens to be, and so the modal never pays for image decode/table
 // layout work across what can be ~200 rendered cards at once.
 const IMAGE_PLACEHOLDER =
-  '<span class="search-media-placeholder" title="Изображение — откройте, чтобы посмотреть">🖼️ изображение</span>';
+  '<span class="search-media-placeholder" title="Изображение — откройте, чтобы посмотреть">🖼️ Изображение</span>';
 const TABLE_PLACEHOLDER =
-  '<span class="search-media-placeholder" title="Таблица — откройте, чтобы посмотреть">📊 таблица</span>';
+  '<span class="search-media-placeholder" title="Таблица — откройте, чтобы посмотреть">📊 Таблица</span>';
 // <table> only ever comes from marked's own GFM table parsing (real <img>
 // tags don't currently occur in this app's description/content text either,
 // but are handled for safety); Obsidian's ![[file]] embed syntax isn't
@@ -218,9 +218,17 @@ function renderCard(entry) {
     entry.hex != null
       ? `<div class="search-sq" style="background:${entry.hex}"></div>`
       : '';
+  // note/tip content is long-form lore/wiki text that can run to several
+  // thousand characters (a full note is one click away via the card
+  // itself) — capped with a visible fade + "…" below, once its real
+  // height is known (see renderResults). Ability/combo descriptions are
+  // never long enough in practice to need this and stay fully uncapped —
+  // clamping them was the original bug (a short combo description getting
+  // cut mid-sentence at a much tighter, blanket cap).
+  const clampCandidate = entry.type === 'note' || entry.type === 'tip';
   card.innerHTML = `${sqHtml}<div class="search-card-content">
     <div class="search-card-title">${highlightPlain(entry.title, _query)}</div>
-    <div class="search-card-desc">${renderDesc(entry)}</div>
+    <div class="search-card-desc"${clampCandidate ? ' data-clamp-candidate' : ''}>${renderDesc(entry)}</div>
   </div>`;
   card.addEventListener('click', () => {
     if (entry.type === 'ability' || entry.type === 'combo') {
@@ -236,6 +244,16 @@ function renderCard(entry) {
   return card;
 }
 
+// note/tip descriptions taller than this get clamped with a fade + "…" —
+// generous enough that every current ability/combo description (never a
+// clamp candidate anyway) and any short note fits without ever showing the
+// affordance; only genuinely long-form lore (thousands of characters) hits
+// it. Measured in JS, not via CSS-only line-clamp, because content here can
+// include block elements (multiple <p>, <ul>, the media placeholders) that
+// -webkit-line-clamp doesn't reliably clip across browsers (see the
+// pagination-removal change's own note on this).
+const DESC_CLAMP_PX = 152; // ~9.5rem
+
 function renderResults() {
   const results = filteredEntries();
 
@@ -245,6 +263,13 @@ function renderResults() {
       '<div class="search-empty">Ничего не найдено</div>';
   } else {
     results.forEach((entry) => searchResults.appendChild(renderCard(entry)));
+    // real (unclamped) height is only knowable once laid out in the DOM —
+    // apply the cap in a second pass rather than guessing at build time.
+    searchResults
+      .querySelectorAll('.search-card-desc[data-clamp-candidate]')
+      .forEach((el) => {
+        if (el.scrollHeight > DESC_CLAMP_PX) el.classList.add('clamped');
+      });
   }
 
   searchCounter.textContent = `${results.length} результат${pluralSuffix(results.length)}`;
