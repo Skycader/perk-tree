@@ -159,8 +159,36 @@ const DESC_RENDERER = {
   note: renderMD, // matches note-link-popup.js's popup content
   tip: renderMD,
 };
+
+// Cards are a compact preview, not the real detail view (which the user
+// reaches by clicking through) — images and tables are replaced with a
+// short "there's one here" placeholder instead of being rendered, so a
+// card's height reflects its actual TEXT (now shown in full, uncapped —
+// see .search-card-desc) rather than however tall an embedded image or
+// table happens to be, and so the modal never pays for image decode/table
+// layout work across what can be ~200 rendered cards at once.
+const IMAGE_PLACEHOLDER =
+  '<span class="search-media-placeholder" title="Изображение — откройте, чтобы посмотреть">🖼️ изображение</span>';
+const TABLE_PLACEHOLDER =
+  '<span class="search-media-placeholder" title="Таблица — откройте, чтобы посмотреть">📊 таблица</span>';
+// <table> only ever comes from marked's own GFM table parsing (real <img>
+// tags don't currently occur in this app's description/content text either,
+// but are handled for safety); Obsidian's ![[file]] embed syntax isn't
+// CommonMark, so marked leaves it as literal text — caught directly here
+// rather than first converting it to a real <img> just to strip it again.
+function replaceHeavyMedia(html) {
+  return html
+    .replace(/<table[\s\S]*?<\/table>/gi, TABLE_PLACEHOLDER)
+    .replace(/<img\b[^>]*>/gi, IMAGE_PLACEHOLDER)
+    .replace(/!\[\[[^\]]+\]\]/g, IMAGE_PLACEHOLDER)
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, IMAGE_PLACEHOLDER);
+}
+
 function renderDesc(entry) {
-  return (DESC_RENDERER[entry.type] || renderMD)(markMatches(entry.text, _query));
+  const html = (DESC_RENDERER[entry.type] || renderMD)(
+    markMatches(entry.text, _query),
+  );
+  return replaceHeavyMedia(html);
 }
 
 function matches(entry, ql) {
