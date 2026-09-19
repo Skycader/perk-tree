@@ -81,6 +81,11 @@
 #search-filters label:hover {
   color: #c0bdb4;
 }
+#search-filters label:has(input:disabled),
+#search-filters input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 #search-filters input[type='checkbox'] {
   accent-color: #e09040;
   cursor: pointer;

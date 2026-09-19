@@ -200,21 +200,34 @@ function matches(entry, ql) {
 
 // empty query = browse everything, unfiltered — lets the user see the full
 // content set without typing anything (see design.md)
-// type checkboxes (#search-filters). Wiki articles ('tip') share the
-// "Заметки" checkbox — the UI lists three kinds, not four.
-const _filters = { ability: true, combo: true, note: true };
-const TYPE_TO_FILTER = { ability: 'ability', combo: 'combo', note: 'note', tip: 'note' };
+// type checkboxes (#search-filters), one per entry type
+const _filters = { ability: true, combo: true, note: true, tip: true };
 
 function filteredEntries() {
   const ql = _query.toLowerCase();
-  return _entries.filter(
-    (e) => _filters[TYPE_TO_FILTER[e.type]] && (!ql || matches(e, ql)),
-  );
+  return _entries.filter((e) => _filters[e.type] && (!ql || matches(e, ql)));
 }
 
-document.querySelectorAll('#search-filters input[data-filter]').forEach((cb) => {
+const filterBoxes = [...document.querySelectorAll('#search-filters input[data-filter]')];
+
+// the last checked box is locked: unchecking it would leave an always-empty
+// list. The hint goes on the <label> — a disabled input doesn't reliably
+// show its own tooltip.
+function syncFilterLock() {
+  const checkedCount = filterBoxes.filter((cb) => cb.checked).length;
+  filterBoxes.forEach((cb) => {
+    const locked = cb.checked && checkedCount === 1;
+    cb.disabled = locked;
+    cb.parentElement.title = locked
+      ? 'Нельзя отключить последний тип — сначала включите другой'
+      : '';
+  });
+}
+
+filterBoxes.forEach((cb) => {
   cb.addEventListener('change', () => {
     _filters[cb.dataset.filter] = cb.checked;
+    syncFilterLock();
     renderResults();
   });
 });

@@ -4,9 +4,9 @@ The search list mixes ~190 entries of four kinds. When looking only for, say, a 
 
 ## What Changes
 
-- A row of three checkboxes under the search input: **Перки**, **Комбо**, **Заметки**. All checked by default.
+- A row of four checkboxes under the search input: **Перки**, **Комбо**, **Заметки** (unknown's notes), **Вики** (wiki articles from the `wiki/` folder). All checked by default.
 - Unchecking one hides that kind from the list (browse-all and filtered alike); the result counter reflects only what's shown.
-- **Заметки** covers both unknown's notes and wiki articles (no separate wiki checkbox — the user listed three).
+- Notes and wiki articles are separate kinds with separate checkboxes — they're different content (in-universe lore vs. out-of-character reference articles).
 - Filter state persists while the page is open (reopening search keeps it); it is not saved across reloads.
 
 ## Capabilities
