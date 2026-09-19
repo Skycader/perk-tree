@@ -61,6 +61,34 @@
   color: #454a60;
 }
 
+#search-filters {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.875rem;
+  padding: 0.4375rem 0.875rem;
+  border-bottom: 1px solid #1c1f2e;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.625rem;
+  color: #8a9098;
+  user-select: none;
+}
+#search-filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  cursor: pointer;
+}
+#search-filters label:hover {
+  color: #c0bdb4;
+}
+#search-filters input[type='checkbox'] {
+  accent-color: #e09040;
+  cursor: pointer;
+  width: 0.6875rem;
+  height: 0.6875rem;
+  margin: 0;
+}
+
 #search-results {
   flex: 1;
   min-height: 0;

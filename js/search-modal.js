@@ -200,11 +200,24 @@ function matches(entry, ql) {
 
 // empty query = browse everything, unfiltered — lets the user see the full
 // content set without typing anything (see design.md)
+// type checkboxes (#search-filters). Wiki articles ('tip') share the
+// "Заметки" checkbox — the UI lists three kinds, not four.
+const _filters = { ability: true, combo: true, note: true };
+const TYPE_TO_FILTER = { ability: 'ability', combo: 'combo', note: 'note', tip: 'note' };
+
 function filteredEntries() {
-  if (!_query) return _entries;
   const ql = _query.toLowerCase();
-  return _entries.filter((e) => matches(e, ql));
+  return _entries.filter(
+    (e) => _filters[TYPE_TO_FILTER[e.type]] && (!ql || matches(e, ql)),
+  );
 }
+
+document.querySelectorAll('#search-filters input[data-filter]').forEach((cb) => {
+  cb.addEventListener('change', () => {
+    _filters[cb.dataset.filter] = cb.checked;
+    renderResults();
+  });
+});
 
 function renderCard(entry) {
   const card = document.createElement('div');
