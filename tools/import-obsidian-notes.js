@@ -21,7 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const inputPath = process.argv[2] || 'notes.md';
+const inputPath = process.argv[2] || 'tools/notes.md';
 const outputPath =
   process.argv[3] || path.join('configs', 'default', 'default.notes.js');
 
@@ -58,19 +58,46 @@ for (const line of lines) {
 
 // ── cyrillic → latin transliteration (matches ids already in default.notes.js) ──
 const TRANSLIT = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z',
-  и: 'i', й: 'i', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
-  с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh',
-  щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+  а: 'a',
+  б: 'b',
+  в: 'v',
+  г: 'g',
+  д: 'd',
+  е: 'e',
+  ё: 'e',
+  ж: 'zh',
+  з: 'z',
+  и: 'i',
+  й: 'i',
+  к: 'k',
+  л: 'l',
+  м: 'm',
+  н: 'n',
+  о: 'o',
+  п: 'p',
+  р: 'r',
+  с: 's',
+  т: 't',
+  у: 'u',
+  ф: 'f',
+  х: 'kh',
+  ц: 'ts',
+  ч: 'ch',
+  ш: 'sh',
+  щ: 'shch',
+  ъ: '',
+  ы: 'y',
+  ь: '',
+  э: 'e',
+  ю: 'yu',
+  я: 'ya',
 };
 function slugify(title) {
   const noEmoji = title.replace(/\p{Extended_Pictographic}/gu, '');
   const translit = [...noEmoji.toLowerCase()]
     .map((ch) => (ch in TRANSLIT ? TRANSLIT[ch] : ch))
     .join('');
-  return translit
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  return translit.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 // ── extract content/author from each block's blockquote body ──
@@ -132,20 +159,23 @@ const WIKILINK = /\[\[#([^\]|]+?)(?:\|([^\]]+))?\]\]/g;
 
 const notes = blocks.map((block) => {
   const { content, author } = extractContentAndAuthor(block.bodyLines);
-  const resolvedContent = content.replace(WIKILINK, (full, targetTitle, label) => {
-    // strip the same way the title map's keys were built (Обsidian lets
-    // the link target itself carry **bold**/etc, e.g. [[#📜 **Аксиома**]])
-    // — without this the lookup key never matches the stripped title.
-    const target = stripEmphasis(targetTitle.trim());
-    const id = titleToId.get(target);
-    if (!id) {
-      console.warn(
-        `[import-obsidian-notes] dangling link in "${block.title}": [[#${target}]] has no matching heading`,
-      );
-      return label || target;
-    }
-    return `<note id="${id}">${(label || target).trim()}</note>`;
-  });
+  const resolvedContent = content.replace(
+    WIKILINK,
+    (full, targetTitle, label) => {
+      // strip the same way the title map's keys were built (Обsidian lets
+      // the link target itself carry **bold**/etc, e.g. [[#📜 **Аксиома**]])
+      // — without this the lookup key never matches the stripped title.
+      const target = stripEmphasis(targetTitle.trim());
+      const id = titleToId.get(target);
+      if (!id) {
+        console.warn(
+          `[import-obsidian-notes] dangling link in "${block.title}": [[#${target}]] has no matching heading`,
+        );
+        return label || target;
+      }
+      return `<note id="${id}">${(label || target).trim()}</note>`;
+    },
+  );
   return {
     id: titleToId.get(block.title),
     title: block.title,
@@ -177,4 +207,6 @@ const output = `export const notes = [\n${entries.join('\n')}\n];\n`;
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, output, 'utf8');
 
-console.log(`[import-obsidian-notes] wrote ${notes.length} notes to ${outputPath}`);
+console.log(
+  `[import-obsidian-notes] wrote ${notes.length} notes to ${outputPath}`,
+);
