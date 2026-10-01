@@ -534,7 +534,7 @@ export const CONFIG = {
         {
           id: 'shadowBeacon',
           name: 'Маяки',
-          slider: true,
+          switchMode: 'tabs',
           imgs: [
             {
               title: 'Ловец Снов',

@@ -291,7 +291,40 @@
   color: #e09040;
 }
 
-/* ── slider dots (used when imgs[] has >=2 items and slider:true) ── */
+/* ── switchMode:'tabs' header (used when imgs[] has >=2 items) — tab
+   buttons replace the plain title text, same look as the app's other tab
+   row (#license-tabs/.license-tab in css/license.css), reused directly
+   rather than duplicated. Overrides .tt-header's own padding/display
+   (css/tooltip.css) since the buttons supply their own. ── */
+.win-img .tt-header:has(.img-tab) {
+  display: flex;
+  padding: 0;
+}
+.img-tab {
+  flex: 1;
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #585e72;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.img-tab:hover {
+  color: #8a9098;
+}
+.img-tab.active {
+  color: #e09040;
+  border-bottom-color: #e09040;
+}
+
+/* ── slider dots (used when imgs[] has >=2 items and switchMode:'slider', or the legacy slider:true) ── */
 #img-dots {
   display: none;
   flex-shrink: 0;

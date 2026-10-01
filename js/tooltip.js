@@ -590,16 +590,31 @@ export function showTooltip(name, lvlDesc, iconEl) {
   const imgsList = Array.isArray(perkData?.imgs)
     ? perkData.imgs.filter(Boolean)
     : [];
-  const useSlider = imgsList.length >= 2 && perkData?.slider === true;
-  const useMultiImg = imgsList.length >= 2 && !useSlider; // multiple separate img windows
+  // switchMode: 'none' | 'slider' | 'tabs' — how multiple imgs[] combine.
+  // 'slider'/'tabs' both merge into ONE .win-img box; 'none' gives each
+  // image its own window (the old default/only behavior). perkData.slider
+  // (boolean) is the older spelling of 'slider' — kept working as-is so
+  // existing config entries (e.g. default.config.js) don't need editing.
+  const switchModeRaw = perkData?.switchMode;
+  const switchMode =
+    switchModeRaw === 'tabs' || switchModeRaw === 'slider' || switchModeRaw === 'none'
+      ? switchModeRaw
+      : perkData?.slider === true
+        ? 'slider'
+        : 'none';
+  const useCombined = imgsList.length >= 2 && switchMode !== 'none';
+  const useTabs = useCombined && switchMode === 'tabs';
+  const useSlider = useCombined && switchMode === 'slider'; // dot navigation specifically
+  const useMultiImg = imgsList.length >= 2 && !useCombined; // multiple separate img windows
   const hasImg = imgsList.length >= 1 || !!perkData?.img;
   const hasImg2 = useMultiImg; // keep alias for compat during transition
   const hasCombo = !!(combo && Object.keys(combo).length);
 
   // resolve the actual list of image sources to render for the (single) .win-img.
-  // - imgs[] + slider:true  → all images go into ONE box, navigated via dots
-  // - imgs[] + slider:false → each image gets its own .win-img window
-  // - plain img             → single image, as before
+  // - imgs[] + switchMode:'slider' → all images go into ONE box, navigated via dots
+  // - imgs[] + switchMode:'tabs'   → all images go into ONE box, navigated via tab buttons in the header
+  // - imgs[] + switchMode:'none'   → each image gets its own .win-img window
+  // - plain img                    → single image, as before
   const imgSourcesRaw = imgsList.length
     ? imgsList
     : perkData?.img
@@ -686,14 +701,17 @@ export function showTooltip(name, lvlDesc, iconEl) {
   const snippetSources = snippetsList.map(normalizeSnippetEntry);
   const snippetBoxes = [];
 
-  // Create one .win-img window per imgSources entry (no slider mode)
-  // or one window for slider mode. imgBoxes[i] mirrors imgSources[i].
+  // Create one .win-img window per imgSources entry (switchMode:'none')
+  // or one shared window (switchMode:'slider'/'tabs'). imgBoxes[i] mirrors
+  // imgSources[i].
   if (hasImg) {
-    const count = useSlider ? 1 : imgSources.length;
+    const count = useCombined ? 1 : imgSources.length;
     for (let i = 0; i < count; i++) {
       const w = createWin('img');
-      // first window gets dots container for slider
-      if (i === 0) {
+      // first window gets the dots container — only for dot navigation;
+      // 'tabs' mode replaces the header itself instead (see below), no
+      // separate dots strip needed.
+      if (i === 0 && useSlider) {
         imgDots = document.createElement('div');
         imgDots.className = 'img-dots';
         imgDots.id = 'img-dots';
@@ -978,7 +996,10 @@ export function showTooltip(name, lvlDesc, iconEl) {
     const imgLoadPromises = [];
     let _sliderIndex = 0;
 
-    function renderSliderImage(idx) {
+    // shared by switchMode 'slider' and 'tabs' — swaps the visible media in
+    // the one combined box, then syncs whichever switching UI is active
+    // (dots for 'slider', the active tab for 'tabs').
+    function renderCombinedImage(idx) {
       // explicitly stop any currently playing video before swapping content
       imgContent.querySelectorAll('video').forEach((v) => {
         v.pause();
@@ -995,11 +1016,17 @@ export function showTooltip(name, lvlDesc, iconEl) {
         entry.controls,
       );
       withLoadingSpinner(el, imgContent, entry.desc);
-      imgHeader.textContent =
-        entry.title || perkData.name || 'Иллюстрация';
-      imgDots
-        .querySelectorAll('.img-dot')
-        .forEach((d, i) => d.classList.toggle('active', i === idx));
+      if (useTabs) {
+        imgHeader
+          .querySelectorAll('.img-tab')
+          .forEach((t, i) => t.classList.toggle('active', i === idx));
+      } else {
+        imgHeader.textContent =
+          entry.title || perkData.name || 'Иллюстрация';
+        imgDots
+          .querySelectorAll('.img-dot')
+          .forEach((d, i) => d.classList.toggle('active', i === idx));
+      }
     }
 
     // helper: wraps a media element with a spinner that's visible until
@@ -1071,10 +1098,31 @@ export function showTooltip(name, lvlDesc, iconEl) {
     }
 
     if (hasImg) {
-      if (useSlider) {
+      if (useTabs) {
+        // ONE window, multiple images, tab buttons where the title would
+        // normally sit — styled like the app's other tab rows (see
+        // #license-tabs/.license-tab in css/license.css), reused directly
+        // rather than duplicated here.
+        _sliderIndex = 0;
+        imgHeader.innerHTML = imgSources
+          .map(
+            (entry, i) =>
+              `<button type="button" class="img-tab${i === 0 ? ' active' : ''}" data-idx="${i}">${
+                entry.title || `Фото ${i + 1}`
+              }</button>`,
+          )
+          .join('');
+        imgHeader.querySelectorAll('.img-tab').forEach((tab) => {
+          tab.addEventListener('click', () => {
+            _sliderIndex = parseInt(tab.dataset.idx, 10);
+            renderCombinedImage(_sliderIndex);
+          });
+        });
+        renderCombinedImage(0);
+      } else if (useSlider) {
         // ONE window, multiple images, dot navigation
         _sliderIndex = 0;
-        renderSliderImage(0);
+        renderCombinedImage(0);
         imgDots.innerHTML = imgSources
           .map(
             (_, i) =>
@@ -1085,7 +1133,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
         imgDots.querySelectorAll('.img-dot').forEach((dot) => {
           dot.addEventListener('click', () => {
             _sliderIndex = parseInt(dot.dataset.idx, 10);
-            renderSliderImage(_sliderIndex);
+            renderCombinedImage(_sliderIndex);
           });
         });
       } else {
@@ -1112,7 +1160,7 @@ export function showTooltip(name, lvlDesc, iconEl) {
     }
 
     // populate all img windows from imgSources (index 0 handled above, rest here)
-    if (!useSlider) {
+    if (!useCombined) {
       for (
         let _i = 1;
         _i < imgSources.length && _i < imgBoxes.length;
@@ -1133,13 +1181,16 @@ export function showTooltip(name, lvlDesc, iconEl) {
         withLoadingSpinner(_el, _w.content, _entry.desc);
       }
     }
-    // set header for first img box too
-    imgBoxes.forEach((_w, _i) => {
-      if (!_w.hdr.textContent && imgSources[_i]) {
-        _w.hdr.textContent =
-          imgSources[_i].title || perkData.name || 'Иллюстрация';
-      }
-    });
+    // set header for first img box too (tabs mode already filled it with
+    // buttons above — leave that alone)
+    if (!useTabs) {
+      imgBoxes.forEach((_w, _i) => {
+        if (!_w.hdr.textContent && imgSources[_i]) {
+          _w.hdr.textContent =
+            imgSources[_i].title || perkData.name || 'Иллюстрация';
+        }
+      });
+    }
 
     // populate every snippet window — no slider mode, each entry always
     // gets its own window (see snippetBoxes above).
