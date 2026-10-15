@@ -3,6 +3,10 @@
 This file is auto-loaded every session. Details live in `claude/` — read the
 relevant file before touching the area it covers.
 
+**New to the project, or chat history was lost?** Start with
+`docs/welcome.md` — project overview, rules, and a table of contents for all
+documentation.
+
 ## Quick facts
 
 - Dev server: `python .claude/nocache_server.py 8199` (never `file://` — ES
