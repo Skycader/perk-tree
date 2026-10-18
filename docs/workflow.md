@@ -65,6 +65,10 @@ openspec/changes/<имя>/
 - Ветка `master`; remote'ы: `origin` → GitHub `Skycader/perk-tree`,
   `origin-gitlab` → GitLab `daniil.ustimencko/perk-tree`.
 - Коммиты и пуши — **только по просьбе**. «push to both» = в оба remote'а.
+- Слово **«cap»** от автора = commit + push во все remote'ы, после чего
+  напомнить запустить `bash scripts/backup_to_obsidian.sh` (zip коммита
+  HEAD в хранилище Obsidian — страховка от потери аккаунтов). Скрипт
+  запускает только автор, ассистент — никогда (разрешён лишь `bash -n`).
 - Сообщения коротко, по сути, на английском или русском; добавлять
   подпись соавтора согласно инструкции текущей сессии.
 - Предупреждения `LF will be replaced by CRLF` на Windows безвредны.

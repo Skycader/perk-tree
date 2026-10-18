@@ -29,6 +29,18 @@ documentation.
   CLAUDE.md/claude/*.md first" grounding for whatever generates these
   artifacts — keep it in sync if those docs' scope changes.
 
+## Working rule: "cap"
+
+When the user writes **"cap"**, that means: commit and push (to **all**
+remotes — `origin` and `origin-gitlab`), then remind them to run
+`bash scripts/backup_to_obsidian.sh` (a zip of HEAD into their Obsidian
+vault — a safety layer against losing the GitHub/GitLab accounts).
+**Never run that script yourself** — not during testing, not after "cap".
+Only `bash -n scripts/backup_to_obsidian.sh` (syntax check) is fine, and a
+run with `--dest <temp dir>` only if the user explicitly allows it (delete
+the temp dir afterwards). Without "cap" or an explicit request, don't
+commit or push.
+
 ## Read before working in these areas
 
 - **Any UI/DOM work, verification, or "is this actually rendering" doubt** →
