@@ -92,4 +92,10 @@ export const tips = [
     content: '<file src="wiki/tips/hormones/oxytocin.md"></file>',
     author: '— Википедия',
   },
+  {
+    id: 'neurotoxins',
+    title: '📜 Таблица нейротоксинов',
+    content: '<file src="wiki/tips/neurotoxins.md"></file>',
+    author: '— Википедия',
+  },
 ];
