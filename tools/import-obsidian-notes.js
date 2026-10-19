@@ -2,7 +2,7 @@
 // ── Obsidian notes.md → default.notes.js ──
 // Simplest possible converter: one input .md file, one output .js file.
 // Usage: node tools/import-obsidian-notes.js [input.md] [output.js]
-//   input.md  default: notes.md (current directory)
+//   input.md  default: tools/notes.md (next to this script)
 //   output.js default: configs/default/default.notes.js
 //
 // Input format (one note per `# Heading`, repeated in the same file):
@@ -21,9 +21,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const inputPath = process.argv[2] || 'tools/notes.md';
+// Defaults are resolved from this file's own location, not the current
+// directory, so the script works the same whether it's run from the repo root
+// or from tools/.
+const inputPath = process.argv[2] || path.join(__dirname, 'notes.md');
 const outputPath =
-  process.argv[3] || path.join('configs', 'default', 'default.notes.js');
+  process.argv[3] ||
+  path.join(__dirname, '..', 'configs', 'default', 'default.notes.js');
 
 const raw = fs.readFileSync(inputPath, 'utf8');
 
