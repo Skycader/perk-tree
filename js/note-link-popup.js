@@ -245,6 +245,9 @@ async function openLinkPopup(triggerEl, kind, refId) {
   const pw = popup.offsetWidth;
   const ph = popup.offsetHeight;
 
+  const icX = r.left + r.width / 2;
+  const icY = r.top + r.height / 2;
+
   let px, py;
   if (hostIndex < 0) {
     // root popup — positioned off the trigger word itself: left of it by
@@ -281,15 +284,45 @@ async function openLinkPopup(triggerEl, kind, refId) {
     // exactly where step N+1's ends, which already starts beyond step N's,
     // regardless of how much they share in X.
     const parentRect = chain[hostIndex].popup.getBoundingClientRect();
-    px = parentRect.left + cascadeDirX * CASCADE_STEP_X;
-    py =
+    const fits = (x, y) => x >= 4 && x + pw <= vw - 4 && y >= 4 && y + ph <= vh - 4;
+    // no overlap with ANY popup already open in the chain
+    const clear = (x, y) =>
+      chain.every((link) => {
+        const o = link.popup.getBoundingClientRect();
+        return x + pw <= o.left || x >= o.right || y + ph <= o.top || y >= o.bottom;
+      });
+    const stairX = parentRect.left + cascadeDirX * CASCADE_STEP_X;
+    const stairY =
       cascadeDirY > 0
         ? parentRect.top + parentRect.height // steps down, touching the parent's bottom edge
         : parentRect.top - ph; // steps up, touching the parent's top edge
-    if (px < 4) px = 4;
-    if (px + pw > vw - 4) px = vw - pw - 4;
-    if (py < 4) py = 4;
-    if (py + ph > vh - 4) py = vh - ph - 4;
+    if (fits(stairX, stairY)) {
+      px = stairX;
+      py = stairY;
+    } else {
+      // The staircase doesn't fit on screen — typically when the parent is
+      // already nearly full-height, so "touching its bottom/top edge" is
+      // off-screen. Clamping it back on (the old behavior) dragged the new
+      // popup over its parent and, with it, over the very word that opened
+      // it: the connector then ran from that word straight through the
+      // new popup's own body. Put it BESIDE the parent instead (toward the
+      // open side first, then the other), header level with the word, as
+      // long as that doesn't land on any popup already in the chain.
+      const sideY = Math.max(4, Math.min(icY - 20, vh - ph - 4));
+      const rightX = parentRect.right + GAP;
+      const leftX = parentRect.left - pw - GAP;
+      const sideX = (cascadeDirX > 0 ? [rightX, leftX] : [leftX, rightX]).find(
+        (x) => fits(x, sideY) && clear(x, sideY),
+      );
+      if (sideX !== undefined) {
+        px = sideX;
+        py = sideY;
+      } else {
+        // no room anywhere — last resort, overlap as before (clamped)
+        px = Math.min(Math.max(stairX, 4), vw - pw - 4);
+        py = Math.min(Math.max(stairY, 4), vh - ph - 4);
+      }
+    }
   }
 
   popup.style.left = px + 'px';
@@ -301,8 +334,6 @@ async function openLinkPopup(triggerEl, kind, refId) {
   // getBoundingClientRect() like chain-tip.js does. Vertical segment first
   // (up or down from the word to the popup's title-bar height), then
   // horizontal to whichever side the popup landed on — a Г/L elbow.
-  const icX = r.left + r.width / 2;
-  const icY = r.top + r.height / 2;
   // Normally: bend to whichever side edge is nearer the word, at roughly
   // header height (py + 20) — this is the "arrow into the middle of the
   // header" look every other connector in the app uses, and it's safe
@@ -328,16 +359,25 @@ async function openLinkPopup(triggerEl, kind, refId) {
         : py
     : py + 20;
   const total = Math.abs(icY - toY) + Math.abs(toX - icX);
+  // Last-resort overlap (no placement left that clears the chain) can leave
+  // the word itself under the new popup. Any line from it would then run
+  // through that popup's own body (the overlay paints above every popup) —
+  // so draw only the dot.
+  const wordCovered = icX > px && icX < px + pw && icY > py && icY < py + ph;
 
   syncArrowSvgSize();
   arrowSvg.style.display = 'block';
   const connector = document.createElementNS(SVG_NS, 'g');
   connector.innerHTML = `
     <circle cx="${icX}" cy="${icY}" r="3" fill="#50556a"/>
-    <polyline points="${icX},${icY} ${icX},${toY} ${toX},${toY}"
+    ${
+      wordCovered
+        ? ''
+        : `<polyline points="${icX},${icY} ${icX},${toY} ${toX},${toY}"
       fill="none" stroke="#50556a" stroke-width="1.5"
       stroke-dasharray="${total}" stroke-dashoffset="${total}"
-      style="animation:dashIn .3s ease forwards"/>`;
+      style="animation:dashIn .3s ease forwards"/>`
+    }`;
   arrowSvg.appendChild(connector);
 
   closeBtn.addEventListener('click', (e) => {

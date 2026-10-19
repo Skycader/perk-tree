@@ -59,3 +59,20 @@ clearance on one axis, small stagger on the other" (recreates floating).
   through either. This exact edge case was a judgment call (an
   `AskUserQuestion` went unanswered — see `collaboration.md`) — if flagged
   again, this is the remaining fallback to revisit.
+
+## Tall parents: staircase doesn't fit → place beside the parent
+
+When the parent popup is nearly full-height (long wiki articles like
+"Список гормонов"), the "touch the parent's bottom/top edge" step lands
+off-screen. The old code clamped it back on, which dragged the child over
+its parent and over the very word that opened it — the connector then ran
+from that word straight through the child's own body (the connector overlay
+paints above every popup).
+
+Now `openLinkPopup` tries, in order: (1) the staircase, if it fits on screen
+unclamped; (2) **beside the parent** (toward `cascadeDirX` first, then the
+other side), header level with the word (`py = wordY - 20`), only if it
+clears every popup already in the chain; (3) the old clamped staircase as a
+last resort (viewport too narrow for a deeper chain). In case (3) the word
+can end up under the child — then only the dot is drawn, no line (any line
+would cross the child's body). Seen at 1280x720 from depth 3 on.
