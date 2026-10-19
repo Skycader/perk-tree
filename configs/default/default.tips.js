@@ -26,4 +26,16 @@ export const tips = [
     content: '<file src="wiki/tips/visible-spectre.md"></file>',
     author: '— Википедия',
   },
+  {
+    id: 'stress-hormones',
+    title: '📜 Гормоны стресса и боя',
+    content: '<file src="wiki/tips/stress-hormones.md"></file>',
+    author: '— Википедия',
+  },
+  {
+    id: 'fertility-cycle',
+    title: '📜 Фертильность и беременность',
+    content: '<file src="wiki/tips/fertility-cycle.md"></file>',
+    author: '— Википедия',
+  },
 ];
