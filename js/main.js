@@ -5,7 +5,8 @@ import { drawColumn, drawTopBus } from './connectors.js';
 import { hideSpectre } from './spectre.js';
 import { licenseToolbar, licenseOverlay, showLicense, hideLicense } from './license-modal.js';
 import { searchToolbar, searchOverlay, showSearchModal, hideSearchModal } from './search-modal.js';
-import { hideTooltip, OPEN_TOOLTIP_STORAGE_KEY } from './tooltip.js';
+import { hideTooltip, OPEN_TOOLTIP_PARAM } from './tooltip.js';
+import { getParam } from './url-state.js';
 import { focusPerkById } from './perk-focus.js';
 import { IPR_GLOW_BLUR, IPR_GLOW_SPREAD, MIN_LOADER_MS } from './constants.js';
 import { colRefs } from './tree.js';
@@ -50,19 +51,14 @@ function redrawAll() {
 }
 
 // ── F5 RESTORE: reopen whatever perk tooltip was open before reload ──
-// tooltip.js's showTooltip()/hideTooltip() keep OPEN_TOOLTIP_STORAGE_KEY in
-// sessionStorage in sync with whatever tooltip is currently open. On load,
-// if one was left open, scroll to that perk and re-click its icon — reusing
+// tooltip.js's showTooltip()/hideTooltip() keep the `?perk=` URL param (see
+// url-state.js) in sync with whatever tooltip is currently open. On load,
+// if one is named, scroll to that perk and re-click its icon — reusing
 // the exact same click listener tree.js already wired up (see tree.js's
 // `icon.addEventListener('click', () => showTooltip(...))`) rather than
 // duplicating showTooltip's calling contract here.
 function restoreOpenTooltip() {
-  let pid;
-  try {
-    pid = sessionStorage.getItem(OPEN_TOOLTIP_STORAGE_KEY);
-  } catch (e) {
-    return;
-  }
+  const pid = getParam(OPEN_TOOLTIP_PARAM);
   if (!pid) return;
   const perkEl = [...document.querySelectorAll('.perk')].find(
     (pe) => pe.dataset.perkId === pid,

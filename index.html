@@ -2,7 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <!-- Applies the saved UI zoom (js/zoom.js) before any CSS/content loads, so
+    <!-- Applies the UI zoom from the URL (?zoom=, js/zoom.js) before any CSS/content loads, so
          the page never flashes at 100% and then jumps to the saved level.
          Plain synchronous script, not a module — needs to run before the
          very first paint, no import overhead to wait on. Scales the root
@@ -12,7 +12,7 @@
          pixel positions, which font-only scaling never touches. -->
     <script>
       (function () {
-        var v = localStorage.getItem('uiZoomPercent');
+        var v = new URLSearchParams(location.search).get('zoom');
         var n = v === null ? 100 : parseInt(v, 10);
         if (!isFinite(n)) n = 100;
         n = Math.min(200, Math.max(50, n));

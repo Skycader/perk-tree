@@ -1,8 +1,15 @@
 # UI zoom architecture (`js/zoom.js`)
 
 The user wanted a local, in-app zoom (topbar `−`/`+`, 5% steps, 50–200%,
-persisted to `localStorage['uiZoomPercent']`) instead of relying on native
-browser zoom (their prior workaround: manually setting 125%).
+kept in the URL as `?zoom=<percent>`, omitted at 100%) instead of relying on
+native browser zoom (their prior workaround: manually setting 125%).
+
+Zoom used to live in `localStorage['uiZoomPercent']`; the user moved it into
+the URL (via `js/url-state.js`, `history.replaceState`) together with the open
+perk (`?perk=<id>`, formerly sessionStorage), so a link reproduces the view.
+Consequence: a bare URL opens at 100% — the zoom is no longer remembered
+between visits. `index.html`'s early inline script reads `?zoom=` too (keep
+the two in sync, like `MOBILE_ADAPT`).
 
 ## Rejected: CSS `zoom` on `<html>`
 

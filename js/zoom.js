@@ -23,7 +23,11 @@
 //      value at the CURRENT zoom every time the layout code reads it, so
 //      the column math stays consistent with however big the boxes are
 //      actually rendering.
-const STORAGE_KEY = 'uiZoomPercent';
+import { getParam, setParam } from './url-state.js';
+
+// Zoom lives in the URL (`?zoom=125`, omitted at the default) rather than
+// localStorage — index.html's early inline script reads the same param.
+const PARAM = 'zoom';
 const BASE_FONT_PX = 16; // must match html{font-size} in base.css
 const STEP = 5;
 const MIN = 50;
@@ -31,7 +35,7 @@ const MAX = 200;
 const DEFAULT = 100;
 
 function getStoredZoom() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw = getParam(PARAM);
   const n = raw === null ? DEFAULT : parseInt(raw, 10);
   return Number.isFinite(n) ? Math.min(MAX, Math.max(MIN, n)) : DEFAULT;
 }
@@ -48,7 +52,7 @@ function applyZoom() {
   if (levelEl) levelEl.textContent = currentZoom + '%';
   if (zoomOutBtn) zoomOutBtn.disabled = currentZoom <= MIN;
   if (zoomInBtn) zoomInBtn.disabled = currentZoom >= MAX;
-  localStorage.setItem(STORAGE_KEY, String(currentZoom));
+  setParam(PARAM, currentZoom === DEFAULT ? null : currentZoom);
   // Any open tooltip/popup already baked the OLD scale into its
   // hand-computed .win-* column positions (see the comment above) — rather
   // than try to reflow it live, just close everything and let it reopen

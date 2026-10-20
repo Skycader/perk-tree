@@ -9,6 +9,7 @@ import { openVideoLightbox } from './video-lightbox.js';
 import { openSnippetLightbox } from './snippet-lightbox.js';
 import { hideNoteLinkPopup } from './note-link-popup.js';
 import { scale } from './zoom.js';
+import { setParam } from './url-state.js';
 import {
   COLOURS,
   COL_HEX,
@@ -48,23 +49,16 @@ export function isCurrentBtn(icon) {
   return _currentBtn === icon;
 }
 
-// sessionStorage (not localStorage — this is "what was open THIS visit",
-// not a persistent setting like zoom/notes-on-startup) key used to reopen
-// the tooltip after an F5 reload — see the F5-restore listener in main.js.
-export const OPEN_TOOLTIP_STORAGE_KEY = 'openTooltipPerkId';
+// URL query param (`?perk=<id>`, see url-state.js) naming the open tooltip's
+// perk, so an F5 reload or a shared link reopens it — see restoreOpenTooltip()
+// in main.js.
+export const OPEN_TOOLTIP_PARAM = 'perk';
 
 export function showTooltip(name, lvlDesc, iconEl) {
   _currentBtn = iconEl;
   _isVisible = true;
   _comboPerkId = iconEl.closest('.perk')?.dataset?.perkId || null;
-  try {
-    if (_comboPerkId)
-      sessionStorage.setItem(OPEN_TOOLTIP_STORAGE_KEY, _comboPerkId);
-  } catch (e) {
-    // sessionStorage can throw in a locked-down context (private mode,
-    // sandboxed iframe) — F5-restore is a nicety, never worth breaking the
-    // tooltip itself over.
-  }
+  if (_comboPerkId) setParam(OPEN_TOOLTIP_PARAM, _comboPerkId);
   document.body.style.overflow = 'hidden';
 
   // keep glow on clicked icon, remove from others
@@ -2161,9 +2155,7 @@ style="animation:dashIn .3s ease forwards"/>`;
 export function hideTooltip() {
   if (!_isVisible) return;
   _isVisible = false;
-  try {
-    sessionStorage.removeItem(OPEN_TOOLTIP_STORAGE_KEY);
-  } catch (e) {}
+  setParam(OPEN_TOOLTIP_PARAM, null);
   // see showTooltip()
   document.documentElement.style.removeProperty('--perk-accent-color');
   document.documentElement.style.removeProperty('--perk-accent-r');
