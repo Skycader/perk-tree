@@ -338,6 +338,7 @@
 /* ── CHAIN DEPENDENCY ── */
 .perk-name-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
@@ -352,6 +353,34 @@
   transition: opacity 0.2s;
 }
 .perk-chain:hover {
+  opacity: 1;
+}
+/* line of colored squares after the chain icon: one per required perk,
+   level ("10+") inside */
+.perk-chain-sqs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+}
+.chain-sq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 2px;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.chain-sq:hover {
   opacity: 1;
 }
 .perk-chain-tip {

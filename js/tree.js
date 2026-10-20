@@ -215,10 +215,9 @@ columns.forEach((chapters, colPos) => {
 
         const tip = document.createElement('div');
         tip.className = 'perk-chain-tip';
-        tip.innerHTML =
-          `<strong>Эта способность требует развития:</strong>` +
-          p.requiredPerks
-            .map((entry) => {
+        // one entry per required perk — feeds both the hover tip below and
+        // the row of colored level squares ("skittles") next to the chain icon
+        const deps = p.requiredPerks.map((entry) => {
               const [rid, reqLvlStr] = entry.split(':');
               const reqLvl = reqLvlStr ? parseInt(reqLvlStr, 10) : null;
               let rname = rid,
@@ -258,13 +257,20 @@ columns.forEach((chapters, colPos) => {
                   p: '#7840c8',
                   y: '#b89030',
                 }[rcolor] || '#888';
-              return `<div class="perk-chain-dep" data-rid="${rid}" style="cursor:pointer"
+              return { rid, rname, hex, reqLvl };
+            });
+        tip.innerHTML =
+          `<strong>Эта способность требует развития:</strong>` +
+          deps
+            .map(
+              ({ rid, rname, hex, reqLvl }) =>
+                `<div class="perk-chain-dep" data-rid="${rid}" style="cursor:pointer"
           onmouseenter="this.querySelector('span').style.boxShadow='0 0 6px 3px ${hex}88, 0 0 14px 5px ${hex}44'; this.querySelectorAll('span')[1].style.color='#e0ddd6'"
           onmouseleave="this.querySelector('span').style.boxShadow=''; this.querySelectorAll('span')[1].style.color=''">
         <span style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
         <span style="transition:color .15s">${rname}</span>${reqLvl ? `<span class="perk-chain-dep-lvl">от ур. ${reqLvl}</span>` : ''}
-      </div>`;
-            })
+      </div>`,
+            )
             .join('');
 
         let _chainHide = null;
@@ -408,6 +414,27 @@ columns.forEach((chapters, colPos) => {
         // insert chain icon into name row
         const nameRow = pEl.querySelector('.perk-name-row');
         nameRow.appendChild(chainSvg);
+
+        // "skittles": a line of colored squares after the chain icon, one per
+        // required perk, each carrying the required level ("10+") when the
+        // entry has one. Hover shows the same tip as the icon; click focuses
+        // that perk.
+        const sqRow = document.createElement('span');
+        sqRow.className = 'perk-chain-sqs';
+        sqRow.innerHTML = deps
+          .map(({ rid, hex, reqLvl }) => {
+            const { r, g, b } = hexToRgb(hex);
+            const dark = 0.299 * r + 0.587 * g + 0.114 * b > 120;
+            return `<span class="chain-sq" data-rid="${rid}" style="background:${hex};color:${dark ? '#0d0f14' : '#fff'}">${reqLvl ? reqLvl + '+' : ''}</span>`;
+          })
+          .join('');
+        sqRow.addEventListener('mouseenter', showTip);
+        sqRow.addEventListener('mouseleave', hideTipDelayed);
+        sqRow.addEventListener('click', (e) => {
+          const sq = e.target.closest('.chain-sq');
+          if (sq) focusPerk(sq.dataset.rid);
+        });
+        nameRow.appendChild(sqRow);
         document.body.appendChild(tip); // attach to body so hover works
       }
 
