@@ -38,7 +38,7 @@
 | Поле | Назначение |
 | --- | --- |
 | `id` | Уникальный id (ключ в `skillLevelDescriptions`, `requiredPerks`, `<perk>`) |
-| `name`, `description` | Название и краткое описание в дереве (Markdown) |
+| `name`, `description` | Название и краткое описание в дереве (Markdown). Абзацы — через `<br><br>`: `\n\n` здесь **не** даёт разрыва (рендерится инлайн-Markdown) |
 | `requiredPerks` | id перков-зависимостей → иконка-цепочка и коннекторы |
 | `img` / `imgs[]` | Медиа: строка-путь или `{src,title,desc,audio,height,controls}`; `.png/.jpg/.gif/.mp4` |
 | `switchMode` | При ≥2 `imgs`: `'none'` (отдельные окна, по умолчанию) · `'slider'` (одно окно, точки) · `'tabs'` (одно окно, вкладки вместо заголовка). Старое `slider: true` = `'slider'` |

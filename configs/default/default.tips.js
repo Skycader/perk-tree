@@ -122,4 +122,10 @@ export const tips = [
     content: '<file src="wiki/tips/polygraph.md"></file>',
     author: '— Пояснение',
   },
+  {
+    id: 'zombie',
+    title: '📜 Зомби',
+    content: '<file src="wiki/tips/zombie.md"></file>',
+    author: '— Пояснение',
+  },
 ];
