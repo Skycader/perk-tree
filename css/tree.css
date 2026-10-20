@@ -237,6 +237,27 @@
 .ipr-sq {
   transform: translateY(-1px);
 }
+/* Perk square carrying the required level inside it: [ 9+ ] Perk name,
+   with the name in the perk's color too. */
+.inline-perk-ref.has-lvl .ipr-label {
+  color: var(--perk-hex);
+}
+.ipr-sq-lvl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 14px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 2px;
+  flex-shrink: 0;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #0d0f14;
+  white-space: nowrap;
+}
 .perk-body {
   flex: 1;
   min-width: 0;

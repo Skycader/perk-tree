@@ -197,17 +197,26 @@ export function processSquareTags(html) {
 export function processPerkTags(html) {
   // New syntax: <perk name="standVisor">optional label</perk>
   // Old syntax: <perk>standVisor</perk> (still supported for compat)
+  // Either form takes an optional lvl="N" — the perk's square grows and
+  // carries the required level inside it ("9+"), followed by the perk name.
   return html.replace(
-    /<perk(?:\s+name="([^"]+)")?\s*>([^<]*)<\/perk>/gi,
-    (_, attrId, inner) => {
+    /<perk((?:\s+(?:name|lvl)="[^"]*")*)\s*>([^<]*)<\/perk>/gi,
+    (_, attrs, inner) => {
+      const attrId = /\bname="([^"]+)"/i.exec(attrs)?.[1];
+      const lvl = /\blvl="(\d+)"/i.exec(attrs)?.[1];
       const pid = (attrId || inner).trim();
       const label = attrId ? inner.trim() : ''; // text only for new syntax
       const { name: perkName, hex } = resolvePerkInline(pid);
       const displayText = label || perkName;
-      return `<span class="inline-perk-ref" data-rid="${pid}" data-hex="${hex}"
-      style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;vertical-align:middle;">
-      <span class="ipr-sq" style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>
-      ${displayText ? `<span class="ipr-label" style="color:inherit;transition:color .2s;font-size:inherit;">${displayText}</span>` : ''}
+      const sq = lvl
+        ? `<span class="ipr-sq ipr-sq-lvl" style="background:${hex};transition:box-shadow .2s">${lvl}+</span>`
+        : `<span class="ipr-sq" style="display:inline-block;width:8px;height:8px;background:${hex};border-radius:1px;flex-shrink:0;transition:box-shadow .2s"></span>`;
+      // A ref with a level also colors its name (via .has-lvl in tree.css, so
+      // no inline color: main.js's mouseout clears inline label colors).
+      return `<span class="inline-perk-ref${lvl ? ' has-lvl' : ''}" data-rid="${pid}" data-hex="${hex}"
+      style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;vertical-align:middle;--perk-hex:${hex};">
+      ${sq}
+      ${displayText ? `<span class="ipr-label" style="${lvl ? '' : 'color:inherit;'}transition:color .2s;font-size:inherit;">${displayText}</span>` : ''}
     </span>`;
     },
   );
