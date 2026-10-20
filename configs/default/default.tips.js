@@ -98,4 +98,28 @@ export const tips = [
     content: '<file src="wiki/tips/neurotoxins.md"></file>',
     author: '— Википедия',
   },
+  {
+    id: 'intent',
+    title: '📜 Намерения (Одрадек)',
+    content: '<file src="wiki/tips/intent.md"></file>',
+    author: '— Пояснение',
+  },
+  {
+    id: 'moods',
+    title: '📜 Настроения',
+    content: '<file src="wiki/tips/moods.md"></file>',
+    author: '— Пояснение',
+  },
+  {
+    id: 'mentat-intent',
+    title: '📜 Намерения (ментат)',
+    content: '<file src="wiki/tips/mentat-intent.md"></file>',
+    author: '— Пояснение',
+  },
+  {
+    id: 'polygraph',
+    title: '📜 Живой полиграф',
+    content: '<file src="wiki/tips/polygraph.md"></file>',
+    author: '— Пояснение',
+  },
 ];
