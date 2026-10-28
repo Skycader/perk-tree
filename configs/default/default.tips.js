@@ -128,4 +128,10 @@ export const tips = [
     content: '<file src="wiki/tips/zombie.md"></file>',
     author: '— Пояснение',
   },
+  {
+    id: 'noosphere-distortion',
+    title: '📜 Явление искажения',
+    content: '<file src="wiki/tips/noosphere-distortion.md"></file>',
+    author: '— Пояснение',
+  },
 ];
